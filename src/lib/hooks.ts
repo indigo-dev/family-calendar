@@ -1,0 +1,76 @@
+import { useEffect, useRef, useState, type TouchEvent } from 'react';
+
+/** Current time, re-rendering every `intervalMs`. */
+export function useNow(intervalMs = 30_000): Date {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), intervalMs);
+    return () => clearInterval(t);
+  }, [intervalMs]);
+  return now;
+}
+
+/** Observes an element's size. */
+export function useSize<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setSize((s) => (s.width === width && s.height === height ? s : { width, height }));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, size] as const;
+}
+
+/** Keeps the screen on (Screen Wake Lock API, Safari ≥ 16.4). */
+export function useWakeLock(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled || !('wakeLock' in navigator)) return;
+    let lock: WakeLockSentinel | null = null;
+    let cancelled = false;
+    const request = async () => {
+      try {
+        if (document.visibilityState === 'visible' && !cancelled) lock = await navigator.wakeLock.request('screen');
+      } catch {
+        /* not allowed (e.g. low power mode) */
+      }
+    };
+    request();
+    const onVis = () => {
+      if (document.visibilityState === 'visible') request();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVis);
+      lock?.release().catch(() => {});
+    };
+  }, [enabled]);
+}
+
+/** Horizontal swipe detection for touch navigation. */
+export function useSwipe(onSwipe: (dir: 1 | -1) => void) {
+  const start = useRef<{ x: number; y: number; t: number } | null>(null);
+  return {
+    onTouchStart: (e: TouchEvent) => {
+      const t = e.touches[0];
+      start.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+    },
+    onTouchEnd: (e: TouchEvent) => {
+      const s = start.current;
+      start.current = null;
+      if (!s) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - s.x;
+      const dy = t.clientY - s.y;
+      if (Math.abs(dx) > 80 && Math.abs(dx) > Math.abs(dy) * 1.5 && Date.now() - s.t < 600) {
+        onSwipe(dx < 0 ? 1 : -1);
+      }
+    },
+  };
+}
