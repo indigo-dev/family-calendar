@@ -5,7 +5,7 @@ Digitaler Wandkalender für die Familie – läuft komplett im Browser (z. B. au
 - **Outlook-Anbindung** über Microsoft Graph: jede Person meldet sich mit ihrem eigenen Microsoft-Konto an (nur Lesezugriff).
 - **Familienmitglieder** mit Name, Farbe und Avatar (Initialen, Emoji oder Foto); pro Person wählbare Kalender.
 - **Ansichten:** Tag, Woche, Monat, Jahr, Agenda – Wischen links/rechts blättert.
-- **Personenfilter:** Chips oben antippen; doppelt tippen / lange drücken zeigt nur diese Person.
+- **Personenfilter:** Avatar antippen zeigt nur diese Person (nochmal antippen oder „Alle“ = alle). Lange drücken nimmt eine Person dazu bzw. wieder heraus.
 - Gemeinsame Termine (gleiche Einladung in mehreren Kalendern) werden zu einem Termin mit mehreren Farben zusammengeführt.
 - **Export/Import** der Konfiguration als JSON (Einstellungen → Sicherung).
 - Wandmodus: Bildschirm bleibt an, Rücksprung auf „Heute“ nach Inaktivität, Auto-Aktualisierung, Offline-Cache.

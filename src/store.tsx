@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { AppConfig, Member, Settings } from './types';
 import { loadConfig, saveConfig } from './lib/config';
 
-const HIDDEN_KEY = 'fc.hiddenMembers';
+const SELECTED_KEY = 'fc.selectedMembers';
 
 interface Store {
   config: AppConfig;
@@ -15,31 +15,39 @@ interface Store {
   removeMember: (id: string) => void;
   moveMember: (id: string, dir: -1 | 1) => void;
   replaceConfig: (cfg: AppConfig) => void;
-  /** person filter */
-  hidden: Set<string>;
-  toggleMember: (id: string) => void;
-  showOnly: (id: string) => void;
+  /** person filter: empty = all members, otherwise only these members */
+  selectedIds: Set<string>;
+  /** tap: show only this member (tapping the only selected member again goes back to all) */
+  selectOnly: (id: string) => void;
+  /** long press: add/remove this member to/from the selection */
+  toggleSelected: (id: string) => void;
   showAll: () => void;
 }
 
 const Ctx = createContext<Store | null>(null);
 
-function loadHidden(): Set<string> {
+function loadSelected(): string[] {
   try {
-    return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? '[]') as string[]);
+    const v = JSON.parse(localStorage.getItem(SELECTED_KEY) ?? '[]');
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
   } catch {
-    return new Set();
+    return [];
   }
 }
 
 export function StoreProvider({ initial, children }: { initial?: AppConfig; children: ReactNode }) {
   const [config, setConfig] = useState<AppConfig>(() => initial ?? loadConfig());
-  const [hidden, setHidden] = useState<Set<string>>(loadHidden);
+  const [selected, setSelected] = useState<string[]>(loadSelected);
 
   useEffect(() => saveConfig(config), [config]);
+  // only existing members count; everyone selected is the same as "Alle"
+  const selectedIds = useMemo(() => {
+    const ids = new Set(selected.filter((id) => config.members.some((m) => m.id === id)));
+    return ids.size === config.members.length ? new Set<string>() : ids;
+  }, [selected, config.members]);
   useEffect(() => {
-    localStorage.setItem(HIDDEN_KEY, JSON.stringify([...hidden]));
-  }, [hidden]);
+    localStorage.setItem(SELECTED_KEY, JSON.stringify([...selectedIds]));
+  }, [selectedIds]);
 
   const updateSettings = useCallback((patch: Partial<Settings>) => {
     setConfig((c) => ({ ...c, settings: { ...c.settings, ...patch } }));
@@ -76,23 +84,15 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
 
   const replaceConfig = useCallback((cfg: AppConfig) => {
     setConfig(cfg);
-    setHidden(new Set());
+    setSelected([]);
   }, []);
 
-  const toggleMember = useCallback((id: string) => {
-    setHidden((h) => {
-      const n = new Set(h);
-      if (n.has(id)) n.delete(id);
-      else n.add(id);
-      return n;
-    });
-  }, []);
-
-  const showOnly = useCallback(
-    (id: string) => setHidden(new Set(config.members.filter((m) => m.id !== id).map((m) => m.id))),
-    [config.members],
+  const selectOnly = useCallback((id: string) => setSelected((cur) => (cur.length === 1 && cur[0] === id ? [] : [id])), []);
+  const toggleSelected = useCallback(
+    (id: string) => setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id])),
+    [],
   );
-  const showAll = useCallback(() => setHidden(new Set()), []);
+  const showAll = useCallback(() => setSelected([]), []);
 
   const value = useMemo<Store>(
     () => ({
@@ -106,12 +106,12 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
       removeMember,
       moveMember,
       replaceConfig,
-      hidden,
-      toggleMember,
-      showOnly,
+      selectedIds,
+      selectOnly,
+      toggleSelected,
       showAll,
     }),
-    [config, hidden, updateSettings, upsertMember, patchMember, removeMember, moveMember, replaceConfig, toggleMember, showOnly, showAll],
+    [config, selectedIds, updateSettings, upsertMember, patchMember, removeMember, moveMember, replaceConfig, selectOnly, toggleSelected, showAll],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

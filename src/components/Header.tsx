@@ -1,4 +1,5 @@
-import type { ViewMode } from '../types';
+import { useRef } from 'react';
+import type { Member, ViewMode } from '../types';
 import { fmt } from '../lib/dates';
 import { useStore } from '../store';
 import type { MemberStatus } from '../lib/events';
@@ -64,33 +65,87 @@ export function Header({ title, view, now, loading, onView, onStep, onToday, onR
   );
 }
 
-export function MemberFilter({ status, onReauth }: { status: Record<string, MemberStatus>; onReauth: (memberId: string) => void }) {
-  const { members, hidden, toggleMember, showAll, showOnly } = useStore();
-  if (members.length === 0) return null;
-  const allVisible = hidden.size === 0;
+const LONG_PRESS_MS = 450;
+
+/** Tap = only this person, long press = add/remove this person to/from the selection. */
+function MemberChip({ member, active, dimmed, onTap, onLongPress }: {
+  member: Member;
+  active: boolean;
+  dimmed: boolean;
+  onTap: () => void;
+  onLongPress: () => void;
+}) {
+  const timer = useRef<number | undefined>(undefined);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const fired = useRef(false);
+
+  const cancel = () => {
+    window.clearTimeout(timer.current);
+    timer.current = undefined;
+    start.current = null;
+  };
+
   return (
-    <nav className="filterbar">
-      <button className={`chip all ${allVisible ? 'on' : ''}`} onClick={showAll}>
+    <button
+      className={`chip ${active ? 'on' : ''} ${dimmed ? 'off' : ''}`}
+      style={{
+        borderColor: dimmed ? undefined : member.color,
+        background: active ? `color-mix(in srgb, ${member.color} 22%, var(--surface))` : undefined,
+      }}
+      aria-pressed={active}
+      onPointerDown={(e) => {
+        fired.current = false;
+        start.current = { x: e.clientX, y: e.clientY };
+        timer.current = window.setTimeout(() => {
+          fired.current = true;
+          timer.current = undefined;
+          onLongPress();
+        }, LONG_PRESS_MS);
+      }}
+      onPointerMove={(e) => {
+        // finger moves (e.g. scrolling the chip bar) -> no long press
+        const s = start.current;
+        if (s && Math.hypot(e.clientX - s.x, e.clientY - s.y) > 10) cancel();
+      }}
+      onPointerUp={cancel}
+      onPointerLeave={cancel}
+      onPointerCancel={cancel}
+      onContextMenu={(e) => e.preventDefault()}
+      onClick={() => {
+        if (fired.current) {
+          fired.current = false; // click after a long press is swallowed
+          return;
+        }
+        onTap();
+      }}
+    >
+      <Avatar member={member} size={30} ring={false} />
+      {member.name}
+    </button>
+  );
+}
+
+export function MemberFilter({ status, onReauth }: { status: Record<string, MemberStatus>; onReauth: (memberId: string) => void }) {
+  const { members, selectedIds, selectOnly, toggleSelected, showAll } = useStore();
+  if (members.length === 0) return null;
+  const all = selectedIds.size === 0;
+  return (
+    <nav className="filterbar" aria-label="Personenfilter">
+      <button className={`chip all ${all ? 'on' : ''}`} aria-pressed={all} onClick={showAll}>
         Alle
       </button>
       {members.map((m) => {
-        const on = !hidden.has(m.id);
+        const active = selectedIds.has(m.id);
         const st = status[m.id];
         return (
           <span key={m.id} className="chip-wrap">
-            <button
-              className={`chip ${on ? 'on' : 'off'}`}
-              style={on ? { borderColor: m.color, background: `color-mix(in srgb, ${m.color} 16%, var(--surface))` } : undefined}
-              onClick={() => toggleMember(m.id)}
-              onDoubleClick={() => showOnly(m.id)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                showOnly(m.id);
-              }}
-            >
-              <Avatar member={m} size={30} ring={false} />
-              {m.name}
-            </button>
+            <MemberChip
+              member={m}
+              active={active}
+              dimmed={!all && !active}
+              onTap={() => selectOnly(m.id)}
+              onLongPress={() => toggleSelected(m.id)}
+            />
             {st && st.state !== 'ok' && (
               <button
                 className={`warn-badge ${st.state}`}

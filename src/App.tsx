@@ -14,7 +14,7 @@ import { YearView } from './views/YearView';
 import { AgendaView } from './views/AgendaView';
 
 export function App({ authError, openMemberId }: { authError?: string; openMemberId?: string | null }) {
-  const { settings, members, hidden, memberById } = useStore();
+  const { settings, members, selectedIds, memberById } = useStore();
   const [view, setView] = useState<ViewMode>(settings.defaultView);
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [selected, setSelected] = useState<CalEvent | null>(null);
@@ -100,9 +100,9 @@ export function App({ authError, openMemberId }: { authError?: string; openMembe
   const visible = useMemo(
     () =>
       events
-        .map((e) => ({ ...e, memberIds: e.memberIds.filter((id) => !hidden.has(id) && memberById.has(id)) }))
-        .filter((e) => e.memberIds.length > 0),
-    [events, hidden, memberById],
+        .map((e) => ({ ...e, memberIds: e.memberIds.filter((id) => memberById.has(id)) }))
+        .filter((e) => (selectedIds.size > 0 ? e.memberIds.some((id) => selectedIds.has(id)) : e.memberIds.length > 0)),
+    [events, selectedIds, memberById],
   );
 
   const viewProps = { date, now, events: visible, onEvent: setSelected, onOpen: open };

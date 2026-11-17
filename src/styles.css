@@ -264,6 +264,11 @@ h2 {
   font-weight: 600;
   white-space: nowrap;
 }
+.filterbar .chip {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 .chip.all {
   padding-left: 16px;
   padding-right: 16px;
@@ -322,7 +327,7 @@ h2 {
 }
 .avatar-stack .avatar + .avatar {
   margin-left: -6px;
-  box-shadow: 0 0 0 2px var(--surface);
+  outline: 2px solid var(--surface);
 }
 
 /* ------------------------------------------------------------ events */
@@ -695,6 +700,11 @@ h2 {
   overflow-y: auto;
   height: 100%;
   padding: 6px 18px 30px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* own compositing layer: scrolling doesn't repaint the rounded/clipped parent */
+  transform: translateZ(0);
+  will-change: transform;
 }
 .agenda-day {
   display: grid;
@@ -702,14 +712,16 @@ h2 {
   gap: 12px;
   padding: 14px 0;
   border-bottom: 1px solid var(--line);
+  /* off-screen days are skipped for layout/paint (Safari 18+, Chrome) */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 260px;
+  contain: layout paint style;
 }
 .agenda-date {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   text-align: left;
-  position: sticky;
-  top: 0;
   align-self: start;
 }
 .agenda-dn {

@@ -1,15 +1,33 @@
+import { memo, useMemo } from 'react';
 import { useStore } from '../store';
-import { addDays, AGENDA_DAYS, fmt, fmtTime, isSameDay, overlaps, startOfDay } from '../lib/dates';
+import { addDays, AGENDA_DAYS, dayKey, fmt, fmtTime, isSameDay, startOfDay } from '../lib/dates';
+import type { CalEvent } from '../types';
 import { AvatarStack } from '../components/Avatar';
 import { membersOf, stripe, type ViewProps } from './common';
 
-export function AgendaView({ date, now, events, onEvent, onOpen }: ViewProps) {
+// Re-renders only when its inputs change (the clock ticks every 30 s).
+export const AgendaView = memo(function AgendaView({ date, now, events, onEvent, onOpen }: ViewProps) {
   const { memberById } = useStore();
-  const start = startOfDay(date);
-  const days = Array.from({ length: AGENDA_DAYS }, (_, i) => addDays(start, i));
-  const groups = days
-    .map((d) => ({ d, list: events.filter((e) => overlaps(e.start, e.end, d, addDays(d, 1))) }))
-    .filter((g) => g.list.length > 0 || isSameDay(g.d, now));
+  const todayKey = dayKey(now);
+
+  // One pass over the events, bucketed by day (instead of filtering all events for every day).
+  const groups = useMemo(() => {
+    const start = startOfDay(date);
+    const end = addDays(start, AGENDA_DAYS);
+    const buckets = new Map<string, CalEvent[]>();
+    for (const e of events) {
+      let d = e.start > start ? startOfDay(e.start) : start;
+      for (; d < e.end && d < end; d = addDays(d, 1)) {
+        const k = dayKey(d);
+        const list = buckets.get(k);
+        if (list) list.push(e);
+        else buckets.set(k, [e]);
+      }
+    }
+    return Array.from({ length: AGENDA_DAYS }, (_, i) => addDays(start, i))
+      .map((d) => ({ d, list: buckets.get(dayKey(d)) ?? [] }))
+      .filter((g) => g.list.length > 0 || dayKey(g.d) === todayKey);
+  }, [date, events, todayKey]);
 
   return (
     <div className="agenda">
@@ -56,4 +74,4 @@ export function AgendaView({ date, now, events, onEvent, onOpen }: ViewProps) {
       })}
     </div>
   );
-}
+});
