@@ -1,23 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Member, Settings, ViewMode } from '../types';
+import type { Account, AccountKind, CalendarSource, Member, Settings, ViewMode } from '../types';
 import { useStore } from '../store';
 import {
+  ACCOUNT_KINDS,
   demoMembers,
   EMOJIS,
   exportConfig,
   imageFileToAvatar,
+  newAccount,
+  newCalendar,
   newMember,
   PALETTE,
   readConfigFile,
+  REGIONS,
 } from '../lib/config';
-import { forgetAccount, getToken, hasAccount, isAuthConfigured, loginMember, redirectUri } from '../lib/auth';
-import { listCalendars, type GraphCalendar } from '../lib/graph';
+import { normalizeIcsUrl, testCalendarLink } from '../lib/events';
+import { loadHolidays, type Holiday } from '../lib/holidays';
+import { fmt } from '../lib/dates';
 import { Avatar } from '../components/Avatar';
 
-type Tab = 'family' | 'outlook' | 'display' | 'backup';
+type Tab = 'family' | 'calendars' | 'holidays' | 'display' | 'backup';
 
-export function SettingsPanel({ onClose, initialMemberId }: { onClose: () => void; initialMemberId?: string | null }) {
-  const [tab, setTab] = useState<Tab>('family');
+export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; initialTab?: Tab }) {
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'family');
   return (
     <div className="modal-backdrop">
       <div className="modal settings" role="dialog" aria-modal="true">
@@ -27,7 +32,8 @@ export function SettingsPanel({ onClose, initialMemberId }: { onClose: () => voi
             {(
               [
                 ['family', 'Familie'],
-                ['outlook', 'Outlook'],
+                ['calendars', 'Kalender'],
+                ['holidays', 'Ferien'],
                 ['display', 'Anzeige'],
                 ['backup', 'Sicherung'],
               ] as [Tab, string][]
@@ -42,8 +48,9 @@ export function SettingsPanel({ onClose, initialMemberId }: { onClose: () => voi
           </button>
         </div>
         <div className="settings-body">
-          {tab === 'family' && <FamilyTab initialMemberId={initialMemberId} onGoOutlook={() => setTab('outlook')} />}
-          {tab === 'outlook' && <OutlookTab />}
+          {tab === 'family' && <FamilyTab onGoCalendars={() => setTab('calendars')} />}
+          {tab === 'calendars' && <CalendarsTab />}
+          {tab === 'holidays' && <HolidaysTab />}
           {tab === 'display' && <DisplayTab />}
           {tab === 'backup' && <BackupTab />}
         </div>
@@ -54,15 +61,22 @@ export function SettingsPanel({ onClose, initialMemberId }: { onClose: () => voi
 
 /* ---------------------------------------------------------------- Familie */
 
-function FamilyTab({ initialMemberId, onGoOutlook }: { initialMemberId?: string | null; onGoOutlook: () => void }) {
-  const { members, upsertMember, replaceConfig, config } = useStore();
-  const [selected, setSelected] = useState<string | null>(initialMemberId ?? members[0]?.id ?? null);
+function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
+  const { members, calendars, upsertMember, replaceConfig, config } = useStore();
+  const [selected, setSelected] = useState<string | null>(members[0]?.id ?? null);
   const current = members.find((m) => m.id === selected) ?? null;
 
   const add = () => {
     const m = newMember(members);
     upsertMember(m);
     setSelected(m.id);
+  };
+
+  const subtitle = (m: Member) => {
+    const n = calendars.filter((c) => c.memberIds.includes(m.id)).length;
+    const parts = [n === 0 ? 'keine Kalender' : n === 1 ? '1 Kalender' : `${n} Kalender`];
+    if (m.demo) parts.push('Demo');
+    return parts.join(' · ');
   };
 
   return (
@@ -73,9 +87,7 @@ function FamilyTab({ initialMemberId, onGoOutlook }: { initialMemberId?: string 
             <Avatar member={m} size={36} ring={false} />
             <span>
               {m.name}
-              <small className="muted">
-                {m.source === 'demo' ? 'Demo' : m.account ? m.account.username : 'nicht verbunden'}
-              </small>
+              <small className="muted">{subtitle(m)}</small>
             </span>
           </button>
         ))}
@@ -97,7 +109,7 @@ function FamilyTab({ initialMemberId, onGoOutlook }: { initialMemberId?: string 
       </aside>
       <section className="member-edit">
         {current ? (
-          <MemberEditor key={current.id} member={current} onGoOutlook={onGoOutlook} onDeleted={() => setSelected(null)} />
+          <MemberEditor key={current.id} member={current} onGoCalendars={onGoCalendars} onDeleted={() => setSelected(null)} />
         ) : (
           <p className="muted">Lege ein Familienmitglied an oder wähle eines aus.</p>
         )}
@@ -106,12 +118,13 @@ function FamilyTab({ initialMemberId, onGoOutlook }: { initialMemberId?: string 
   );
 }
 
-function MemberEditor({ member, onGoOutlook, onDeleted }: { member: Member; onGoOutlook: () => void; onDeleted: () => void }) {
-  const { patchMember, removeMember, moveMember, settings } = useStore();
+function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; onGoCalendars: () => void; onDeleted: () => void }) {
+  const { patchMember, removeMember, moveMember, calendars, accounts } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (patch: Partial<Member>) => patchMember(member.id, patch);
+  const mine = calendars.filter((c) => c.memberIds.includes(member.id));
+  const accountLabel = (c: CalendarSource) => accounts.find((a) => a.id === c.accountId)?.label ?? '';
 
   const onPhoto = async (f: File | undefined) => {
     if (!f) return;
@@ -122,26 +135,6 @@ function MemberEditor({ member, onGoOutlook, onDeleted }: { member: Member; onGo
       setError(String(e));
     }
   };
-
-  const connect = async (hint?: string) => {
-    setError(null);
-    setBusy(true);
-    try {
-      const acc = await loginMember(member.id, settings.loginMode, hint);
-      if (acc) set({ account: acc });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const disconnect = async () => {
-    if (member.account) await forgetAccount(member.account);
-    set({ account: undefined, calendars: [] });
-  };
-
-  const signedInHere = !!member.account && isAuthConfigured() && hasAccount(member.account.homeAccountId);
 
   return (
     <div className="form">
@@ -157,8 +150,7 @@ function MemberEditor({ member, onGoOutlook, onDeleted }: { member: Member; onGo
           <button
             className="btn danger"
             onClick={() => {
-              if (confirm(`${member.name} wirklich entfernen?`)) {
-                if (member.account) forgetAccount(member.account);
+              if (confirm(`${member.name} wirklich entfernen?\n\nDie Kalenderkonten bleiben erhalten und können neu zugeordnet werden.`)) {
                 removeMember(member.id);
                 onDeleted();
               }
@@ -223,186 +215,402 @@ function MemberEditor({ member, onGoOutlook, onDeleted }: { member: Member; onGo
             ))}
           </div>
         )}
+        {error && <p className="error">{error}</p>}
       </div>
 
       <div className="field">
-        <span>Kalenderquelle</span>
-        <div className="segmented small">
-          <button className={member.source === 'outlook' ? 'active' : ''} onClick={() => set({ source: 'outlook' })}>
-            Outlook
-          </button>
-          <button className={member.source === 'demo' ? 'active' : ''} onClick={() => set({ source: 'demo' })}>
-            Demo-Daten
+        <span>Kalender</span>
+        {mine.length === 0 ? (
+          <p className="hint muted">Dieser Person ist noch kein Kalender zugeordnet.</p>
+        ) : (
+          <div className="chip-list">
+            {mine.map((c) => (
+              <span key={c.id} className="chip static">
+                {c.name}
+                <small className="muted">{accountLabel(c)}</small>
+              </span>
+            ))}
+          </div>
+        )}
+        <div>
+          <button className="btn" onClick={onGoCalendars}>
+            Kalender zuordnen …
           </button>
         </div>
       </div>
 
-      {member.source === 'outlook' && (
-        <div className="field">
-          <span>Microsoft-Konto</span>
-          {!settings.clientId ? (
-            <p className="hint">
-              Zuerst die Client-ID der App-Registrierung eintragen.{' '}
-              <button className="link" onClick={onGoOutlook}>
-                Zu den Outlook-Einstellungen
-              </button>
-            </p>
-          ) : member.account ? (
-            <div className="account-box">
-              <div>
-                <strong>{member.account.name ?? member.account.username}</strong>
-                <div className="muted small">{member.account.username}</div>
-                {!signedInHere && <div className="warn small">Auf diesem Gerät nicht (mehr) angemeldet.</div>}
-              </div>
-              <div className="row-actions">
-                {!signedInHere && (
-                  <button className="btn primary" disabled={busy} onClick={() => connect(member.account?.username)}>
-                    Erneut anmelden
-                  </button>
-                )}
-                <button className="btn" onClick={disconnect}>
-                  Trennen
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button className="btn primary" disabled={busy} onClick={() => connect()}>
-              Mit Outlook verbinden
-            </button>
-          )}
-          {error && <p className="error">{error}</p>}
-        </div>
-      )}
-
-      {member.source === 'outlook' && member.account && signedInHere && <CalendarPicker member={member} />}
-      {member.source === 'outlook' && member.account && !signedInHere && member.calendars.length > 0 && (
-        <p className="muted small">Gewählte Kalender: {member.calendars.map((c) => c.name).join(', ')}</p>
-      )}
+      <label className="check">
+        <input type="checkbox" checked={!!member.demo} onChange={(e) => set({ demo: e.target.checked || undefined })} />
+        <span>Beispieltermine anzeigen (Demo)</span>
+      </label>
     </div>
   );
 }
 
-function CalendarPicker({ member }: { member: Member }) {
-  const { patchMember } = useStore();
-  const [cals, setCals] = useState<GraphCalendar[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+/* ---------------------------------------------------------------- Kalender */
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const token = await getToken(member.account!);
-        const list = await listCalendars(token);
-        if (!alive) return;
-        setCals(list);
-        // first time: preselect the default calendar
-        if (member.calendars.length === 0) {
-          const def = list.find((c) => c.isDefaultCalendar) ?? list[0];
-          if (def) patchMember(member.id, { calendars: [{ id: def.id, name: def.name }] });
-        }
-      } catch (e) {
-        if (alive) setError(e instanceof Error ? e.message : String(e));
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [member.account?.homeAccountId]);
+type TestState = { busy: true } | { busy: false; ok: true; text: string } | { busy: false; ok: false; text: string };
 
-  const toggle = (c: GraphCalendar) => {
-    const on = member.calendars.some((x) => x.id === c.id);
-    patchMember(member.id, {
-      calendars: on ? member.calendars.filter((x) => x.id !== c.id) : [...member.calendars, { id: c.id, name: c.name }],
-    });
+function CalendarsTab() {
+  const { accounts, calendars, settings, updateSettings, upsertAccount } = useStore();
+  const [proxy, setProxy] = useState(settings.proxyUrl);
+  const [proxyTest, setProxyTest] = useState<TestState | null>(null);
+  const [kind, setKind] = useState<AccountKind>('google');
+  const [label, setLabel] = useState('');
+
+  const saveProxy = async () => {
+    const url = proxy.trim().replace(/\/+$/, '');
+    setProxy(url);
+    updateSettings({ proxyUrl: url });
+    if (!url) return setProxyTest(null);
+    setProxyTest({ busy: true });
+    try {
+      const res = await fetch(url + '/', { cache: 'no-store' });
+      const text = await res.text();
+      setProxyTest(
+        res.ok && text.includes('Familienkalender')
+          ? { busy: false, ok: true, text: 'Weiterleitung erreichbar.' }
+          : { busy: false, ok: false, text: `Unerwartete Antwort (${res.status}). Ist das die Worker-Adresse?` },
+      );
+    } catch {
+      setProxyTest({ busy: false, ok: false, text: 'Nicht erreichbar. Adresse prüfen (https://…workers.dev).' });
+    }
   };
 
   return (
-    <div className="field">
-      <span>Angezeigte Kalender</span>
-      {error && <p className="error">{error}</p>}
-      {!cals && !error && <p className="muted">Kalender werden geladen …</p>}
-      {cals && (
-        <div className="checklist">
-          {cals.map((c) => (
-            <label key={c.id} className="check">
-              <input type="checkbox" checked={member.calendars.some((x) => x.id === c.id)} onChange={() => toggle(c)} />
-              <span>
-                {c.name}
-                {c.owner?.address && c.owner.address !== member.account?.username && (
-                  <small className="muted"> · geteilt von {c.owner.name ?? c.owner.address}</small>
-                )}
-              </span>
-            </label>
-          ))}
+    <div className="form">
+      <div className="field">
+        <span>Weiterleitung (Cloudflare Worker)</span>
+        <div className="copy-row">
+          <input
+            style={{ flex: 1, minHeight: 44, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '0 12px' }}
+            value={proxy}
+            placeholder="https://familienkalender-ics.NAME.workers.dev"
+            onChange={(e) => setProxy(e.target.value)}
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+          <button className="btn primary" onClick={saveProxy} disabled={proxyTest?.busy}>
+            Speichern & testen
+          </button>
         </div>
-      )}
+        {proxyTest && !proxyTest.busy && <p className={proxyTest.ok ? 'success' : 'error'}>{proxyTest.text}</p>}
+        {!settings.proxyUrl && (
+          <p className="help">Ohne Weiterleitung kann die App die Kalender-Links nicht laden (Google und Microsoft blockieren direkte Zugriffe aus dem Browser).</p>
+        )}
+      </div>
+
+      <p className="help">
+        Jedes Konto kann mehrere Kalender haben. Tippe bei einem Kalender auf die Personen, denen er gehört – ein gemeinsamer
+        Familienkalender kann mehreren Personen gehören. Kalender ohne Person werden nicht angezeigt.
+      </p>
+
+      <div className="cal-accounts">
+        {accounts.map((a) => (
+          <AccountCard key={a.id} account={a} calendars={calendars.filter((c) => c.accountId === a.id)} />
+        ))}
+        {accounts.length === 0 && <p className="muted">Noch keine Konten. Lege unten das erste an.</p>}
+      </div>
+
+      <div className="cal-account">
+        <div className="add-box" style={{ borderTop: 0 }}>
+          <strong>Konto hinzufügen</strong>
+          <div className="field-row">
+            <label className="field">
+              <span>Art</span>
+              <select value={kind} onChange={(e) => setKind(e.target.value as AccountKind)}>
+                {(Object.keys(ACCOUNT_KINDS) as AccountKind[]).map((k) => (
+                  <option key={k} value={k}>
+                    {ACCOUNT_KINDS[k].icon} {ACCOUNT_KINDS[k].label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>Bezeichnung</span>
+              <input value={label} placeholder="z. B. Papa privat" onChange={(e) => setLabel(e.target.value)} />
+            </label>
+          </div>
+          <div>
+            <button
+              className="btn primary"
+              onClick={() => {
+                upsertAccount(newAccount(kind, label));
+                setLabel('');
+              }}
+            >
+              + Konto anlegen
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-/* ---------------------------------------------------------------- Outlook */
+function AccountCard({ account, calendars }: { account: Account; calendars: CalendarSource[] }) {
+  const { upsertAccount, removeAccount, upsertCalendar, members, settings } = useStore();
+  const kind = ACCOUNT_KINDS[account.kind];
+  const [name, setName] = useState('');
+  const [url, setUrl] = useState('');
+  const [adding, setAdding] = useState<TestState | null>(null);
+  const [showHelp, setShowHelp] = useState(calendars.length === 0);
 
-function OutlookTab() {
+  const add = async (force = false) => {
+    const link = url.trim();
+    if (!/^(https?|webcals?):\/\//i.test(link)) {
+      setAdding({ busy: false, ok: false, text: 'Bitte den vollständigen Link einfügen (beginnt mit https:// oder webcal://).' });
+      return;
+    }
+    let calName = name.trim();
+    if (!force) {
+      setAdding({ busy: true });
+      try {
+        const res = await testCalendarLink(settings.proxyUrl, link);
+        calName ||= res.name ?? '';
+      } catch (e) {
+        setAdding({ busy: false, ok: false, text: e instanceof Error ? e.message : String(e) });
+        return;
+      }
+    }
+    // a new calendar of an account usually belongs to the person who owns the account → preselect nobody, but
+    // if exactly one person exists, assign it
+    upsertCalendar(newCalendar(account.id, calName || kind.label, link, members.length === 1 ? [members[0].id] : []));
+    setName('');
+    setUrl('');
+    setAdding(null);
+    setShowHelp(false);
+  };
+
+  return (
+    <div className="cal-account">
+      <div className="cal-account-head">
+        <span className="icon">{kind.icon}</span>
+        <div className="grow">
+          <input value={account.label} onChange={(e) => upsertAccount({ ...account, label: e.target.value })} aria-label="Bezeichnung" />
+          <small className="muted">{kind.label}</small>
+        </div>
+        <button
+          className="btn danger"
+          onClick={() => {
+            const n = calendars.length;
+            if (confirm(`Konto „${account.label}“${n ? ` mit ${n} Kalender${n === 1 ? '' : 'n'}` : ''} entfernen?`)) removeAccount(account.id);
+          }}
+        >
+          Entfernen
+        </button>
+      </div>
+
+      {calendars.map((c) => (
+        <CalendarRow key={c.id} cal={c} />
+      ))}
+
+      <div className="add-box">
+        <div className="row-actions" style={{ justifyContent: 'space-between' }}>
+          <strong>Kalender hinzufügen</strong>
+          <button className="link" onClick={() => setShowHelp((v) => !v)}>
+            {showHelp ? 'Hilfe ausblenden' : 'Wo finde ich den Link?'}
+          </button>
+        </div>
+        {showHelp && <p className="help">{kind.help}</p>}
+        <div className="field-row">
+          <label className="field">
+            <span>Name (optional)</span>
+            <input value={name} placeholder="z. B. Arbeit" onChange={(e) => setName(e.target.value)} />
+          </label>
+          <label className="field">
+            <span>Abo-Link (ICS)</span>
+            <input
+              value={url}
+              placeholder="https://…/basic.ics"
+              onChange={(e) => setUrl(e.target.value)}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+          </label>
+        </div>
+        <div className="row-actions">
+          <button className="btn primary" disabled={!url.trim() || adding?.busy} onClick={() => add()}>
+            {adding?.busy ? 'Prüfe …' : 'Prüfen & hinzufügen'}
+          </button>
+          {adding && !adding.busy && !adding.ok && (
+            <>
+              <span className="error">{adding.text}</span>
+              {/^(https?|webcals?):\/\//i.test(url.trim()) && (
+                <button className="btn" onClick={() => add(true)}>
+                  Trotzdem hinzufügen
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalendarRow({ cal }: { cal: CalendarSource }) {
+  const { members, patchCalendar, removeCalendar, toggleCalendarMember, settings } = useStore();
+  const [test, setTest] = useState<TestState | null>(null);
+
+  const run = async () => {
+    setTest({ busy: true });
+    try {
+      const res = await testCalendarLink(settings.proxyUrl, cal.url);
+      setTest({ busy: false, ok: true, text: `OK · ${res.upcoming} Termine in den nächsten 60 Tagen` });
+    } catch (e) {
+      setTest({ busy: false, ok: false, text: e instanceof Error ? e.message : String(e) });
+    }
+  };
+
+  let host = '';
+  try {
+    host = new URL(normalizeIcsUrl(cal.url)).hostname;
+  } catch {
+    host = 'ungültiger Link';
+  }
+
+  return (
+    <div className={`cal-row ${cal.enabled ? '' : 'disabled'}`}>
+      <input
+        type="checkbox"
+        checked={cal.enabled}
+        onChange={(e) => patchCalendar(cal.id, { enabled: e.target.checked })}
+        aria-label="Kalender anzeigen"
+        style={{ width: 22, height: 22, accentColor: 'var(--accent)' }}
+      />
+      <div className="cal-name">
+        <input value={cal.name} onChange={(e) => patchCalendar(cal.id, { name: e.target.value })} aria-label="Kalendername" />
+        <span className="cal-url" title={host}>
+          {host}
+        </span>
+        <span className="row-actions">
+          {cal.memberIds.length === 0 && <span className="badge warn">keiner Person zugeordnet</span>}
+          {test?.busy && <span className="badge">prüfe …</span>}
+          {test && !test.busy && <span className={`badge ${test.ok ? 'ok' : 'err'}`}>{test.text}</span>}
+        </span>
+      </div>
+      <div className="assign" aria-label="Personen">
+        {members.map((m) => {
+          const on = cal.memberIds.includes(m.id);
+          return (
+            <button
+              key={m.id}
+              className={`assign-btn ${on ? 'on' : ''}`}
+              aria-pressed={on}
+              title={`${m.name} ${on ? 'entfernen' : 'zuordnen'}`}
+              onClick={() => toggleCalendarMember(cal.id, m.id)}
+            >
+              <Avatar member={m} size={34} ring={on} />
+            </button>
+          );
+        })}
+        {members.length === 0 && <span className="muted small">Erst Personen anlegen</span>}
+      </div>
+      <div className="row-actions">
+        <button className="btn" onClick={run} disabled={test?.busy}>
+          Testen
+        </button>
+        <button className="btn danger" onClick={() => confirm(`Kalender „${cal.name}“ entfernen?`) && removeCalendar(cal.id)}>
+          ✕
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Ferien & Feiertage */
+
+function HolidaysTab() {
   const { settings, updateSettings } = useStore();
-  const [clientId, setClientId] = useState(settings.clientId);
-  const [authority, setAuthority] = useState(settings.authority);
-  const dirty = clientId.trim() !== settings.clientId || authority !== settings.authority;
-  const uri = redirectUri();
+  const h = settings.holidays;
+  const set = (patch: Partial<typeof h>) => updateSettings({ holidays: { ...h, ...patch } });
+  const [preview, setPreview] = useState<{ list?: Holiday[]; error?: string }>({});
+
+  useEffect(() => {
+    if (!h.region) return setPreview({});
+    let alive = true;
+    const y = new Date().getFullYear();
+    setPreview({});
+    loadHolidays(h.region, [y, y + 1])
+      .then((list) => alive && setPreview({ list }))
+      .catch((e) => alive && setPreview({ error: e instanceof Error ? e.message : String(e) }));
+    return () => {
+      alive = false;
+    };
+  }, [h.region]);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = (type: Holiday['type'], n: number) => (preview.list ?? []).filter((x) => x.type === type && x.end >= today).slice(0, n);
+  const day = (s: string) => fmt(new Date(s + 'T12:00:00'), { day: '2-digit', month: '2-digit', year: '2-digit' });
+  const span = (x: Holiday) => (x.start === x.end ? day(x.start) : `${day(x.start)} – ${day(x.end)}`);
 
   return (
     <div className="form narrow">
-      <p>
-        Für die Outlook-Anbindung braucht die App eine (kostenlose) App-Registrierung in Microsoft Entra ID. Die Schritte stehen
-        in der README. Es wird nur <strong>Lesezugriff</strong> (Calendars.Read) angefragt; Tokens bleiben auf diesem Gerät.
+      <p className="help">
+        Feiertage und Schulferien gelten für die ganze Familie. Sie erscheinen nicht als Person, sondern als Markierung im Kalender:
+        Feiertage farbig am Datum, Ferien als leicht eingefärbte Tage.
       </p>
       <label className="field">
-        <span>Anwendungs-ID (Client-ID)</span>
-        <input
-          value={clientId}
-          placeholder="00000000-0000-0000-0000-000000000000"
-          onChange={(e) => setClientId(e.target.value)}
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-        />
-      </label>
-      <label className="field">
-        <span>Kontotyp</span>
-        <select value={authority} onChange={(e) => setAuthority(e.target.value as Settings['authority'])}>
-          <option value="common">Privat (outlook.com/live.com) und Arbeit/Schule</option>
-          <option value="consumers">Nur private Microsoft-Konten</option>
-          <option value="organizations">Nur Arbeits-/Schulkonten</option>
+        <span>Bundesland</span>
+        <select value={h.region} onChange={(e) => set({ region: e.target.value })}>
+          <option value="">– keine Ferien/Feiertage anzeigen –</option>
+          {REGIONS.map(([code, name]) => (
+            <option key={code} value={code}>
+              {name}
+            </option>
+          ))}
         </select>
       </label>
-      <label className="field">
-        <span>Anmeldeart</span>
-        <select value={settings.loginMode} onChange={(e) => updateSettings({ loginMode: e.target.value as Settings['loginMode'] })}>
-          <option value="redirect">Weiterleitung (empfohlen für iPad / Homescreen-App)</option>
-          <option value="popup">Popup-Fenster</option>
-        </select>
+      <label className="check">
+        <input type="checkbox" checked={h.showPublic} disabled={!h.region} onChange={(e) => set({ showPublic: e.target.checked })} />
+        <span>Gesetzliche Feiertage anzeigen</span>
       </label>
-      <div className="field">
-        <span>Redirect-URI (in Azure als „Single-page application“ eintragen)</span>
-        <div className="copy-row">
-          <code>{uri}</code>
-          <button className="btn" onClick={() => navigator.clipboard?.writeText(uri)}>
-            Kopieren
-          </button>
+      <label className="check">
+        <input type="checkbox" checked={h.showSchool} disabled={!h.region} onChange={(e) => set({ showSchool: e.target.checked })} />
+        <span>Schulferien anzeigen</span>
+      </label>
+
+      {h.region && (
+        <div className="field">
+          <span>Vorschau</span>
+          {preview.error && <p className="error">Daten konnten nicht geladen werden: {preview.error}</p>}
+          {!preview.list && !preview.error && <p className="muted">Lade …</p>}
+          {preview.list && (
+            <div className="field-row">
+              <dl className="hol-preview">
+                {upcoming('public', 5).map((x) => (
+                  <FragmentRow key={x.id} dt={span(x)} dd={x.name} />
+                ))}
+              </dl>
+              <dl className="hol-preview">
+                {upcoming('school', 5).map((x) => (
+                  <FragmentRow key={x.id} dt={span(x)} dd={x.name} />
+                ))}
+              </dl>
+            </div>
+          )}
         </div>
-      </div>
-      <button
-        className="btn primary"
-        disabled={!dirty}
-        onClick={() => {
-          updateSettings({ clientId: clientId.trim(), authority });
-          // MSAL is initialised once at start-up – reload to apply.
-          setTimeout(() => window.location.reload(), 100);
-        }}
-      >
-        Speichern & neu laden
-      </button>
+      )}
+      <p className="help">
+        Daten:{' '}
+        <a href="https://www.openholidaysapi.org" target="_blank" rel="noreferrer">
+          OpenHolidays API
+        </a>{' '}
+        (Lizenz ODbL). Sie werden pro Jahr geladen und auf diesem Gerät gespeichert.
+      </p>
     </div>
+  );
+}
+
+function FragmentRow({ dt, dd }: { dt: string; dd: string }) {
+  return (
+    <>
+      <dt>{dt}</dt>
+      <dd>{dd}</dd>
+    </>
   );
 }
 
@@ -508,11 +716,14 @@ function BackupTab() {
     if (!f) return;
     try {
       const cfg = await readConfigFile(f);
-      if (!confirm(`Konfiguration mit ${cfg.members.length} Person(en) importieren? Die aktuelle Konfiguration wird ersetzt.`)) return;
-      const clientChanged = cfg.settings.clientId !== config.settings.clientId;
+      if (
+        !confirm(
+          `Konfiguration mit ${cfg.members.length} Person(en) und ${cfg.calendars.length} Kalender(n) importieren? Die aktuelle Konfiguration wird ersetzt.`,
+        )
+      )
+        return;
       replaceConfig(cfg);
-      setMsg({ ok: true, text: 'Import erfolgreich.' + (clientChanged ? ' Die App wird neu geladen.' : '') });
-      if (clientChanged) setTimeout(() => window.location.reload(), 800);
+      setMsg({ ok: true, text: 'Import erfolgreich.' });
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error ? e.message : String(e) });
     } finally {
@@ -523,9 +734,11 @@ function BackupTab() {
   return (
     <div className="form narrow">
       <p>
-        Die Konfiguration (Personen, Farben, Avatare, gewählte Kalender, Einstellungen) wird nur auf diesem Gerät gespeichert. Mit
-        Export/Import kannst du sie sichern oder auf ein anderes Gerät übertragen. Anmeldungen (Tokens) werden <em>nicht</em>{' '}
-        exportiert – nach einem Import auf einem neuen Gerät meldet sich jede Person einmal neu an.
+        Die Konfiguration (Personen, Kalenderkonten, Zuordnungen, Einstellungen) wird nur auf diesem Gerät gespeichert. Mit
+        Export/Import kannst du sie sichern oder z.&nbsp;B. vom Computer auf das iPad übertragen.
+      </p>
+      <p className="warn">
+        Die Datei enthält die geheimen Abo-Links deiner Kalender. Wer sie hat, kann die Termine lesen – bitte nicht weitergeben.
       </p>
       <div className="row-actions">
         <button className="btn primary" onClick={() => exportConfig(config)}>
@@ -541,7 +754,7 @@ function BackupTab() {
       <button
         className="btn danger"
         onClick={() => {
-          if (confirm('Alle Einstellungen, Personen und zwischengespeicherten Termine auf diesem Gerät löschen?')) {
+          if (confirm('Alle Einstellungen, Personen, Kalender und zwischengespeicherten Termine auf diesem Gerät löschen?')) {
             Object.keys(localStorage)
               .filter((k) => k.startsWith('fc.') || k.startsWith('msal.') || k.includes('login.windows.net') || k.includes('login.microsoftonline'))
               .forEach((k) => localStorage.removeItem(k));

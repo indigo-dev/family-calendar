@@ -1,19 +1,21 @@
 # Familienkalender
 
-Digitaler Wandkalender für die Familie – läuft komplett im Browser (z. B. auf einem iPad an der Wand), ohne eigenes Backend.
+Digitaler Wandkalender für die Familie – läuft komplett im Browser (z. B. auf einem iPad an der Wand), ohne Anmeldung und ohne eigenen Server.
 
-- **Outlook-Anbindung** über Microsoft Graph: jede Person meldet sich mit ihrem eigenen Microsoft-Konto an (nur Lesezugriff).
-- **Familienmitglieder** mit Name, Farbe und Avatar (Initialen, Emoji oder Foto); pro Person wählbare Kalender.
+- **Kalender per Abo-Link (ICS):** Google, Microsoft privat (Outlook.com/Live), Microsoft 365 (geschäftlich), iCloud und jeder andere iCal-Link. Keine Anmeldung, nichts läuft ab.
+- **Kalenderkonten getrennt von Personen:** Unter Einstellungen → Kalender legst du Konten an, darin beliebig viele (Unter-)Kalender, und ordnest jeden Kalender einer oder mehreren Personen zu. Wird eine Person gelöscht, bleiben Konten und Kalender erhalten.
+- **Feiertage und Schulferien** aller Bundesländer (OpenHolidays API) – personenunabhängig, als Markierung im Kalender, in den Einstellungen ein-/ausschaltbar.
+- **Familienmitglieder** mit Name, Farbe und Avatar (Initialen, Emoji oder Foto).
 - **Ansichten:** Tag, Woche, Monat, Jahr, Agenda – Wischen links/rechts blättert.
 - **Personenfilter:** Avatar antippen zeigt nur diese Person (nochmal antippen oder „Alle“ = alle). Lange drücken nimmt eine Person dazu bzw. wieder heraus.
-- Gemeinsame Termine (gleiche Einladung in mehreren Kalendern) werden zu einem Termin mit mehreren Farben zusammengeführt.
+- Gleiche Termine in mehreren Kalendern werden zu einem Termin mit mehreren Farben zusammengeführt.
 - **Export/Import** der Konfiguration als JSON (Einstellungen → Sicherung).
 - Wandmodus: Bildschirm bleibt an, Rücksprung auf „Heute“ nach Inaktivität, Auto-Aktualisierung, Offline-Cache.
-- **Demo-Familie** zum Ausprobieren ohne Outlook.
+- **Demo-Termine** zum Ausprobieren.
 
 ## Lokal starten
 
-Unter Windows einfach **`start-lokal.bat`** doppelklicken – installiert bei Bedarf die Pakete, startet den Server und öffnet den Browser. Oder manuell:
+Unter Windows einfach **`start-lokal.bat`** doppelklicken. Oder manuell:
 
 ```bash
 npm install
@@ -21,60 +23,61 @@ npm run dev        # http://localhost:5173 (auch im WLAN erreichbar, --host)
 npm run build      # Produktions-Build nach dist/
 ```
 
-> Die Microsoft-Anmeldung funktioniert nur über `https://…` oder `http://localhost`. Vom iPad aus im WLAN (`http://192.168…`) geht also nur der Demo-Modus – für echte Outlook-Daten die GitHub-Pages-Version nutzen.
+## Weiterleitung (Cloudflare Worker, einmalig, kostenlos)
+
+Google und Microsoft erlauben nicht, dass eine Webseite die Abo-Links direkt im Browser lädt (CORS). Der kleine Worker in
+`worker/worker.js` holt die Links ab und reicht sie weiter. Er speichert nichts und lässt nur Google, Outlook/Microsoft und iCloud zu.
+
+1. <https://dash.cloudflare.com> → Workers & Pages → Erstellen → „Mit Hello World beginnen“, Name `familienkalender-ics`, Bereitstellen.
+2. „Code bearbeiten“, alles durch den Inhalt von `worker/worker.js` ersetzen, Bereitstellen.
+3. Die Adresse (`https://familienkalender-ics.<name>.workers.dev`) in der App unter **Einstellungen → Kalender → Weiterleitung** eintragen.
+
+Erlaubte Seiten (GitHub-Pages-Adresse, localhost, Heimnetz) stehen oben im Worker-Code.
+
+## Abo-Links finden
+
+| Konto | Wo |
+|---|---|
+| Google | calendar.google.com → Einstellungen → Kalender wählen → „Kalender integrieren“ → **Privatadresse im iCal-Format** |
+| Outlook.com / Live | outlook.live.com → Einstellungen → Kalender → Freigegebene Kalender → **Kalender veröffentlichen** → ICS-Link |
+| Microsoft 365 | outlook.office.com → genauso; fehlt die Option, hat die IT das Veröffentlichen gesperrt |
+| iCloud | Kalender-App → Info → **Öffentlicher Kalender** |
+
+Die Links sind geheim: Wer sie kennt, kann die Termine lesen. Änderungen kommen je nach Anbieter mit etwas Verzögerung an
+(Google teils mehrere Stunden, Outlook meist schneller).
 
 ## Auf GitHub Pages veröffentlichen
 
-1. Neues GitHub-Repository anlegen (z. B. `Family_Calendar`) und diesen Ordner pushen (Branch `main`).
-2. Im Repo: **Settings → Pages → Source: GitHub Actions**.
-3. Der Workflow `.github/workflows/deploy.yml` baut und veröffentlicht bei jedem Push.
-   Adresse danach: `https://<dein-github-name>.github.io/Family_Calendar/`
-
-## Microsoft-App-Registrierung (einmalig, kostenlos)
-
-1. <https://entra.microsoft.com> → **App-Registrierungen → Neue Registrierung**
-   (mit privatem Microsoft-Konto geht das ebenfalls; ggf. wird automatisch ein Verzeichnis angelegt).
-2. Name: `Familienkalender`
-   Kontotypen: **„Konten in einem beliebigen Organisationsverzeichnis und persönliche Microsoft-Konten“**.
-3. Umleitungs-URI: Plattform **„Single-Page-Anwendung (SPA)“**, URI = deine GitHub-Pages-Adresse mit abschließendem `/`,
-   z. B. `https://<name>.github.io/Family_Calendar/`. Für lokale Tests zusätzlich `http://localhost:5173/`.
-   (Die exakte URI zeigt die App unter Einstellungen → Outlook an.)
-4. **API-Berechtigungen:** Microsoft Graph → Delegiert → `User.Read`, `Calendars.Read` (kein Admin-Consent nötig).
-5. Die **Anwendungs-ID (Client-ID)** kopieren und in der App unter **Einstellungen → Outlook** eintragen.
-
-Dann unter **Einstellungen → Familie** je Person „Mit Outlook verbinden“ und die gewünschten Kalender anhaken.
-Wenn sich nacheinander mehrere Personen anmelden, im Microsoft-Dialog jeweils „Anderes Konto verwenden“ wählen.
+1. Im Repo: **Settings → Pages → Source: GitHub Actions**.
+2. Der Workflow `.github/workflows/deploy.yml` baut und veröffentlicht bei jedem Push.
+   Adresse danach: `https://<dein-github-name>.github.io/family-calendar/`
 
 ## iPad einrichten
 
 - Seite in Safari öffnen → Teilen → **Zum Home-Bildschirm**.
+- Konfiguration vom Computer übertragen: dort Einstellungen → Sicherung → Exportieren, Datei aufs iPad (AirDrop/iCloud) und importieren.
 - Für den Wandbetrieb: Einstellungen → Bedienungshilfen → **Geführter Zugriff** aktivieren, App öffnen, dreimal Seitentaste → Start.
 - Automatische Sperre wird über die Wake-Lock-API verhindert (iPadOS ≥ 16.4); bei älteren Geräten Auto-Sperre auf „Nie“ stellen.
 
-## Bekannte Einschränkung: Anmeldung läuft ab
-
-Ohne Backend gibt Microsoft einer Browser-App Refresh-Tokens mit **24 Stunden** Laufzeit. Danach versucht MSAL eine stille
-Erneuerung – Safari blockiert dafür nötige Drittanbieter-Cookies aber häufig. Folge: Eine Person muss sich ggf. einmal pro Tag
-neu anmelden. Die App zeigt das am Personen-Chip mit **„Anmelden“** an und zeigt bis dahin die zuletzt geladenen Termine aus dem
-Cache. Dauerhafte Abhilfe wäre später z. B. ein veröffentlichter ICS-Link pro Kalender oder ein kleiner Token-Dienst.
-
 ## Konfiguration & Datenschutz
 
-- Alles (Personen, Avatare, Einstellungen, Termin-Cache, Tokens) liegt nur im `localStorage` des Geräts.
-- Der Export (`familienkalender-JJJJ-MM-TT.json`) enthält **keine** Tokens. Nach dem Import auf einem anderen Gerät meldet sich jede Person einmal neu an.
+- Alles (Personen, Kalender-Links, Einstellungen, Termin-Cache) liegt nur im `localStorage` des Geräts.
+- Der Export enthält die geheimen Kalender-Links – nicht weitergeben.
+- Feiertage/Ferien: [OpenHolidays API](https://www.openholidaysapi.org), Lizenz ODbL.
 
 ## Projektstruktur
 
 ```
 src/
-  main.tsx              Start, verarbeitet Login-Redirect
+  main.tsx              Start
   App.tsx               Layout, Navigation, Auto-Refresh, Wandmodus
-  store.tsx             Konfiguration + Personenfilter (React Context, localStorage)
-  lib/auth.ts           MSAL (mehrere Konten)
-  lib/graph.ts          Microsoft-Graph-Aufrufe
-  lib/events.ts         Termine laden, zusammenführen, cachen
+  store.tsx             Konfiguration (Personen, Konten, Kalender) + Personenfilter
+  lib/ics.ts            iCal-Parser inkl. Serienterminen und Zeitzonen
+  lib/events.ts         Abo-Links über die Weiterleitung laden, zusammenführen, cachen
+  lib/holidays.ts       Feiertage/Schulferien (OpenHolidays API)
   lib/demo.ts           Demo-Termine
-  lib/config.ts         Defaults, Export/Import, Avatar-Bilder
+  lib/config.ts         Defaults, Migration, Export/Import, Avatar-Bilder
   views/                Tag/Woche, Monat, Jahr, Agenda
   settings/             Einstellungsdialog
+worker/worker.js        Cloudflare Worker (Weiterleitung)
 ```

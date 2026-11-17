@@ -1064,3 +1064,219 @@ hr {
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------------------------------------------------------------- Feiertage & Ferien */
+:root {
+  --holiday: #c2410c;
+  --school: color-mix(in srgb, #0ea5e9 9%, transparent);
+  --school-text: #0369a1;
+}
+:root[data-theme='dark'] {
+  --holiday: #fb923c;
+  --school: color-mix(in srgb, #38bdf8 10%, transparent);
+  --school-text: #7dd3fc;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --holiday: #fb923c;
+    --school: color-mix(in srgb, #38bdf8 10%, transparent);
+    --school-text: #7dd3fc;
+  }
+}
+.month-cell.school,
+.tg-col.school,
+.year-day.school {
+  background: var(--school);
+}
+.month-cell.holiday .month-dn,
+.tg-dayhead.holiday .tg-dn,
+.tg-dayhead.holiday .tg-wd,
+.year-day.holiday > span:first-child {
+  color: var(--holiday);
+}
+.month-cell.today.holiday .month-dn,
+.tg-dayhead.today.holiday .tg-dn,
+.year-day.today.holiday > span:first-child {
+  color: #fff;
+}
+.hol-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--holiday);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 18px;
+  padding: 0 2px;
+}
+.hol-label.school {
+  color: var(--school-text);
+  font-weight: 500;
+}
+.tg-dayhead {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+.tg-hol {
+  flex-basis: 100%;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--school-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.tg-dayhead.holiday .tg-hol {
+  color: var(--holiday);
+}
+.agenda-hol {
+  font-weight: 600;
+}
+.agenda-hol.holiday {
+  color: var(--holiday);
+}
+.agenda-hol.school {
+  color: var(--school-text);
+}
+
+/* ---------------------------------------------------------------- Einstellungen: Kalender */
+.cal-accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cal-account {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.cal-account-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--surface-2);
+}
+.cal-account-head .icon {
+  font-size: 1.4rem;
+}
+.cal-account-head .grow {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cal-account-head input {
+  font-weight: 700;
+  font-size: 1rem;
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+  min-width: 0;
+}
+.cal-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.cal-row.disabled {
+  opacity: 0.55;
+}
+.cal-row .cal-name {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cal-row .cal-name input {
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+}
+.cal-row .cal-url {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 360px;
+}
+.assign {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.assign-btn {
+  border-radius: 999px;
+  padding: 2px;
+  opacity: 0.35;
+  filter: grayscale(0.8);
+  transition: opacity 0.15s, filter 0.15s;
+}
+.assign-btn.on {
+  opacity: 1;
+  filter: none;
+}
+.badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.badge.warn {
+  background: color-mix(in srgb, #eab308 20%, var(--surface));
+  color: #92400e;
+}
+.badge.err {
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface));
+  color: var(--danger);
+}
+.badge.ok {
+  background: color-mix(in srgb, var(--ok) 14%, var(--surface));
+  color: var(--ok);
+}
+.add-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px dashed var(--line-strong);
+}
+.add-box .field-row {
+  grid-template-columns: 1fr 2fr;
+}
+.help {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.4;
+}
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hol-preview {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  font-size: 0.9rem;
+  margin: 0;
+}
+.hol-preview dt {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.hol-preview dd {
+  margin: 0;
+}

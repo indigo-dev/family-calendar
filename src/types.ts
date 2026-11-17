@@ -5,33 +5,48 @@ export type Avatar =
   | { type: 'emoji'; value: string }
   | { type: 'image'; dataUrl: string };
 
-export interface LinkedAccount {
-  /** MSAL homeAccountId – only valid on the device where the login happened */
-  homeAccountId: string;
-  username: string;
-  name?: string;
-}
-
-export interface CalendarRef {
-  id: string;
-  name: string;
-}
-
 export interface Member {
   id: string;
   name: string;
   color: string;
   avatar: Avatar;
-  /** 'outlook' = real Microsoft account, 'demo' = generated sample events */
-  source: 'outlook' | 'demo';
-  account?: LinkedAccount;
-  calendars: CalendarRef[];
+  /** shows generated sample events for this person */
+  demo?: boolean;
+}
+
+/** Where the calendar links of an account come from – only used for labels and help texts. */
+export type AccountKind = 'microsoft' | 'microsoft-work' | 'google' | 'icloud' | 'other';
+
+/** A mail/calendar account. Groups calendars; it survives deleting a person. */
+export interface Account {
+  id: string;
+  kind: AccountKind;
+  label: string;
+}
+
+/** One (sub-)calendar of an account, subscribed via its ICS link. */
+export interface CalendarSource {
+  id: string;
+  accountId: string;
+  name: string;
+  /** secret ICS subscription link (https:// or webcal://) */
+  url: string;
+  /** family members this calendar belongs to; empty = not shown */
+  memberIds: string[];
+  enabled: boolean;
+}
+
+/** German federal state code like 'DE-NW', '' = off */
+export interface HolidaySettings {
+  region: string;
+  showPublic: boolean;
+  showSchool: boolean;
 }
 
 export interface Settings {
-  clientId: string;
-  authority: 'common' | 'consumers' | 'organizations';
-  loginMode: 'redirect' | 'popup';
+  /** Cloudflare worker that fetches ICS links (CORS) */
+  proxyUrl: string;
+  holidays: HolidaySettings;
   weekStartsOn: 0 | 1;
   dayStartHour: number;
   dayEndHour: number;
@@ -43,9 +58,11 @@ export interface Settings {
 }
 
 export interface AppConfig {
-  schemaVersion: 1;
+  schemaVersion: 2;
   settings: Settings;
   members: Member[];
+  accounts: Account[];
+  calendars: CalendarSource[];
 }
 
 export interface CalEvent {
@@ -64,4 +81,10 @@ export interface CalEvent {
 export interface DateRange {
   start: Date;
   end: Date;
+}
+
+/** Public and school holidays of one day */
+export interface DayMarks {
+  publicNames: string[];
+  schoolNames: string[];
 }

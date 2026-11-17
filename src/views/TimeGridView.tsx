@@ -1,10 +1,10 @@
 import { useEffect, useRef } from 'react';
 import type { CalEvent } from '../types';
 import { useStore } from '../store';
-import { addDays, fmt, fmtTime, isSameDay, overlaps, startOfDay, startOfWeek } from '../lib/dates';
+import { addDays, dayKey, fmt, fmtTime, isSameDay, overlaps, startOfDay, startOfWeek } from '../lib/dates';
 import { useSize } from '../lib/hooks';
 import { AvatarStack } from '../components/Avatar';
-import { membersOf, stripe, tint, type ViewProps } from './common';
+import { markClass, membersOf, stripe, tint, type ViewProps } from './common';
 import { AllDayChip } from './AllDayChip';
 
 interface Placed {
@@ -52,7 +52,7 @@ function layoutDay(events: CalEvent[], winStart: Date, winEnd: Date): Placed[] {
   return items;
 }
 
-export function TimeGridView({ date, now, events, onEvent, onOpen, days }: ViewProps & { days: 1 | 7 }) {
+export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days }: ViewProps & { days: 1 | 7 }) {
   const { settings, memberById } = useStore();
   const first = days === 1 ? startOfDay(date) : startOfWeek(date, settings.weekStartsOn);
   const dayList = Array.from({ length: days }, (_, i) => addDays(first, i));
@@ -85,14 +85,17 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, days }: ViewP
         <div className="tg-gutter" />
         {dayList.map((d) => {
           const today = isSameDay(d, now);
+          const mk = marks.get(dayKey(d));
+          const label = [...(mk?.publicNames ?? []), ...(mk?.schoolNames ?? [])].join(' · ');
           return (
             <button
               key={d.toISOString()}
-              className={`tg-dayhead ${today ? 'today' : ''}`}
+              className={`tg-dayhead ${today ? 'today' : ''} ${markClass(mk)}`}
               onClick={() => days > 1 && onOpen('day', d)}
             >
               <span className="tg-wd">{fmt(d, { weekday: days === 1 ? 'long' : 'short' })}</span>
               <span className="tg-dn">{d.getDate()}</span>
+              {label && <span className="tg-hol" title={label}>{label}</span>}
             </button>
           );
         })}
@@ -141,7 +144,7 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, days }: ViewP
             const isToday = isSameDay(d, now);
             const nowMin = (now.getTime() - winStart.getTime()) / 60000;
             return (
-              <div key={d.toISOString()} className={`tg-col ${isToday ? 'today' : ''}`}>
+              <div key={d.toISOString()} className={`tg-col ${isToday ? 'today' : ''} ${markClass(marks.get(dayKey(d)))}`}>
                 {Array.from({ length: hours }, (_, i) => (
                   <div key={i} className="tg-line" style={{ top: i * hourHeight }} />
                 ))}

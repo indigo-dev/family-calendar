@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { AppConfig, Member, Settings } from './types';
+import type { Account, AppConfig, CalendarSource, Member, Settings } from './types';
 import { loadConfig, saveConfig } from './lib/config';
 
 const SELECTED_KEY = 'fc.selectedMembers';
@@ -7,13 +7,23 @@ const SELECTED_KEY = 'fc.selectedMembers';
 interface Store {
   config: AppConfig;
   members: Member[];
+  accounts: Account[];
+  calendars: CalendarSource[];
   settings: Settings;
   memberById: Map<string, Member>;
   updateSettings: (patch: Partial<Settings>) => void;
   upsertMember: (m: Member) => void;
   patchMember: (id: string, patch: Partial<Member>) => void;
+  /** removes the person; accounts and calendars stay, only the assignment is dropped */
   removeMember: (id: string) => void;
   moveMember: (id: string, dir: -1 | 1) => void;
+  upsertAccount: (a: Account) => void;
+  /** removes the account together with its calendars */
+  removeAccount: (id: string) => void;
+  upsertCalendar: (c: CalendarSource) => void;
+  patchCalendar: (id: string, patch: Partial<CalendarSource>) => void;
+  removeCalendar: (id: string) => void;
+  toggleCalendarMember: (calendarId: string, memberId: string) => void;
   replaceConfig: (cfg: AppConfig) => void;
   /** person filter: empty = all members, otherwise only these members */
   selectedIds: Set<string>;
@@ -68,7 +78,11 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
   }, []);
 
   const removeMember = useCallback((id: string) => {
-    setConfig((c) => ({ ...c, members: c.members.filter((m) => m.id !== id) }));
+    setConfig((c) => ({
+      ...c,
+      members: c.members.filter((m) => m.id !== id),
+      calendars: c.calendars.map((cal) => ({ ...cal, memberIds: cal.memberIds.filter((x) => x !== id) })),
+    }));
   }, []);
 
   const moveMember = useCallback((id: string, dir: -1 | 1) => {
@@ -80,6 +94,50 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
       [members[i], members[j]] = [members[j], members[i]];
       return { ...c, members };
     });
+  }, []);
+
+  const upsertAccount = useCallback((a: Account) => {
+    setConfig((c) => {
+      const exists = c.accounts.some((x) => x.id === a.id);
+      return { ...c, accounts: exists ? c.accounts.map((x) => (x.id === a.id ? a : x)) : [...c.accounts, a] };
+    });
+  }, []);
+
+  const removeAccount = useCallback((id: string) => {
+    setConfig((c) => ({
+      ...c,
+      accounts: c.accounts.filter((a) => a.id !== id),
+      calendars: c.calendars.filter((cal) => cal.accountId !== id),
+    }));
+  }, []);
+
+  const upsertCalendar = useCallback((cal: CalendarSource) => {
+    setConfig((c) => {
+      const exists = c.calendars.some((x) => x.id === cal.id);
+      return { ...c, calendars: exists ? c.calendars.map((x) => (x.id === cal.id ? cal : x)) : [...c.calendars, cal] };
+    });
+  }, []);
+
+  const patchCalendar = useCallback((id: string, patch: Partial<CalendarSource>) => {
+    setConfig((c) => ({ ...c, calendars: c.calendars.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+  }, []);
+
+  const removeCalendar = useCallback((id: string) => {
+    setConfig((c) => ({ ...c, calendars: c.calendars.filter((x) => x.id !== id) }));
+  }, []);
+
+  const toggleCalendarMember = useCallback((calendarId: string, memberId: string) => {
+    setConfig((c) => ({
+      ...c,
+      calendars: c.calendars.map((x) =>
+        x.id !== calendarId
+          ? x
+          : {
+              ...x,
+              memberIds: x.memberIds.includes(memberId) ? x.memberIds.filter((id) => id !== memberId) : [...x.memberIds, memberId],
+            },
+      ),
+    }));
   }, []);
 
   const replaceConfig = useCallback((cfg: AppConfig) => {
@@ -98,6 +156,8 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
     () => ({
       config,
       members: config.members,
+      accounts: config.accounts,
+      calendars: config.calendars,
       settings: config.settings,
       memberById: new Map(config.members.map((m) => [m.id, m])),
       updateSettings,
@@ -105,13 +165,37 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
       patchMember,
       removeMember,
       moveMember,
+      upsertAccount,
+      removeAccount,
+      upsertCalendar,
+      patchCalendar,
+      removeCalendar,
+      toggleCalendarMember,
       replaceConfig,
       selectedIds,
       selectOnly,
       toggleSelected,
       showAll,
     }),
-    [config, selectedIds, updateSettings, upsertMember, patchMember, removeMember, moveMember, replaceConfig, selectOnly, toggleSelected, showAll],
+    [
+      config,
+      selectedIds,
+      updateSettings,
+      upsertMember,
+      patchMember,
+      removeMember,
+      moveMember,
+      upsertAccount,
+      removeAccount,
+      upsertCalendar,
+      patchCalendar,
+      removeCalendar,
+      toggleCalendarMember,
+      replaceConfig,
+      selectOnly,
+      toggleSelected,
+      showAll,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

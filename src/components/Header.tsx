@@ -2,7 +2,6 @@ import { useRef } from 'react';
 import type { Member, ViewMode } from '../types';
 import { fmt } from '../lib/dates';
 import { useStore } from '../store';
-import type { MemberStatus } from '../lib/events';
 import { Avatar } from './Avatar';
 
 const VIEWS: { id: ViewMode; label: string }[] = [
@@ -125,7 +124,7 @@ function MemberChip({ member, active, dimmed, onTap, onLongPress }: {
   );
 }
 
-export function MemberFilter({ status, onReauth }: { status: Record<string, MemberStatus>; onReauth: (memberId: string) => void }) {
+export function MemberFilter({ issues, onIssue }: { issues: Record<string, string>; onIssue: (message: string) => void }) {
   const { members, selectedIds, selectOnly, toggleSelected, showAll } = useStore();
   if (members.length === 0) return null;
   const all = selectedIds.size === 0;
@@ -136,7 +135,7 @@ export function MemberFilter({ status, onReauth }: { status: Record<string, Memb
       </button>
       {members.map((m) => {
         const active = selectedIds.has(m.id);
-        const st = status[m.id];
+        const issue = issues[m.id];
         return (
           <span key={m.id} className="chip-wrap">
             <MemberChip
@@ -146,13 +145,9 @@ export function MemberFilter({ status, onReauth }: { status: Record<string, Memb
               onTap={() => selectOnly(m.id)}
               onLongPress={() => toggleSelected(m.id)}
             />
-            {st && st.state !== 'ok' && (
-              <button
-                className={`warn-badge ${st.state}`}
-                title={st.message}
-                onClick={() => st.state === 'auth' && onReauth(m.id)}
-              >
-                {st.state === 'auth' ? 'Anmelden' : '!'}
+            {issue && (
+              <button className="warn-badge error" title={issue} onClick={() => onIssue(`Kalender von ${m.name} nicht geladen – ${issue}`)}>
+                !
               </button>
             )}
           </span>

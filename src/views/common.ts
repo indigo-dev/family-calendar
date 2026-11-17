@@ -1,4 +1,4 @@
-import type { CalEvent, Member, ViewMode } from '../types';
+import type { CalEvent, DayMarks, Member, ViewMode } from '../types';
 
 export interface ViewProps {
   date: Date;
@@ -6,6 +6,13 @@ export interface ViewProps {
   events: CalEvent[];
   onEvent: (e: CalEvent) => void;
   onOpen: (view: ViewMode, date: Date) => void;
+  /** public / school holidays per dayKey */
+  marks: Map<string, DayMarks>;
+}
+
+export function markClass(m: DayMarks | undefined): string {
+  if (!m) return '';
+  return `${m.publicNames.length ? 'holiday' : ''} ${m.schoolNames.length ? 'school' : ''}`;
 }
 
 export function membersOf(e: CalEvent, byId: Map<string, Member>): Member[] {

@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
 import { useStore } from '../store';
 import { addDays, dayKey, fmt, isSameDay, startOfDay, startOfWeek, weekdayNames } from '../lib/dates';
-import type { ViewProps } from './common';
+import { markClass, type ViewProps } from './common';
 
-export function YearView({ date, now, events, onOpen }: ViewProps) {
+export function YearView({ date, now, events, onOpen, marks }: ViewProps) {
   const { settings, memberById } = useStore();
   const year = date.getFullYear();
 
@@ -49,7 +49,8 @@ export function YearView({ date, now, events, onOpen }: ViewProps) {
                 return (
                   <button
                     key={d.toISOString()}
-                    className={`year-day ${isSameDay(d, now) ? 'today' : ''}`}
+                    className={`year-day ${isSameDay(d, now) ? 'today' : ''} ${markClass(marks.get(dayKey(d)))}`}
+                    title={[...(marks.get(dayKey(d))?.publicNames ?? []), ...(marks.get(dayKey(d))?.schoolNames ?? [])].join(', ') || undefined}
                     onClick={() => onOpen('day', d)}
                   >
                     <span>{d.getDate()}</span>

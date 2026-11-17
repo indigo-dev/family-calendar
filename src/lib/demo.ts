@@ -41,7 +41,7 @@ const PROFILES: Tpl[][] = [
 ];
 
 export function demoEvents(members: Member[], range: DateRange): CalEvent[] {
-  const demo = members.filter((m) => m.source === 'demo');
+  const demo = members.filter((m) => m.demo);
   if (demo.length === 0) return [];
   const out: CalEvent[] = [];
   const allIds = demo.map((m) => m.id);

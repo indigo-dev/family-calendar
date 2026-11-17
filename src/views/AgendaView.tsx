@@ -6,7 +6,7 @@ import { AvatarStack } from '../components/Avatar';
 import { membersOf, stripe, type ViewProps } from './common';
 
 // Re-renders only when its inputs change (the clock ticks every 30 s).
-export const AgendaView = memo(function AgendaView({ date, now, events, onEvent, onOpen }: ViewProps) {
+export const AgendaView = memo(function AgendaView({ date, now, events, onEvent, onOpen, marks }: ViewProps) {
   const { memberById } = useStore();
   const todayKey = dayKey(now);
 
@@ -26,8 +26,8 @@ export const AgendaView = memo(function AgendaView({ date, now, events, onEvent,
     }
     return Array.from({ length: AGENDA_DAYS }, (_, i) => addDays(start, i))
       .map((d) => ({ d, list: buckets.get(dayKey(d)) ?? [] }))
-      .filter((g) => g.list.length > 0 || dayKey(g.d) === todayKey);
-  }, [date, events, todayKey]);
+      .filter((g) => g.list.length > 0 || dayKey(g.d) === todayKey || !!marks.get(dayKey(g.d))?.publicNames.length);
+  }, [date, events, todayKey, marks]);
 
   return (
     <div className="agenda">
@@ -35,6 +35,8 @@ export const AgendaView = memo(function AgendaView({ date, now, events, onEvent,
       {groups.map(({ d, list }) => {
         const today = isSameDay(d, now);
         const tomorrow = isSameDay(d, addDays(startOfDay(now), 1));
+        const mk = marks.get(dayKey(d));
+        const label = [...(mk?.publicNames ?? []), ...(mk?.schoolNames ?? [])].join(' · ');
         return (
           <section key={d.toISOString()} className={`agenda-day ${today ? 'today' : ''}`}>
             <button className="agenda-date" onClick={() => onOpen('day', d)}>
@@ -42,6 +44,7 @@ export const AgendaView = memo(function AgendaView({ date, now, events, onEvent,
               <span className="agenda-wd">
                 {today ? 'Heute' : tomorrow ? 'Morgen' : fmt(d, { weekday: 'long' })}
                 <small>{fmt(d, { month: 'long', year: 'numeric' })}</small>
+                {label && <small className={`agenda-hol ${mk?.publicNames.length ? 'holiday' : 'school'}`}>{label}</small>}
               </span>
             </button>
             <div className="agenda-list">

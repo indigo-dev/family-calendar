@@ -2,12 +2,12 @@ import { useStore } from '../store';
 import { addDays, dayKey, fmtTime, isSameDay, isoWeek, overlaps, startOfMonth, startOfWeek, weekdayNames } from '../lib/dates';
 import { useSize } from '../lib/hooks';
 import type { CalEvent } from '../types';
-import { membersOf, type ViewProps } from './common';
+import { markClass, membersOf, type ViewProps } from './common';
 import { AllDayChip } from './AllDayChip';
 
 const CHIP_H = 22;
 
-export function MonthView({ date, now, events, onEvent, onOpen }: ViewProps) {
+export function MonthView({ date, now, events, onEvent, onOpen, marks }: ViewProps) {
   const { settings, memberById } = useStore();
   const first = startOfWeek(startOfMonth(date), settings.weekStartsOn);
   const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 1);
@@ -46,14 +46,24 @@ export function MonthView({ date, now, events, onEvent, onOpen }: ViewProps) {
               {Array.from({ length: 7 }, (_, i) => {
                 const d = addDays(weekStart, i);
                 const list = byDay.get(dayKey(d)) ?? [];
-                const shown = list.length > maxChips ? list.slice(0, maxChips - 1) : list;
+                const mk = marks.get(dayKey(d));
+                // school holiday name only where it starts (or at the start of the week row)
+                const schoolLabel =
+                  mk?.schoolNames.length && (i === 0 || !marks.get(dayKey(addDays(d, -1)))?.schoolNames.length)
+                    ? mk.schoolNames.join(', ')
+                    : '';
+                const labels = (mk?.publicNames.length ? 1 : 0) + (schoolLabel ? 1 : 0);
+                const room = Math.max(1, maxChips - labels);
+                const shown = list.length > room ? list.slice(0, room - 1) : list;
                 const other = d.getMonth() !== date.getMonth();
                 return (
-                  <div key={i} className={`month-cell ${other ? 'other' : ''} ${isSameDay(d, now) ? 'today' : ''}`}>
+                  <div key={i} className={`month-cell ${other ? 'other' : ''} ${isSameDay(d, now) ? 'today' : ''} ${markClass(mk)}`}>
                     <button className="month-dn" onClick={() => onOpen('day', d)}>
                       {d.getDate()}
                     </button>
                     <div className="month-events">
+                      {mk?.publicNames.length ? <div className="hol-label">{mk.publicNames.join(', ')}</div> : null}
+                      {schoolLabel && <div className="hol-label school">{schoolLabel}</div>}
                       {shown.map((e) => {
                         const ms = membersOf(e, memberById);
                         return e.allDay ? (
