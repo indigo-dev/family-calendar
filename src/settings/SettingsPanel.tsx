@@ -689,7 +689,7 @@ function DisplayTab() {
           />
         </label>
         <label className="field">
-          <span>Zurück zu „Heute“ nach (Min., 0 = aus)</span>
+          <span>Zurück zur Übersicht nach (Min., 0 = aus)</span>
           <input
             type="number"
             min={0}

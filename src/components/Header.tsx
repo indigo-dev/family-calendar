@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
 import type { Member, ViewMode } from '../types';
 import { fmt } from '../lib/dates';
 import { useStore } from '../store';
@@ -108,14 +108,27 @@ function Clock({ now }: { now: Date }) {
 }
 
 /** Simple header for modules without date navigation (to-dos, ...). */
-export function ModuleHeader({ title, now, onSettings }: { title: string; now: Date; onSettings: () => void }) {
+export function ModuleHeader({
+  title,
+  now,
+  onSettings,
+  actions,
+  clock = true,
+}: {
+  title: string;
+  now: Date;
+  onSettings: () => void;
+  actions?: ReactNode;
+  clock?: boolean;
+}) {
   return (
     <header className="topbar">
       <div className="topbar-left">
         <h1 className="title">{title}</h1>
       </div>
       <div className="topbar-right">
-        <Clock now={now} />
+        {clock && <Clock now={now} />}
+        {actions}
         <button className="icon-btn" onClick={onSettings} aria-label="Einstellungen">
           <GlyphIcon glyph="⚙" name="settings" />
         </button>

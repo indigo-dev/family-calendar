@@ -12,15 +12,17 @@ import { FrameModule } from './frame/FrameModule';
 import { PhotoFrame, type FrameMode } from './frame/PhotoFrame';
 import { useFrameSettings, usePhotos } from './lib/frame';
 import { WeatherModule } from './weather/WeatherModule';
+import { Dashboard } from './dashboard/Dashboard';
+import { GlyphIcon } from './components/Icon';
 
 const MODULE_KEY = 'fc.module';
 
 function loadModule(): ModuleId {
   try {
     const saved = localStorage.getItem(MODULE_KEY);
-    return MODULES.find((m) => m.id === saved)?.id ?? 'calendar';
+    return MODULES.find((m) => m.id === saved)?.id ?? 'dashboard';
   } catch {
-    return 'calendar';
+    return 'dashboard';
   }
 }
 
@@ -30,6 +32,7 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState<boolean>(members.length === 0);
   const [settingsTab, setSettingsTab] = useState<SettingsTab | undefined>();
   const [reloadKey, setReloadKey] = useState(0);
+  const [dashEditing, setDashEditing] = useState(false);
   const now = useNow();
   const lastInteraction = useRef(Date.now());
   const frameCfg = useFrameSettings();
@@ -71,7 +74,7 @@ export function App() {
     }
   }, [module]);
 
-  // after inactivity go back to the calendar (wall display mode)
+  // after inactivity go back to the dashboard (wall display mode)
   useEffect(() => {
     const mark = () => (lastInteraction.current = Date.now());
     window.addEventListener('pointerdown', mark, { passive: true });
@@ -84,7 +87,8 @@ export function App() {
   useEffect(() => {
     if (!settings.idleResetMinutes || settingsOpen) return;
     if (Date.now() - lastInteraction.current < settings.idleResetMinutes * 60_000) return;
-    setModule('calendar');
+    setModule('dashboard');
+    setDashEditing(false);
   }, [now, settings.idleResetMinutes, settingsOpen]);
 
   // screensaver: the photo frame after inactivity
@@ -101,8 +105,40 @@ export function App() {
 
   return (
     <div className="shell">
-      <ModuleNav active={module} onSelect={setModule} />
+      <ModuleNav
+        active={module}
+        onSelect={(id) => {
+          setModule(id);
+          setDashEditing(false);
+        }}
+      />
       <div className="app">
+        {module === 'dashboard' && (
+          <>
+            <ModuleHeader
+              title={greeting(now)}
+              now={now}
+              clock={false}
+              onSettings={() => openSettings()}
+              actions={
+                !dashEditing && (
+                  <button className="icon-btn" onClick={() => setDashEditing(true)} aria-label="Dashboard bearbeiten" title="Bearbeiten">
+                    <GlyphIcon glyph="✎" name="edit" />
+                  </button>
+                )
+              }
+            />
+            <Dashboard
+              now={now}
+              reloadKey={reloadKey}
+              editing={dashEditing}
+              onEditing={setDashEditing}
+              openModule={setModule}
+              startFrame={(startId) => setFrame({ mode: 'manual', startId })}
+              openSettings={openSettings}
+            />
+          </>
+        )}
         {module === 'calendar' && (
           <CalendarModule
             now={now}
@@ -166,4 +202,13 @@ export function App() {
       )}
     </div>
   );
+}
+
+function greeting(now: Date): string {
+  const h = now.getHours();
+  if (h < 5) return 'Gute Nacht';
+  if (h < 11) return 'Guten Morgen';
+  if (h < 18) return 'Hallo zusammen';
+  if (h < 22) return 'Guten Abend';
+  return 'Gute Nacht';
 }

@@ -10,6 +10,15 @@ const PATHS = {
       <circle cx="9" cy="17" r="2" />
     </>
   ),
+  dashboard: (
+    <>
+      <rect x="3" y="3" width="8" height="10" rx="2" />
+      <rect x="13" y="3" width="8" height="6" rx="2" />
+      <rect x="3" y="15" width="8" height="6" rx="2" />
+      <rect x="13" y="11" width="8" height="10" rx="2" />
+    </>
+  ),
+  edit: <path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" />,
   calendar: (
     <>
       <rect x="3" y="5" width="18" height="16" rx="3" />
