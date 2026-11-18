@@ -14,20 +14,9 @@ export interface Member {
   demo?: boolean;
 }
 
-/** Where the calendar links of an account come from – only used for labels and help texts. */
-export type AccountKind = 'microsoft' | 'microsoft-work' | 'google' | 'icloud' | 'other';
-
-/** A mail/calendar account. Groups calendars; it survives deleting a person. */
-export interface Account {
-  id: string;
-  kind: AccountKind;
-  label: string;
-}
-
-/** One (sub-)calendar of an account, subscribed via its ICS link. */
+/** A calendar subscribed via its ICS link. It survives deleting a person. */
 export interface CalendarSource {
   id: string;
-  accountId: string;
   name: string;
   /** secret ICS subscription link (https:// or webcal://) */
   url: string;
@@ -58,10 +47,9 @@ export interface Settings {
 }
 
 export interface AppConfig {
-  schemaVersion: 2;
+  schemaVersion: 3;
   settings: Settings;
   members: Member[];
-  accounts: Account[];
   calendars: CalendarSource[];
 }
 

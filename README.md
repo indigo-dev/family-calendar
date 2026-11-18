@@ -3,7 +3,7 @@
 Digitaler Wandkalender für die Familie – läuft komplett im Browser (z. B. auf einem iPad an der Wand), ohne Anmeldung und ohne eigenen Server.
 
 - **Kalender per Abo-Link (ICS):** Google, Microsoft privat (Outlook.com/Live), Microsoft 365 (geschäftlich), iCloud und jeder andere iCal-Link. Keine Anmeldung, nichts läuft ab.
-- **Kalenderkonten getrennt von Personen:** Unter Einstellungen → Kalender legst du Konten an, darin beliebig viele (Unter-)Kalender, und ordnest jeden Kalender einer oder mehreren Personen zu. Wird eine Person gelöscht, bleiben Konten und Kalender erhalten.
+- **Kalender getrennt von Personen:** Unter Einstellungen → Kalender fügst du Abo-Links hinzu, gibst jedem Kalender einen Namen und ordnest ihn einer oder mehreren Personen zu. Wird eine Person gelöscht, bleiben die Kalender erhalten.
 - **Feiertage und Schulferien** aller Bundesländer (OpenHolidays API) – personenunabhängig, als Markierung im Kalender, in den Einstellungen ein-/ausschaltbar.
 - **Familienmitglieder** mit Name, Farbe und Avatar (Initialen, Emoji oder Foto).
 - **Ansichten:** Tag, Woche, Monat, Jahr, Agenda – Wischen links/rechts blättert.
@@ -36,7 +36,7 @@ Erlaubte Seiten (GitHub-Pages-Adresse, localhost, Heimnetz) stehen oben im Worke
 
 ## Abo-Links finden
 
-| Konto | Wo |
+| Anbieter | Wo |
 |---|---|
 | Google | calendar.google.com → Einstellungen → Kalender wählen → „Kalender integrieren“ → **Privatadresse im iCal-Format** |
 | Outlook.com / Live | outlook.live.com → Einstellungen → Kalender → Freigegebene Kalender → **Kalender veröffentlichen** → ICS-Link |
@@ -71,7 +71,7 @@ Die Links sind geheim: Wer sie kennt, kann die Termine lesen. Änderungen kommen
 src/
   main.tsx              Start
   App.tsx               Layout, Navigation, Auto-Refresh, Wandmodus
-  store.tsx             Konfiguration (Personen, Konten, Kalender) + Personenfilter
+  store.tsx             Konfiguration (Personen, Kalender) + Personenfilter
   lib/ics.ts            iCal-Parser inkl. Serienterminen und Zeitzonen
   lib/events.ts         Abo-Links über die Weiterleitung laden, zusammenführen, cachen
   lib/holidays.ts       Feiertage/Schulferien (OpenHolidays API)

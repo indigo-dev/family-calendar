@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Account, AppConfig, CalendarSource, Member, Settings } from './types';
+import type { AppConfig, CalendarSource, Member, Settings } from './types';
 import { loadConfig, saveConfig } from './lib/config';
 
 const SELECTED_KEY = 'fc.selectedMembers';
@@ -7,19 +7,15 @@ const SELECTED_KEY = 'fc.selectedMembers';
 interface Store {
   config: AppConfig;
   members: Member[];
-  accounts: Account[];
   calendars: CalendarSource[];
   settings: Settings;
   memberById: Map<string, Member>;
   updateSettings: (patch: Partial<Settings>) => void;
   upsertMember: (m: Member) => void;
   patchMember: (id: string, patch: Partial<Member>) => void;
-  /** removes the person; accounts and calendars stay, only the assignment is dropped */
+  /** removes the person; calendars stay, only the assignment is dropped */
   removeMember: (id: string) => void;
   moveMember: (id: string, dir: -1 | 1) => void;
-  upsertAccount: (a: Account) => void;
-  /** removes the account together with its calendars */
-  removeAccount: (id: string) => void;
   upsertCalendar: (c: CalendarSource) => void;
   patchCalendar: (id: string, patch: Partial<CalendarSource>) => void;
   removeCalendar: (id: string) => void;
@@ -96,21 +92,6 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
     });
   }, []);
 
-  const upsertAccount = useCallback((a: Account) => {
-    setConfig((c) => {
-      const exists = c.accounts.some((x) => x.id === a.id);
-      return { ...c, accounts: exists ? c.accounts.map((x) => (x.id === a.id ? a : x)) : [...c.accounts, a] };
-    });
-  }, []);
-
-  const removeAccount = useCallback((id: string) => {
-    setConfig((c) => ({
-      ...c,
-      accounts: c.accounts.filter((a) => a.id !== id),
-      calendars: c.calendars.filter((cal) => cal.accountId !== id),
-    }));
-  }, []);
-
   const upsertCalendar = useCallback((cal: CalendarSource) => {
     setConfig((c) => {
       const exists = c.calendars.some((x) => x.id === cal.id);
@@ -156,7 +137,6 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
     () => ({
       config,
       members: config.members,
-      accounts: config.accounts,
       calendars: config.calendars,
       settings: config.settings,
       memberById: new Map(config.members.map((m) => [m.id, m])),
@@ -165,8 +145,6 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
       patchMember,
       removeMember,
       moveMember,
-      upsertAccount,
-      removeAccount,
       upsertCalendar,
       patchCalendar,
       removeCalendar,
@@ -185,8 +163,6 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
       patchMember,
       removeMember,
       moveMember,
-      upsertAccount,
-      removeAccount,
       upsertCalendar,
       patchCalendar,
       removeCalendar,

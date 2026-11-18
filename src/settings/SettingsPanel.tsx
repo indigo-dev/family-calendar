@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Account, AccountKind, CalendarSource, Member, Settings, ViewMode } from '../types';
+import type { CalendarSource, Member, Settings, ViewMode } from '../types';
 import { useStore } from '../store';
 import {
-  ACCOUNT_KINDS,
   demoMembers,
   EMOJIS,
   exportConfig,
   imageFileToAvatar,
-  newAccount,
+  LINK_HELP,
   newCalendar,
   newMember,
   PALETTE,
@@ -119,12 +118,11 @@ function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
 }
 
 function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; onGoCalendars: () => void; onDeleted: () => void }) {
-  const { patchMember, removeMember, moveMember, calendars, accounts } = useStore();
+  const { patchMember, removeMember, moveMember, calendars } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const set = (patch: Partial<Member>) => patchMember(member.id, patch);
   const mine = calendars.filter((c) => c.memberIds.includes(member.id));
-  const accountLabel = (c: CalendarSource) => accounts.find((a) => a.id === c.accountId)?.label ?? '';
 
   const onPhoto = async (f: File | undefined) => {
     if (!f) return;
@@ -150,7 +148,7 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
           <button
             className="btn danger"
             onClick={() => {
-              if (confirm(`${member.name} wirklich entfernen?\n\nDie Kalenderkonten bleiben erhalten und können neu zugeordnet werden.`)) {
+              if (confirm(`${member.name} wirklich entfernen?\n\nDie Kalender bleiben erhalten und können neu zugeordnet werden.`)) {
                 removeMember(member.id);
                 onDeleted();
               }
@@ -227,7 +225,6 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
             {mine.map((c) => (
               <span key={c.id} className="chip static">
                 {c.name}
-                <small className="muted">{accountLabel(c)}</small>
               </span>
             ))}
           </div>
@@ -252,11 +249,9 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
 type TestState = { busy: true } | { busy: false; ok: true; text: string } | { busy: false; ok: false; text: string };
 
 function CalendarsTab() {
-  const { accounts, calendars, settings, updateSettings, upsertAccount } = useStore();
+  const { calendars, settings, updateSettings } = useStore();
   const [proxy, setProxy] = useState(settings.proxyUrl);
   const [proxyTest, setProxyTest] = useState<TestState | null>(null);
-  const [kind, setKind] = useState<AccountKind>('google');
-  const [label, setLabel] = useState('');
 
   const saveProxy = async () => {
     const url = proxy.trim().replace(/\/+$/, '');
@@ -302,60 +297,30 @@ function CalendarsTab() {
       </div>
 
       <p className="help">
-        Jedes Konto kann mehrere Kalender haben. Tippe bei einem Kalender auf die Personen, denen er gehört – ein gemeinsamer
-        Familienkalender kann mehreren Personen gehören. Kalender ohne Person werden nicht angezeigt.
+        Tippe bei einem Kalender auf die Personen, denen er gehört – ein gemeinsamer Familienkalender kann mehreren Personen
+        gehören. Kalender ohne Person werden nicht angezeigt.
       </p>
 
-      <div className="cal-accounts">
-        {accounts.map((a) => (
-          <AccountCard key={a.id} account={a} calendars={calendars.filter((c) => c.accountId === a.id)} />
-        ))}
-        {accounts.length === 0 && <p className="muted">Noch keine Konten. Lege unten das erste an.</p>}
-      </div>
-
       <div className="cal-account">
-        <div className="add-box" style={{ borderTop: 0 }}>
-          <strong>Konto hinzufügen</strong>
-          <div className="field-row">
-            <label className="field">
-              <span>Art</span>
-              <select value={kind} onChange={(e) => setKind(e.target.value as AccountKind)}>
-                {(Object.keys(ACCOUNT_KINDS) as AccountKind[]).map((k) => (
-                  <option key={k} value={k}>
-                    {ACCOUNT_KINDS[k].icon} {ACCOUNT_KINDS[k].label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="field">
-              <span>Bezeichnung</span>
-              <input value={label} placeholder="z. B. Papa privat" onChange={(e) => setLabel(e.target.value)} />
-            </label>
-          </div>
-          <div>
-            <button
-              className="btn primary"
-              onClick={() => {
-                upsertAccount(newAccount(kind, label));
-                setLabel('');
-              }}
-            >
-              + Konto anlegen
-            </button>
-          </div>
+        <div className="cal-account-head">
+          <strong>Abonnierte Kalender</strong>
         </div>
+        {calendars.map((c) => (
+          <CalendarRow key={c.id} cal={c} />
+        ))}
+        {calendars.length === 0 && <p className="muted cal-empty">Noch keine Kalender. Füge unten den ersten hinzu.</p>}
+        <AddCalendar />
       </div>
     </div>
   );
 }
 
-function AccountCard({ account, calendars }: { account: Account; calendars: CalendarSource[] }) {
-  const { upsertAccount, removeAccount, upsertCalendar, members, settings } = useStore();
-  const kind = ACCOUNT_KINDS[account.kind];
+function AddCalendar() {
+  const { calendars, upsertCalendar, members, settings } = useStore();
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [adding, setAdding] = useState<TestState | null>(null);
-  const [showHelp, setShowHelp] = useState(calendars.length === 0);
+  const [showHelp, setShowHelp] = useState(() => calendars.length === 0);
 
   const add = async (force = false) => {
     const link = url.trim();
@@ -374,9 +339,8 @@ function AccountCard({ account, calendars }: { account: Account; calendars: Cale
         return;
       }
     }
-    // a new calendar of an account usually belongs to the person who owns the account → preselect nobody, but
-    // if exactly one person exists, assign it
-    upsertCalendar(newCalendar(account.id, calName || kind.label, link, members.length === 1 ? [members[0].id] : []));
+    // preselect nobody, but if exactly one person exists, assign it
+    upsertCalendar(newCalendar(calName || 'Kalender', link, members.length === 1 ? [members[0].id] : []));
     setName('');
     setUrl('');
     setAdding(null);
@@ -384,68 +348,56 @@ function AccountCard({ account, calendars }: { account: Account; calendars: Cale
   };
 
   return (
-    <div className="cal-account">
-      <div className="cal-account-head">
-        <span className="icon">{kind.icon}</span>
-        <div className="grow">
-          <input value={account.label} onChange={(e) => upsertAccount({ ...account, label: e.target.value })} aria-label="Bezeichnung" />
-          <small className="muted">{kind.label}</small>
-        </div>
-        <button
-          className="btn danger"
-          onClick={() => {
-            const n = calendars.length;
-            if (confirm(`Konto „${account.label}“${n ? ` mit ${n} Kalender${n === 1 ? '' : 'n'}` : ''} entfernen?`)) removeAccount(account.id);
-          }}
-        >
-          Entfernen
+    <div className="add-box">
+      <div className="row-actions" style={{ justifyContent: 'space-between' }}>
+        <strong>Kalender hinzufügen</strong>
+        <button className="link" onClick={() => setShowHelp((v) => !v)}>
+          {showHelp ? 'Hilfe ausblenden' : 'Wo finde ich den Link?'}
         </button>
       </div>
-
-      {calendars.map((c) => (
-        <CalendarRow key={c.id} cal={c} />
-      ))}
-
-      <div className="add-box">
-        <div className="row-actions" style={{ justifyContent: 'space-between' }}>
-          <strong>Kalender hinzufügen</strong>
-          <button className="link" onClick={() => setShowHelp((v) => !v)}>
-            {showHelp ? 'Hilfe ausblenden' : 'Wo finde ich den Link?'}
-          </button>
-        </div>
-        {showHelp && <p className="help">{kind.help}</p>}
-        <div className="field-row">
-          <label className="field">
-            <span>Name (optional)</span>
-            <input value={name} placeholder="z. B. Arbeit" onChange={(e) => setName(e.target.value)} />
-          </label>
-          <label className="field">
-            <span>Abo-Link (ICS)</span>
-            <input
-              value={url}
-              placeholder="https://…/basic.ics"
-              onChange={(e) => setUrl(e.target.value)}
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-            />
-          </label>
-        </div>
-        <div className="row-actions">
-          <button className="btn primary" disabled={!url.trim() || adding?.busy} onClick={() => add()}>
-            {adding?.busy ? 'Prüfe …' : 'Prüfen & hinzufügen'}
-          </button>
-          {adding && !adding.busy && !adding.ok && (
-            <>
-              <span className="error">{adding.text}</span>
-              {/^(https?|webcals?):\/\//i.test(url.trim()) && (
-                <button className="btn" onClick={() => add(true)}>
-                  Trotzdem hinzufügen
-                </button>
-              )}
-            </>
-          )}
-        </div>
+      {showHelp && (
+        <dl className="help link-help">
+          {Object.values(LINK_HELP).map((h) => (
+            <div key={h.label}>
+              <dt>
+                {h.icon} {h.label}
+              </dt>
+              <dd>{h.help}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      <div className="field-row">
+        <label className="field">
+          <span>Name (optional)</span>
+          <input value={name} placeholder="z. B. Papa Arbeit" onChange={(e) => setName(e.target.value)} />
+        </label>
+        <label className="field">
+          <span>Abo-Link (ICS)</span>
+          <input
+            value={url}
+            placeholder="https://…/basic.ics"
+            onChange={(e) => setUrl(e.target.value)}
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+          />
+        </label>
+      </div>
+      <div className="row-actions">
+        <button className="btn primary" disabled={!url.trim() || adding?.busy} onClick={() => add()}>
+          {adding?.busy ? 'Prüfe …' : 'Prüfen & hinzufügen'}
+        </button>
+        {adding && !adding.busy && !adding.ok && (
+          <>
+            <span className="error">{adding.text}</span>
+            {/^(https?|webcals?):\/\//i.test(url.trim()) && (
+              <button className="btn" onClick={() => add(true)}>
+                Trotzdem hinzufügen
+              </button>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

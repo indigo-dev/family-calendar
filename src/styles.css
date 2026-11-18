@@ -1141,11 +1141,6 @@ hr {
 }
 
 /* ---------------------------------------------------------------- Einstellungen: Kalender */
-.cal-accounts {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 .cal-account {
   border: 1px solid var(--line);
   border-radius: 14px;
@@ -1159,22 +1154,22 @@ hr {
   padding: 12px 14px;
   background: var(--surface-2);
 }
-.cal-account-head .icon {
-  font-size: 1.4rem;
+.cal-empty {
+  margin: 0;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
 }
-.cal-account-head .grow {
-  flex: 1;
-  min-width: 0;
+.link-help {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
-.cal-account-head input {
-  font-weight: 700;
-  font-size: 1rem;
-  border: 0;
-  background: transparent;
-  padding: 2px 0;
-  min-width: 0;
+.link-help dt {
+  font-weight: 600;
+  color: var(--text);
+}
+.link-help dd {
+  margin: 2px 0 0;
 }
 .cal-row {
   display: flex;

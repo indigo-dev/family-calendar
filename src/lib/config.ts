@@ -1,4 +1,4 @@
-import type { Account, AccountKind, AppConfig, CalendarSource, HolidaySettings, Member, Settings } from '../types';
+import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings } from '../types';
 
 const CONFIG_KEY = 'fc.config.v1';
 
@@ -14,7 +14,8 @@ export const EMOJIS = [
   '⚽', '🎸', '🎨', '📚', '🚀', '🌻', '⭐', '❤️',
 ];
 
-export const ACCOUNT_KINDS: Record<AccountKind, { label: string; icon: string; help: string }> = {
+/** Where to find the ICS subscription link at the common providers (help text in the settings). */
+export const LINK_HELP: Record<string, { label: string; icon: string; help: string }> = {
   microsoft: {
     label: 'Microsoft privat (Outlook.com / Live / Hotmail)',
     icon: '📧',
@@ -83,7 +84,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export function defaultConfig(): AppConfig {
-  return { schemaVersion: 2, settings: { ...DEFAULT_SETTINGS, holidays: { ...DEFAULT_HOLIDAYS } }, members: [], accounts: [], calendars: [] };
+  return { schemaVersion: 3, settings: { ...DEFAULT_SETTINGS, holidays: { ...DEFAULT_HOLIDAYS } }, members: [], calendars: [] };
 }
 
 export function uid(): string {
@@ -96,12 +97,8 @@ export function newMember(existing: Member[]): Member {
   return { id: uid(), name: `Person ${existing.length + 1}`, color, avatar: { type: 'initials' } };
 }
 
-export function newAccount(kind: AccountKind, label: string): Account {
-  return { id: uid(), kind, label: label.trim() || ACCOUNT_KINDS[kind].label };
-}
-
-export function newCalendar(accountId: string, name: string, url: string, memberIds: string[] = []): CalendarSource {
-  return { id: uid(), accountId, name: name.trim() || 'Kalender', url: url.trim(), memberIds, enabled: true };
+export function newCalendar(name: string, url: string, memberIds: string[] = []): CalendarSource {
+  return { id: uid(), name: name.trim() || 'Kalender', url: url.trim(), memberIds, enabled: true };
 }
 
 export function demoMembers(): Member[] {
@@ -133,27 +130,17 @@ function parseMember(raw: unknown): Member | null {
 export function parseConfig(raw: unknown): AppConfig {
   if (!raw || typeof raw !== 'object') throw new Error('Keine gültige Konfiguration.');
   const o = raw as Record<string, unknown>;
-  if (o.schemaVersion !== 1 && o.schemaVersion !== 2) throw new Error('Unbekannte Konfigurationsversion.');
+  if (o.schemaVersion !== 1 && o.schemaVersion !== 2 && o.schemaVersion !== 3) throw new Error('Unbekannte Konfigurationsversion.');
   if (!Array.isArray(o.members)) throw new Error('Familienmitglieder fehlen.');
   const members = o.members.map(parseMember).filter((m): m is Member => !!m);
   const memberIds = new Set(members.map((m) => m.id));
 
-  const accounts: Account[] = (Array.isArray(o.accounts) ? o.accounts : [])
-    .map(obj)
-    .filter((a) => typeof a.id === 'string')
-    .map((a) => ({
-      id: a.id as string,
-      kind: (Object.keys(ACCOUNT_KINDS).includes(str(a.kind)) ? a.kind : 'other') as AccountKind,
-      label: str(a.label, 'Konto'),
-    }));
-  const accountIds = new Set(accounts.map((a) => a.id));
-
+  // version 2 grouped calendars into accounts – the calendars are kept, the accounts dropped
   const calendars: CalendarSource[] = (Array.isArray(o.calendars) ? o.calendars : [])
     .map(obj)
-    .filter((c) => typeof c.id === 'string' && accountIds.has(str(c.accountId)))
+    .filter((c) => typeof c.id === 'string')
     .map((c) => ({
       id: c.id as string,
-      accountId: c.accountId as string,
       name: str(c.name, 'Kalender'),
       url: str(c.url),
       memberIds: (Array.isArray(c.memberIds) ? c.memberIds : []).filter((id): id is string => typeof id === 'string' && memberIds.has(id)),
@@ -167,7 +154,7 @@ export function parseConfig(raw: unknown): AppConfig {
   }
   settings.holidays = { ...DEFAULT_HOLIDAYS, ...obj(s.holidays) } as HolidaySettings;
 
-  return { schemaVersion: 2, settings, members, accounts, calendars };
+  return { schemaVersion: 3, settings, members, calendars };
 }
 
 export function loadConfig(): AppConfig {
