@@ -3,6 +3,7 @@ import type { Member, ViewMode } from '../types';
 import { fmt } from '../lib/dates';
 import { useStore } from '../store';
 import { Avatar } from './Avatar';
+import { GlyphIcon } from './Icon';
 
 const VIEWS: { id: ViewMode; label: string }[] = [
   { id: 'day', label: 'Tag' },
@@ -30,16 +31,16 @@ export function Header({ title, view, now, loading, onView, onStep, onToday, onR
       <div className="topbar-left">
         <div className="nav">
           <button className="icon-btn" onClick={() => onStep(-1)} aria-label="Zurück">
-            ‹
+            <GlyphIcon glyph="‹" name="back" />
           </button>
           <button className="btn" onClick={onToday}>
             Heute
           </button>
           <button className="icon-btn" onClick={() => onStep(1)} aria-label="Weiter">
-            ›
+            <GlyphIcon glyph="›" name="forward" />
           </button>
         </div>
-        <h1 className="title">{title}</h1>
+        <Title text={title} />
       </div>
       <div className="segmented" role="tablist">
         {VIEWS.map((v) => (
@@ -51,13 +52,29 @@ export function Header({ title, view, now, loading, onView, onStep, onToday, onR
       <div className="topbar-right">
         <Clock now={now} />
         <button className={`icon-btn ${loading ? 'spin' : ''}`} onClick={onRefresh} aria-label="Aktualisieren">
-          ⟳
+          <GlyphIcon glyph="⟳" name="refresh" />
         </button>
         <button className="icon-btn" onClick={onSettings} aria-label="Einstellungen">
-          ⚙
+          <GlyphIcon glyph="⚙" name="settings" />
         </button>
       </div>
     </header>
+  );
+}
+
+/** "November 2026" -> month bold, year as its own span (some styles set it lighter). */
+function Title({ text }: { text: string }) {
+  const m = /^(.*S)s+(d{4})$/.exec(text);
+  return (
+    <h1 className="title">
+      {m ? (
+        <>
+          {m[1]} <span className="title-year">{m[2]}</span>
+        </>
+      ) : (
+        text
+      )}
+    </h1>
   );
 }
 
@@ -80,7 +97,7 @@ export function ModuleHeader({ title, now, onSettings }: { title: string; now: D
       <div className="topbar-right">
         <Clock now={now} />
         <button className="icon-btn" onClick={onSettings} aria-label="Einstellungen">
-          ⚙
+          <GlyphIcon glyph="⚙" name="settings" />
         </button>
       </div>
     </header>

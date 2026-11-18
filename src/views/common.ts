@@ -21,7 +21,7 @@ export function membersOf(e: CalEvent, byId: Map<string, Member>): Member[] {
 
 /** Tinted background for an event block based on its first member colour. */
 export function tint(color: string, pct = 22): string {
-  return `color-mix(in srgb, ${color} ${pct}%, var(--surface))`;
+  return `color-mix(in srgb, ${color} ${pct}%, var(--tint-base, var(--surface)))`;
 }
 
 export function stripe(members: Member[]): string {

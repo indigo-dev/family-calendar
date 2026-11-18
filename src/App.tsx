@@ -38,6 +38,22 @@ export function App() {
     else root.setAttribute('data-theme', settings.theme);
   }, [settings.theme]);
 
+  // style + resolved light/dark (the styles only need one dark selector: [data-mode='dark'])
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute('data-style', settings.style);
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const dark = settings.theme === 'dark' || (settings.theme === 'auto' && mq.matches);
+      root.setAttribute('data-mode', dark ? 'dark' : 'light');
+      const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
+      if (bg) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
+    };
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, [settings.style, settings.theme]);
+
   useEffect(() => {
     try {
       localStorage.setItem(MODULE_KEY, module);

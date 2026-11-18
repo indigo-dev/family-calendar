@@ -75,7 +75,11 @@ export interface Settings {
   idleResetMinutes: number;
   keepAwake: boolean;
   theme: 'auto' | 'light' | 'dark';
+  /** visual style, independent of light/dark */
+  style: UiStyle;
 }
+
+export type UiStyle = 'classic' | 'sonoma' | 'liquid' | 'flow' | 'aurora';
 
 export interface AppConfig {
   schemaVersion: 3;

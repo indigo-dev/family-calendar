@@ -1,4 +1,4 @@
-import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings } from '../types';
+import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings, UiStyle } from '../types';
 import { parseSchool, parseTimetable } from './school';
 
 const CONFIG_KEY = 'fc.config.v1';
@@ -82,7 +82,16 @@ export const DEFAULT_SETTINGS: Settings = {
   idleResetMinutes: 3,
   keepAwake: true,
   theme: 'auto',
+  style: 'classic',
 };
+
+export const UI_STYLES: { id: UiStyle; label: string }[] = [
+  { id: 'classic', label: 'Klassisch' },
+  { id: 'sonoma', label: 'Cupertino · Sonoma' },
+  { id: 'liquid', label: 'Cupertino · Liquid Glass' },
+  { id: 'flow', label: 'Glas · Flow' },
+  { id: 'aurora', label: 'Glas · Aurora' },
+];
 
 export function defaultConfig(): AppConfig {
   return { schemaVersion: 3, settings: { ...DEFAULT_SETTINGS, holidays: { ...DEFAULT_HOLIDAYS } }, members: [], calendars: [], school: { colors: {}, custom: [] } };
@@ -155,6 +164,7 @@ export function parseConfig(raw: unknown): AppConfig {
     if (k in s && typeof s[k] === typeof DEFAULT_SETTINGS[k]) (settings as unknown as Record<string, unknown>)[k] = s[k];
   }
   settings.holidays = { ...DEFAULT_HOLIDAYS, ...obj(s.holidays) } as HolidaySettings;
+  if (!UI_STYLES.some((x) => x.id === settings.style)) settings.style = DEFAULT_SETTINGS.style;
 
   return { schemaVersion: 3, settings, members, calendars, school: parseSchool(o.school) };
 }

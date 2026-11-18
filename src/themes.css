@@ -1,0 +1,926 @@
+/* =====================================================================================
+   Styles (Einstellungen → Stil). Independent of light/dark:
+   - <html data-style="classic|sonoma|liquid|flow|aurora">
+   - <html data-mode="light|dark">  (resolved from the theme setting + system, set in App.tsx)
+   "classic" is styles.css as is. Every other style redefines the tokens and adjusts the
+   shared components. Each style defines ALL its tokens in the light block and again in the
+   dark block, so nothing leaks in from the classic dark tokens.
+   ===================================================================================== */
+
+/* ------------------------------------------------------------ shared: icons, background */
+.ui-icon {
+  display: none;
+  width: 1.15em;
+  height: 1.15em;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+:root:not([data-style='classic']) .ui-glyph {
+  display: none;
+}
+:root:not([data-style='classic']) .ui-icon {
+  display: block;
+}
+.icon-btn .ui-icon {
+  width: 21px;
+  height: 21px;
+}
+.module-svg.ui-icon {
+  width: 25px;
+  height: 25px;
+}
+.module-nav-label {
+  display: none;
+}
+:root:not([data-style='classic']) body {
+  background-color: var(--bg);
+  background-image: var(--bg-image, none);
+  background-size: var(--bg-size, cover);
+  background-attachment: fixed;
+}
+/* today markers sit on --today, whose contrast colour differs per style */
+:root:not([data-style='classic']) .month-cell.today .month-dn,
+:root:not([data-style='classic']) .tg-dayhead.today .tg-dn,
+:root:not([data-style='classic']) .year-day.today > span:first-child {
+  color: var(--today-text);
+}
+
+/* =====================================================================================
+   CUPERTINO · SONOMA  –  macOS / iPadOS: white, hairlines, system blue, red today
+   ===================================================================================== */
+:root[data-style='sonoma'] {
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface-2: #f2f2f4;
+  --line: #e3e3e7;
+  --line-strong: #d1d1d6;
+  --text: #1d1d1f;
+  --muted: #86868b;
+  --accent: #007aff;
+  --accent-text: #ffffff;
+  --today: #ff3b30;
+  --today-text: #ffffff;
+  --danger: #ff3b30;
+  --ok: #34c759;
+  --radius: 12px;
+  --shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --fill: rgba(118, 118, 128, 0.12);
+  --fill-strong: rgba(118, 118, 128, 0.18);
+  --seg-thumb: #ffffff;
+  --sidebar: rgba(234, 234, 238, 0.92);
+  --holiday: #d1442b;
+  --school-text: #0a64c2;
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+}
+:root[data-style='sonoma'][data-mode='dark'] {
+  --bg: #161617;
+  --surface: #1f1f21;
+  --surface-2: #2c2c2e;
+  --line: #333336;
+  --line-strong: #48484a;
+  --text: #f5f5f7;
+  --muted: #98989d;
+  --accent: #0a84ff;
+  --accent-text: #ffffff;
+  --today: #ff453a;
+  --today-text: #ffffff;
+  --danger: #ff453a;
+  --ok: #30d158;
+  --shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.07);
+  --fill: rgba(118, 118, 128, 0.24);
+  --fill-strong: rgba(118, 118, 128, 0.32);
+  --seg-thumb: #636366;
+  --sidebar: rgba(36, 36, 38, 0.92);
+  --holiday: #ff7a5c;
+  --school-text: #64b5ff;
+  color-scheme: dark;
+}
+[data-style='sonoma'] .title {
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+[data-style='sonoma'] .title-year {
+  font-weight: 400;
+}
+[data-style='sonoma'] .clock-time {
+  font-weight: 600;
+}
+[data-style='sonoma'] .btn {
+  border-color: transparent;
+  background: var(--fill);
+  color: var(--accent);
+  font-weight: 500;
+  border-radius: 10px;
+}
+[data-style='sonoma'] .btn.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+[data-style='sonoma'] .btn.danger {
+  color: var(--danger);
+}
+[data-style='sonoma'] .btn.ghost {
+  background: transparent;
+  border-color: var(--line-strong);
+}
+[data-style='sonoma'] .icon-btn {
+  background: transparent;
+  border-color: transparent;
+  color: var(--accent);
+}
+[data-style='sonoma'] .segmented {
+  background: var(--fill);
+  border-radius: 9px;
+  padding: 2px;
+}
+[data-style='sonoma'] .segmented button {
+  color: var(--text);
+  font-weight: 500;
+  border-radius: 7px;
+}
+[data-style='sonoma'] .segmented button.active {
+  background: var(--seg-thumb);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+}
+[data-style='sonoma'] .chip {
+  border-width: 1.5px;
+  font-weight: 500;
+}
+[data-style='sonoma'] .chip.all.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+[data-style='sonoma'] .month-head > div {
+  text-align: right;
+  font-weight: 500;
+}
+[data-style='sonoma'] .month-dn {
+  font-weight: 500;
+}
+[data-style='sonoma'] .month-cell.other {
+  background: transparent;
+}
+[data-style='sonoma'] .chip-event .t {
+  order: 2;
+  margin-left: auto;
+  padding-left: 4px;
+  font-size: 0.74rem;
+}
+[data-style='sonoma'] .chip-event.solid,
+[data-style='liquid'] .chip-event.solid {
+  /* tint the member colour instead of a solid bar. The colour comes as an inline `background`
+     shorthand, which also resets background-image, hence !important */
+  background-image: linear-gradient(var(--chip-veil), var(--chip-veil)) !important;
+  color: var(--text);
+  font-weight: 500;
+}
+[data-style='sonoma'] {
+  --chip-veil: color-mix(in srgb, var(--surface) 76%, transparent);
+}
+[data-style='sonoma'] .tg-event {
+  border-radius: 6px;
+}
+[data-style='sonoma'] .agenda-item {
+  border-radius: 10px;
+}
+[data-style='sonoma'] .modal {
+  border-radius: 14px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 22px 60px rgba(0, 0, 0, 0.28);
+}
+[data-style='sonoma'] .field input:not([type='checkbox']):not([type='color']),
+[data-style='sonoma'] .field select {
+  border-radius: 8px;
+}
+[data-style='sonoma'] .module-btn.active .module-svg {
+  color: var(--accent);
+}
+@media (min-width: 1100px) {
+  [data-style='sonoma'] .module-nav {
+    width: 210px;
+    flex: none;
+    gap: 2px;
+    background: var(--sidebar);
+    border-right: 1px solid var(--line);
+    padding: max(18px, env(safe-area-inset-top)) 10px 10px max(10px, env(safe-area-inset-left));
+  }
+  [data-style='sonoma'] .module-nav-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 0 10px 6px;
+  }
+  [data-style='sonoma'] .module-btn {
+    width: auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 11px;
+    padding: 10px 10px;
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 0.98rem;
+    font-weight: 500;
+  }
+  [data-style='sonoma'] .module-svg {
+    color: var(--accent);
+  }
+  [data-style='sonoma'] .module-btn.active {
+    background: var(--fill-strong);
+    box-shadow: none;
+  }
+  [data-style='sonoma'] .shell > .app {
+    padding-left: 16px;
+  }
+}
+@media (max-width: 640px) {
+  [data-style='sonoma'] .module-nav {
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+  }
+  [data-style='sonoma'] .module-btn.active {
+    background: transparent;
+    color: var(--accent);
+  }
+}
+
+/* =====================================================================================
+   CUPERTINO · LIQUID GLASS  –  macOS Tahoe / iOS 26: floating glass, capsules
+   ===================================================================================== */
+:root[data-style='liquid'] {
+  --bg: #e9eefb;
+  --bg-image: radial-gradient(45% 55% at 12% 18%, #9fd0ff 0, transparent 70%),
+    radial-gradient(40% 50% at 88% 8%, #ffcfe4 0, transparent 70%),
+    radial-gradient(50% 55% at 72% 96%, #b9f0cf 0, transparent 70%),
+    radial-gradient(35% 40% at 35% 85%, #d9c8ff 0, transparent 70%), linear-gradient(160deg, #e6efff, #f7f0ff);
+  --surface: rgba(255, 255, 255, 0.58);
+  --surface-2: rgba(255, 255, 255, 0.5);
+  --tint-base: #f3f5fc;
+  --line: rgba(50, 60, 100, 0.1);
+  --line-strong: rgba(50, 60, 100, 0.2);
+  --text: #111827;
+  --muted: #5d6475;
+  --accent: #0a7cff;
+  --accent-text: #ffffff;
+  --today: #ff3b30;
+  --today-text: #ffffff;
+  --danger: #e5352b;
+  --ok: #1f9d55;
+  --radius: 26px;
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(255, 255, 255, 0.3), 0 10px 34px rgba(40, 60, 110, 0.13);
+  --glass-strong: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --sheet: rgba(255, 255, 255, 0.8);
+  --chip-veil: rgba(255, 255, 255, 0.72);
+  --holiday: #d1442b;
+  --school-text: #0a64c2;
+  --school: color-mix(in srgb, #0ea5e9 10%, transparent);
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
+}
+:root[data-style='liquid'][data-mode='dark'] {
+  --bg: #070b1a;
+  --bg-image: radial-gradient(45% 55% at 12% 18%, rgba(37, 99, 235, 0.5) 0, transparent 70%),
+    radial-gradient(40% 50% at 88% 8%, rgba(190, 24, 93, 0.36) 0, transparent 70%),
+    radial-gradient(50% 55% at 72% 96%, rgba(13, 148, 136, 0.42) 0, transparent 70%),
+    radial-gradient(35% 40% at 35% 85%, rgba(109, 40, 217, 0.42) 0, transparent 70%), linear-gradient(160deg, #0a1124, #120c24);
+  --surface: rgba(40, 44, 60, 0.5);
+  --surface-2: rgba(255, 255, 255, 0.07);
+  --tint-base: #1b1f2e;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #f4f6fb;
+  --muted: #a2a9bc;
+  --accent: #3b9bff;
+  --accent-text: #ffffff;
+  --today: #ff453a;
+  --today-text: #ffffff;
+  --danger: #ff6159;
+  --ok: #3ddc84;
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(255, 255, 255, 0.04), 0 10px 34px rgba(0, 0, 0, 0.35);
+  --glass-strong: rgba(255, 255, 255, 0.16);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --sheet: rgba(30, 34, 48, 0.8);
+  --chip-veil: rgba(28, 32, 46, 0.62);
+  --holiday: #ff8a6a;
+  --school-text: #7cc4ff;
+  --school: color-mix(in srgb, #38bdf8 10%, transparent);
+  color-scheme: dark;
+}
+[data-style='liquid'] .view,
+[data-style='liquid'] .btn,
+[data-style='liquid'] .icon-btn,
+[data-style='liquid'] .segmented,
+[data-style='liquid'] .chip,
+[data-style='liquid'] .modal {
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+[data-style='liquid'] .app {
+  gap: 14px;
+}
+[data-style='liquid'] .btn {
+  border-radius: 999px;
+}
+[data-style='liquid'] .btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+[data-style='liquid'] .btn.danger {
+  color: var(--danger);
+}
+[data-style='liquid'] .icon-btn {
+  border-radius: 50%;
+}
+[data-style='liquid'] .nav {
+  gap: 0;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+[data-style='liquid'] .nav .btn,
+[data-style='liquid'] .nav .icon-btn {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  min-height: 40px;
+  height: 40px;
+}
+[data-style='liquid'] .nav .btn {
+  padding: 0 14px;
+}
+[data-style='liquid'] .title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+[data-style='liquid'] .title-year {
+  font-weight: 400;
+  color: var(--muted);
+}
+[data-style='liquid'] .segmented {
+  border-radius: 999px;
+  padding: 3px;
+}
+[data-style='liquid'] .segmented button {
+  border-radius: 999px;
+  color: var(--text);
+  font-weight: 500;
+}
+[data-style='liquid'] .segmented button.active {
+  background: var(--glass-strong);
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+[data-style='liquid'] .chip.all.on {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-text);
+}
+[data-style='liquid'] .month-cell.other {
+  background: transparent;
+}
+[data-style='liquid'] .month-cell.other .month-dn {
+  opacity: 0.55;
+}
+[data-style='liquid'] .month-dn {
+  font-weight: 600;
+}
+[data-style='liquid'] .chip-event {
+  border-radius: 999px;
+}
+[data-style='liquid'] .chip-event .t {
+  order: 2;
+  margin-left: auto;
+  padding-left: 4px;
+  font-size: 0.72rem;
+}
+[data-style='liquid'] .tg-event {
+  border-radius: 12px;
+}
+[data-style='liquid'] .agenda-item {
+  border-radius: 16px;
+}
+[data-style='liquid'] .modal {
+  background: var(--sheet);
+  border-radius: 30px;
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(40px) saturate(180%);
+}
+[data-style='liquid'] .modal-backdrop {
+  background: rgba(10, 14, 30, 0.28);
+}
+[data-style='liquid'] .field input:not([type='checkbox']):not([type='color']),
+[data-style='liquid'] .field select {
+  border-radius: 12px;
+  border-color: var(--line-strong);
+}
+[data-style='liquid'] .module-btn.active {
+  background: var(--glass-strong);
+  color: var(--accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+@media (min-width: 641px) {
+  [data-style='liquid'] .module-nav {
+    align-self: center;
+    margin-left: max(12px, env(safe-area-inset-left));
+    padding: 8px;
+    gap: 4px;
+    border-radius: 44px;
+    background: var(--surface);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+  }
+  [data-style='liquid'] .module-btn {
+    width: 72px;
+    border-radius: 34px;
+    font-size: 0.7rem;
+  }
+  [data-style='liquid'] .shell > .app {
+    padding-left: 16px;
+  }
+}
+@media (max-width: 640px) {
+  [data-style='liquid'] .module-nav {
+    margin: 0 max(12px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    padding: 4px;
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+  }
+  [data-style='liquid'] .module-btn {
+    border-radius: 999px;
+  }
+}
+
+/* =====================================================================================
+   GLAS · FLOW  –  technical, n8n-like: dot canvas, thin glass panels, coral, mono digits
+   ===================================================================================== */
+:root[data-style='flow'] {
+  --bg: #f2f3f7;
+  --bg-image: radial-gradient(rgba(20, 24, 40, 0.15) 1px, transparent 1.4px);
+  --bg-size: 20px 20px;
+  --surface: rgba(255, 255, 255, 0.8);
+  --surface-2: rgba(20, 24, 40, 0.045);
+  --tint-base: #fafafc;
+  --line: rgba(20, 24, 40, 0.08);
+  --line-strong: rgba(20, 24, 40, 0.16);
+  --text: #1b1e2b;
+  --muted: #6a6f86;
+  --accent: #ef5a43;
+  --accent-text: #ffffff;
+  --today: #ef5a43;
+  --today-text: #ffffff;
+  --danger: #e5484d;
+  --ok: #2f9e6e;
+  --radius: 12px;
+  --shadow: none;
+  --panel-border: rgba(20, 24, 40, 0.1);
+  --sheet: rgba(255, 255, 255, 0.94);
+  --pop: 0 24px 60px rgba(20, 24, 40, 0.18);
+  --mono: 'Geist Mono Variable', ui-monospace, 'Cascadia Mono', 'SF Mono', monospace;
+  --holiday: #d9480f;
+  --school-text: #0b6bcb;
+  color-scheme: light;
+  font-family: 'Geist Variable', -apple-system, 'Segoe UI', system-ui, sans-serif;
+}
+:root[data-style='flow'][data-mode='dark'] {
+  --bg: #121319;
+  --bg-image: radial-gradient(rgba(255, 255, 255, 0.075) 1px, transparent 1.4px);
+  --bg-size: 20px 20px;
+  --surface: rgba(30, 32, 42, 0.74);
+  --surface-2: rgba(255, 255, 255, 0.045);
+  --tint-base: #1d1f28;
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --text: #e7e8ee;
+  --muted: #8b90a6;
+  --accent: #ff6d5a;
+  --accent-text: #ffffff;
+  --today: #ff6d5a;
+  --today-text: #1a0b08;
+  --danger: #ff6369;
+  --ok: #4cc38a;
+  --shadow: none;
+  --panel-border: rgba(255, 255, 255, 0.09);
+  --sheet: rgba(26, 28, 37, 0.94);
+  --pop: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --holiday: #ff9466;
+  --school-text: #70b8ff;
+  color-scheme: dark;
+}
+[data-style='flow'] .view,
+[data-style='flow'] .btn,
+[data-style='flow'] .icon-btn,
+[data-style='flow'] .segmented,
+[data-style='flow'] .modal {
+  border: 1px solid var(--panel-border);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+[data-style='flow'] .btn,
+[data-style='flow'] .icon-btn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+[data-style='flow'] .btn.primary,
+[data-style='flow'] .nav .btn {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-text);
+}
+[data-style='flow'][data-mode='dark'] .nav .btn {
+  color: #fff;
+}
+[data-style='flow'] .btn.danger {
+  color: var(--danger);
+}
+[data-style='flow'] .title {
+  font-weight: 600;
+}
+[data-style='flow'] .title-year {
+  color: var(--muted);
+  font-weight: 500;
+}
+[data-style='flow'] .segmented {
+  border-radius: 8px;
+}
+[data-style='flow'] .segmented button {
+  border-radius: 6px;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+[data-style='flow'] .segmented button.active {
+  background: var(--surface-2);
+  border-color: var(--panel-border);
+  box-shadow: none;
+}
+[data-style='flow'] .chip {
+  border-radius: 8px;
+  border-width: 1.5px;
+  font-weight: 500;
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+[data-style='flow'] .chip.all.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+[data-style='flow'] .clock-time,
+[data-style='flow'] .clock-date,
+[data-style='flow'] .month-wk,
+[data-style='flow'] .month-dn,
+[data-style='flow'] .month-head > div,
+[data-style='flow'] .chip-event .t,
+[data-style='flow'] .more,
+[data-style='flow'] .tg-hour-label,
+[data-style='flow'] .tg-event .ev-time,
+[data-style='flow'] .tg-dn,
+[data-style='flow'] .agenda-time,
+[data-style='flow'] .agenda-dn,
+[data-style='flow'] .year-wd,
+[data-style='flow'] .year-day,
+[data-style='flow'] .tt-time small,
+[data-style='flow'] .tt-date,
+[data-style='flow'] .badge {
+  font-family: var(--mono);
+}
+[data-style='flow'] .clock-time {
+  font-weight: 500;
+}
+[data-style='flow'] .month-head > div,
+[data-style='flow'] .tg-wd {
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+[data-style='flow'] .month-dn {
+  font-weight: 500;
+  font-size: 0.88rem;
+  border-radius: 6px;
+}
+[data-style='flow'] .tg-dn {
+  border-radius: 8px;
+  font-weight: 500;
+}
+[data-style='flow'] .month-cell.other {
+  background: transparent;
+}
+[data-style='flow'] .month-cell.other .month-dn {
+  opacity: 0.45;
+}
+[data-style='flow'] .month-cell.today {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+[data-style='flow'] .chip-event {
+  border-radius: 4px;
+}
+[data-style='flow'] .chip-event .t {
+  font-size: 0.72rem;
+}
+[data-style='flow'] .chip-event .dot {
+  border-radius: 2px;
+}
+[data-style='flow'] .tg-event {
+  border-radius: 6px;
+}
+[data-style='flow'] .ev-stripe {
+  width: 3px;
+  border-radius: 2px;
+}
+[data-style='flow'] .agenda-item {
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+}
+[data-style='flow'] .modal {
+  background: var(--sheet);
+  border-radius: 12px;
+  box-shadow: var(--pop);
+}
+[data-style='flow'] .field input:not([type='checkbox']):not([type='color']),
+[data-style='flow'] .field select {
+  border-radius: 8px;
+}
+[data-style='flow'] .module-btn {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-weight: 500;
+}
+[data-style='flow'] .module-btn.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+  color: var(--accent);
+  box-shadow: none;
+}
+@media (min-width: 641px) {
+  [data-style='flow'] .module-nav {
+    margin: max(10px, env(safe-area-inset-top)) 0 max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    padding: 8px 6px;
+    gap: 4px;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--panel-border);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+  [data-style='flow'] .module-btn {
+    width: 68px;
+    font-size: 0.7rem;
+  }
+}
+@media (max-width: 640px) {
+  [data-style='flow'] .module-nav {
+    border-top-color: var(--panel-border);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+}
+
+/* =====================================================================================
+   GLAS · AURORA  –  colourful gradients behind frosted glass, glowing accents
+   ===================================================================================== */
+:root[data-style='aurora'] {
+  --bg: #eef0fb;
+  --bg-image: radial-gradient(42% 52% at 18% 22%, rgba(124, 92, 255, 0.36), transparent 70%),
+    radial-gradient(36% 46% at 82% 16%, rgba(34, 211, 238, 0.32), transparent 70%),
+    radial-gradient(46% 52% at 62% 98%, rgba(236, 72, 153, 0.22), transparent 70%);
+  --surface: rgba(255, 255, 255, 0.55);
+  --surface-2: rgba(60, 50, 140, 0.05);
+  --tint-base: #f6f6fd;
+  --line: rgba(60, 50, 140, 0.09);
+  --line-strong: rgba(60, 50, 140, 0.18);
+  --text: #1a1b3a;
+  --muted: #5f638a;
+  --accent: #6d4cff;
+  --accent-2: #0ea5c6;
+  --accent-text: #ffffff;
+  --today: #6d4cff;
+  --today-text: #ffffff;
+  --danger: #e5366b;
+  --ok: #12a37a;
+  --radius: 20px;
+  --panel-border: rgba(255, 255, 255, 0.85);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 8px 30px rgba(60, 50, 140, 0.1);
+  --glow: rgba(109, 76, 255, 0.35);
+  --sheet: rgba(255, 255, 255, 0.82);
+  --display: 'Sora Variable', 'Manrope Variable', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --holiday: #c2410c;
+  --school-text: #0b6b8f;
+  color-scheme: light;
+  font-family: 'Manrope Variable', -apple-system, 'Segoe UI', system-ui, sans-serif;
+}
+:root[data-style='aurora'][data-mode='dark'] {
+  --bg: #080918;
+  --bg-image: radial-gradient(42% 52% at 18% 22%, rgba(124, 92, 255, 0.48), transparent 70%),
+    radial-gradient(36% 46% at 82% 16%, rgba(34, 211, 238, 0.3), transparent 70%),
+    radial-gradient(46% 52% at 62% 98%, rgba(236, 72, 153, 0.28), transparent 70%);
+  --surface: rgba(255, 255, 255, 0.06);
+  --surface-2: rgba(255, 255, 255, 0.05);
+  --tint-base: #15162c;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --text: #eef0ff;
+  --muted: #a3a7c7;
+  --accent: #22d3ee;
+  --accent-2: #8b6cff;
+  --accent-text: #04131a;
+  --today: #22d3ee;
+  --today-text: #04131a;
+  --danger: #ff5c8a;
+  --ok: #34d399;
+  --panel-border: rgba(255, 255, 255, 0.13);
+  --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 8px 30px rgba(0, 0, 0, 0.3);
+  --glow: rgba(34, 211, 238, 0.45);
+  --sheet: rgba(20, 20, 44, 0.84);
+  --holiday: #fb923c;
+  --school-text: #7dd3fc;
+  color-scheme: dark;
+}
+[data-style='aurora'] .view,
+[data-style='aurora'] .btn,
+[data-style='aurora'] .icon-btn,
+[data-style='aurora'] .segmented,
+[data-style='aurora'] .chip,
+[data-style='aurora'] .modal {
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+[data-style='aurora'] .app {
+  gap: 12px;
+}
+[data-style='aurora'] .btn,
+[data-style='aurora'] .icon-btn {
+  border-radius: 14px;
+}
+[data-style='aurora'] .btn.primary,
+[data-style='aurora'] .nav .btn {
+  background: linear-gradient(135deg, #7c5cff, #22b8d8);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(124, 92, 255, 0.35);
+}
+[data-style='aurora'] .btn.danger {
+  color: var(--danger);
+}
+[data-style='aurora'] .title,
+[data-style='aurora'] .clock-time,
+[data-style='aurora'] .month-dn,
+[data-style='aurora'] .month-head > div,
+[data-style='aurora'] .tg-dn,
+[data-style='aurora'] .agenda-dn,
+[data-style='aurora'] .year-title,
+[data-style='aurora'] .settings-head h2,
+[data-style='aurora'] .event-detail h2,
+[data-style='aurora'] .tt-wd,
+[data-style='aurora'] .shop-pane-head h2 {
+  font-family: var(--display);
+}
+[data-style='aurora'] .month-wk,
+[data-style='aurora'] .chip-event .t,
+[data-style='aurora'] .tg-hour-label,
+[data-style='aurora'] .tg-event .ev-time,
+[data-style='aurora'] .agenda-time,
+[data-style='aurora'] .tt-time small {
+  font-family: var(--mono);
+}
+[data-style='aurora'] .chip-event .t {
+  font-size: 0.74rem;
+}
+[data-style='aurora'] .title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  background: linear-gradient(100deg, var(--accent-2), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+[data-style='aurora'] .title-year {
+  -webkit-text-fill-color: var(--muted);
+  font-weight: 400;
+}
+[data-style='aurora'] .clock-time {
+  font-weight: 600;
+}
+[data-style='aurora'] .segmented {
+  border-radius: 14px;
+  padding: 4px;
+}
+[data-style='aurora'] .segmented button {
+  border-radius: 10px;
+}
+[data-style='aurora'] .segmented button.active {
+  background: var(--sheet);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 10px rgba(0, 0, 0, 0.12);
+}
+[data-style='aurora'] .chip {
+  border-width: 1.5px;
+}
+[data-style='aurora'] .chip.all.on {
+  background: linear-gradient(135deg, #7c5cff, #22b8d8);
+  border-color: transparent;
+  color: #fff;
+}
+[data-style='aurora'] .view {
+  border-radius: 22px;
+}
+[data-style='aurora'] .month-cell.other {
+  background: transparent;
+}
+[data-style='aurora'] .month-cell.other .month-dn {
+  opacity: 0.45;
+}
+[data-style='aurora'] .month-dn {
+  font-weight: 600;
+}
+[data-style='aurora'] .month-cell.today {
+  background: radial-gradient(120% 90% at 30% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+}
+[data-style='aurora'] .month-cell.today .month-dn,
+[data-style='aurora'] .tg-dayhead.today .tg-dn {
+  box-shadow: 0 0 16px var(--glow);
+}
+[data-style='aurora'] .chip-event {
+  border-radius: 8px;
+}
+[data-style='aurora'] .chip-event .dot {
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+[data-style='aurora'] .tg-event {
+  border-radius: 10px;
+}
+[data-style='aurora'] .agenda-item {
+  border-radius: 14px;
+}
+[data-style='aurora'] .modal {
+  background: var(--sheet);
+  border-radius: 24px;
+  -webkit-backdrop-filter: blur(34px) saturate(170%);
+  backdrop-filter: blur(34px) saturate(170%);
+  box-shadow: var(--shadow), 0 24px 60px rgba(0, 0, 0, 0.3);
+}
+[data-style='aurora'] .field input:not([type='checkbox']):not([type='color']),
+[data-style='aurora'] .field select {
+  border-radius: 12px;
+}
+[data-style='aurora'] .module-btn {
+  border: 1px solid transparent;
+}
+[data-style='aurora'] .module-btn.active {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 26%, transparent), color-mix(in srgb, var(--accent-2) 14%, transparent));
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--text);
+  box-shadow: 0 0 22px var(--glow);
+}
+[data-style='aurora'] .module-btn.active .module-svg {
+  color: var(--accent);
+}
+@media (min-width: 641px) {
+  [data-style='aurora'] .module-nav {
+    margin: max(10px, env(safe-area-inset-top)) 0 max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+    padding: 10px 7px;
+    border-radius: 22px;
+    background: var(--surface);
+    border: 1px solid var(--panel-border);
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+  }
+  [data-style='aurora'] .module-btn {
+    width: 70px;
+    font-size: 0.7rem;
+  }
+}
+@media (max-width: 640px) {
+  [data-style='aurora'] .module-nav {
+    border-top-color: var(--panel-border);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+  }
+}

@@ -1,3 +1,5 @@
+import { Icon } from './Icon';
+
 export type ModuleId = 'calendar' | 'timetable' | 'todos' | 'shopping';
 
 export const MODULES: { id: ModuleId; label: string; icon: string }[] = [
@@ -11,6 +13,7 @@ export const MODULES: { id: ModuleId; label: string; icon: string }[] = [
 export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (id: ModuleId) => void }) {
   return (
     <nav className="module-nav" aria-label="Bereiche">
+      <span className="module-nav-label">Familie</span>
       {MODULES.map((m) => (
         <button
           key={m.id}
@@ -18,9 +21,10 @@ export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (i
           aria-current={active === m.id ? 'page' : undefined}
           onClick={() => onSelect(m.id)}
         >
-          <span className="module-icon" aria-hidden>
+          <span className="module-icon ui-glyph" aria-hidden>
             {m.icon}
           </span>
+          <Icon name={m.id} className="module-svg" />
           <span className="module-label">{m.label}</span>
         </button>
       ))}

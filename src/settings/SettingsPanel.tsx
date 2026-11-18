@@ -12,6 +12,7 @@ import {
   PALETTE,
   readConfigFile,
   REGIONS,
+  UI_STYLES,
 } from '../lib/config';
 import { normalizeIcsUrl, testCalendarLink } from '../lib/events';
 import { loadHolidays, type Holiday } from '../lib/holidays';
@@ -655,14 +656,26 @@ function DisplayTab() {
           </select>
         </label>
       </div>
-      <label className="field">
-        <span>Design</span>
-        <select value={settings.theme} onChange={(e) => updateSettings({ theme: e.target.value as Settings['theme'] })}>
-          <option value="auto">Automatisch (System)</option>
-          <option value="light">Hell</option>
-          <option value="dark">Dunkel</option>
-        </select>
-      </label>
+      <div className="field-row">
+        <label className="field">
+          <span>Stil</span>
+          <select value={settings.style} onChange={(e) => updateSettings({ style: e.target.value as Settings['style'] })}>
+            {UI_STYLES.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          <span>Hell / Dunkel</span>
+          <select value={settings.theme} onChange={(e) => updateSettings({ theme: e.target.value as Settings['theme'] })}>
+            <option value="auto">Automatisch (System)</option>
+            <option value="light">Hell</option>
+            <option value="dark">Dunkel</option>
+          </select>
+        </label>
+      </div>
       <div className="field-row">
         <label className="field">
           <span>Aktualisieren alle (Min.)</span>
