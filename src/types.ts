@@ -1,4 +1,4 @@
-export type ViewMode = 'day' | 'week' | 'month' | 'year' | 'agenda';
+export type ViewMode = 'day' | 'days' | 'week' | 'month' | 'year' | 'agenda';
 
 export type Avatar =
   | { type: 'initials' }
@@ -71,6 +71,8 @@ export interface Settings {
   dayStartHour: number;
   dayEndHour: number;
   defaultView: ViewMode;
+  /** number of days in the 'days' view (2–6) */
+  multiDays: number;
   refreshMinutes: number;
   idleResetMinutes: number;
   keepAwake: boolean;

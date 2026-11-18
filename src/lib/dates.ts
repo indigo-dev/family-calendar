@@ -86,11 +86,15 @@ export function overlaps(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): bo
 
 export const AGENDA_DAYS = 28;
 
-export function rangeFor(view: ViewMode, date: Date, weekStartsOn: 0 | 1): DateRange {
+export function rangeFor(view: ViewMode, date: Date, weekStartsOn: 0 | 1, nDays = 3): DateRange {
   switch (view) {
     case 'day': {
       const s = startOfDay(date);
       return { start: s, end: addDays(s, 1) };
+    }
+    case 'days': {
+      const s = startOfDay(date);
+      return { start: s, end: addDays(s, nDays) };
     }
     case 'week': {
       const s = startOfWeek(date, weekStartsOn);
@@ -111,10 +115,12 @@ export function rangeFor(view: ViewMode, date: Date, weekStartsOn: 0 | 1): DateR
   }
 }
 
-export function stepDate(view: ViewMode, date: Date, dir: 1 | -1): Date {
+export function stepDate(view: ViewMode, date: Date, dir: 1 | -1, nDays = 3): Date {
   switch (view) {
     case 'day':
       return addDays(date, dir);
+    case 'days':
+      return addDays(date, nDays * dir);
     case 'week':
       return addDays(date, 7 * dir);
     case 'month':
@@ -126,16 +132,21 @@ export function stepDate(view: ViewMode, date: Date, dir: 1 | -1): Date {
   }
 }
 
-export function titleFor(view: ViewMode, date: Date, weekStartsOn: 0 | 1): string {
+function spanTitle(s: Date, e: Date): string {
+  const sameMonth = s.getMonth() === e.getMonth();
+  const left = sameMonth ? fmt(s, { day: 'numeric' }) + '.' : fmt(s, { day: 'numeric', month: 'short' });
+  return `${left} – ${fmt(e, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+}
+
+export function titleFor(view: ViewMode, date: Date, weekStartsOn: 0 | 1, nDays = 3): string {
   switch (view) {
     case 'day':
       return fmt(date, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    case 'days':
+      return spanTitle(date, addDays(date, nDays - 1));
     case 'week': {
       const s = startOfWeek(date, weekStartsOn);
-      const e = addDays(s, 6);
-      const sameMonth = s.getMonth() === e.getMonth();
-      const left = sameMonth ? fmt(s, { day: 'numeric' }) + '.' : fmt(s, { day: 'numeric', month: 'short' });
-      return `KW ${isoWeek(s)} · ${left} – ${fmt(e, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+      return `KW ${isoWeek(s)} · ${spanTitle(s, addDays(s, 6))}`;
     }
     case 'month':
       return fmt(date, { month: 'long', year: 'numeric' });

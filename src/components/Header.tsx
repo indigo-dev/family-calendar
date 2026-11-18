@@ -7,6 +7,7 @@ import { GlyphIcon } from './Icon';
 
 const VIEWS: { id: ViewMode; label: string }[] = [
   { id: 'day', label: 'Tag' },
+  { id: 'days', label: 'Tage' },
   { id: 'week', label: 'Woche' },
   { id: 'month', label: 'Monat' },
   { id: 'year', label: 'Jahr' },
@@ -18,6 +19,9 @@ interface Props {
   view: ViewMode;
   now: Date;
   loading: boolean;
+  /** day count of the 'days' view */
+  multiDays: number;
+  onMultiDays: (n: number) => void;
   onView: (v: ViewMode) => void;
   onStep: (dir: 1 | -1) => void;
   onToday: () => void;
@@ -25,7 +29,7 @@ interface Props {
   onSettings: () => void;
 }
 
-export function Header({ title, view, now, loading, onView, onStep, onToday, onRefresh, onSettings }: Props) {
+export function Header({ title, view, now, loading, multiDays, onMultiDays, onView, onStep, onToday, onRefresh, onSettings }: Props) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -43,11 +47,24 @@ export function Header({ title, view, now, loading, onView, onStep, onToday, onR
         <Title text={title} />
       </div>
       <div className="segmented" role="tablist">
-        {VIEWS.map((v) => (
-          <button key={v.id} role="tab" aria-selected={view === v.id} className={view === v.id ? 'active' : ''} onClick={() => onView(v.id)}>
-            {v.label}
-          </button>
-        ))}
+        {VIEWS.map((v) =>
+          v.id === 'days' && view === 'days' ? (
+            // active N-days tab: − / + change the number of days
+            <span key={v.id} role="tab" aria-selected className="active seg-days">
+              <button className="seg-step" onClick={() => onMultiDays(multiDays - 1)} disabled={multiDays <= 2} aria-label="Weniger Tage">
+                −
+              </button>
+              <span>{multiDays} Tage</span>
+              <button className="seg-step" onClick={() => onMultiDays(multiDays + 1)} disabled={multiDays >= 6} aria-label="Mehr Tage">
+                +
+              </button>
+            </span>
+          ) : (
+            <button key={v.id} role="tab" aria-selected={view === v.id} className={view === v.id ? 'active' : ''} onClick={() => onView(v.id)}>
+              {v.id === 'days' ? `${multiDays} Tage` : v.label}
+            </button>
+          ),
+        )}
       </div>
       <div className="topbar-right">
         <Clock now={now} />

@@ -4,6 +4,7 @@ import { useStore } from './store';
 import { rangeFor, startOfDay, stepDate, titleFor } from './lib/dates';
 import { useEvents } from './lib/events';
 import { useHolidayMarks } from './lib/holidays';
+import { clampDays } from './lib/config';
 import { useSwipe } from './lib/hooks';
 import { Header, MemberFilter } from './components/Header';
 import { EventDetail } from './components/EventDetail';
@@ -21,7 +22,8 @@ interface Props {
 }
 
 export function CalendarModule({ now, reloadKey, settingsOpen, onSettings }: Props) {
-  const { settings, members, calendars, selectedIds, memberById } = useStore();
+  const { settings, updateSettings, members, calendars, selectedIds, memberById } = useStore();
+  const nDays = settings.multiDays;
   const [view, setView] = useState<ViewMode>(settings.defaultView);
   const [date, setDate] = useState(() => startOfDay(new Date()));
   const [selected, setSelected] = useState<CalEvent | null>(null);
@@ -35,7 +37,7 @@ export function CalendarModule({ now, reloadKey, settingsOpen, onSettings }: Pro
     else setNonce((n) => n + 1);
   }, [reloadKey]);
 
-  const range = useMemo(() => rangeFor(view, date, settings.weekStartsOn), [view, date, settings.weekStartsOn]);
+  const range = useMemo(() => rangeFor(view, date, settings.weekStartsOn, nDays), [view, date, settings.weekStartsOn, nDays]);
   const { events, loading, status, lastUpdated } = useEvents(range, members, calendars, settings.proxyUrl, nonce);
   const { marks } = useHolidayMarks(range, settings.holidays);
 
@@ -90,7 +92,7 @@ export function CalendarModule({ now, reloadKey, settingsOpen, onSettings }: Pro
     }
   }, [now]);
 
-  const step = useCallback((dir: 1 | -1) => setDate((d) => stepDate(view, d, dir)), [view]);
+  const step = useCallback((dir: 1 | -1) => setDate((d) => stepDate(view, d, dir, nDays)), [view, nDays]);
   const swipe = useSwipe(step);
 
   const open = useCallback((v: ViewMode, d: Date) => {
@@ -106,13 +108,29 @@ export function CalendarModule({ now, reloadKey, settingsOpen, onSettings }: Pro
     [events, selectedIds, memberById],
   );
 
+  /** Pinch / stepper: 1 day = day view, 2–6 = N-days view, 7 = week view; `start` = first visible day. */
+  const setDayCount = useCallback(
+    (n: number, start?: Date) => {
+      if (start) setDate(startOfDay(start));
+      if (n <= 1) setView('day');
+      else if (n >= 7) setView('week');
+      else {
+        setView('days');
+        if (n !== nDays) updateSettings({ multiDays: clampDays(n) });
+      }
+    },
+    [nDays, updateSettings],
+  );
+
   const viewProps = { date, now, events: visible, onEvent: setSelected, onOpen: open, marks };
 
   return (
     <>
       <Header
-        title={titleFor(view, date, settings.weekStartsOn)}
+        title={titleFor(view, date, settings.weekStartsOn, nDays)}
         view={view}
+        multiDays={nDays}
+        onMultiDays={(n) => setDayCount(clampDays(n))}
         now={now}
         loading={loading}
         onView={setView}
@@ -128,8 +146,10 @@ export function CalendarModule({ now, reloadKey, settingsOpen, onSettings }: Pro
         </div>
       )}
       <main className="view" {...swipe}>
-        {view === 'day' && <TimeGridView {...viewProps} days={1} />}
-        {view === 'week' && <TimeGridView {...viewProps} days={7} />}
+        {/* one slot for all time-grid views so a pinch gesture survives switching between them */}
+        {(view === 'day' || view === 'days' || view === 'week') && (
+          <TimeGridView {...viewProps} days={view === 'day' ? 1 : view === 'week' ? 7 : nDays} onDayCount={setDayCount} />
+        )}
         {view === 'month' && <MonthView {...viewProps} />}
         {view === 'year' && <YearView {...viewProps} />}
         {view === 'agenda' && <AgendaView {...viewProps} />}

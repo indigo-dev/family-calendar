@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CalEvent } from '../types';
 import { useStore } from '../store';
 import { addDays, dayKey, fmt, fmtTime, isSameDay, overlaps, startOfDay, startOfWeek } from '../lib/dates';
@@ -16,6 +16,50 @@ interface Placed {
 }
 
 const MIN_DURATION = 25;
+/** px per hour chosen by pinching; stored per device */
+const ZOOM_KEY = 'fc.hourHeight';
+const MAX_HOUR = 280;
+const MIN_EVENT_PX = 16;
+
+function loadZoom(): number | null {
+  try {
+    const v = Number(localStorage.getItem(ZOOM_KEY));
+    return v > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+function saveZoom(v: number) {
+  try {
+    localStorage.setItem(ZOOM_KEY, String(Math.round(v)));
+  } catch {
+    /* ignore */
+  }
+}
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
+/** Grid line step in minutes at a given hour height. */
+function lineStep(h: number): number {
+  return h >= 200 ? 15 : h >= 90 ? 30 : 60;
+}
+/** Time label step in minutes at a given hour height. */
+function labelStep(h: number): number {
+  return h >= 240 ? 15 : h >= 110 ? 30 : h < 22 ? 120 : 60;
+}
+
+interface Pinch {
+  x0: number;
+  y0: number;
+  h0: number;
+  n0: number;
+  axis: 'x' | 'y' | null;
+  /** minute under the fingers when the pinch started */
+  minute0: number;
+  /** horizontal finger position across the day columns, 0..1 */
+  frac: number;
+  focalDay: Date;
+  lastN: number;
+}
 
 function layoutDay(events: CalEvent[], winStart: Date, winEnd: Date): Placed[] {
   const total = (winEnd.getTime() - winStart.getTime()) / 60000;
@@ -52,19 +96,33 @@ function layoutDay(events: CalEvent[], winStart: Date, winEnd: Date): Placed[] {
   return items;
 }
 
-export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days }: ViewProps & { days: 1 | 7 }) {
+interface Props extends ViewProps {
+  /** number of day columns, 1–7; 7 = calendar week */
+  days: number;
+  /** pinch sideways: new number of days and the first day to show */
+  onDayCount?: (n: number, start: Date) => void;
+}
+
+export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days, onDayCount }: Props) {
   const { settings, memberById } = useStore();
-  const first = days === 1 ? startOfDay(date) : startOfWeek(date, settings.weekStartsOn);
+  const first = days === 7 ? startOfWeek(date, settings.weekStartsOn) : startOfDay(date);
   const dayList = Array.from({ length: days }, (_, i) => addDays(first, i));
   const h0 = settings.dayStartHour;
   const h1 = Math.max(settings.dayEndHour, h0 + 1);
   const hours = h1 - h0;
 
   const [bodyRef, size] = useSize<HTMLDivElement>();
-  const hourHeight = Math.max(40, Math.floor(size.height / hours) || 52);
+  const fit = size.height > 0 ? size.height / hours : 0;
+  const auto = Math.max(40, Math.floor(fit) || 52);
+  // zooming out stops when the whole day fits on screen
+  const minH = fit > 0 ? Math.min(fit, auto) : 20;
+  const [zoom, setZoom] = useState<number | null>(loadZoom);
+  const hourHeight = zoom == null ? auto : clamp(zoom, minH, MAX_HOUR);
   const pxPerMin = hourHeight / 60;
   const scrollRef = bodyRef;
+  const rootRef = useRef<HTMLDivElement>(null);
   const didScroll = useRef(false);
+  const pendingScroll = useRef<number | null>(null);
 
   // When the grid is taller than the screen, scroll to the current hour once.
   useEffect(() => {
@@ -75,12 +133,129 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days }
     if (target > 0) el.scrollTop = target;
   }, [size.height, hourHeight, h0, now, scrollRef]);
 
+  // keep the time under the fingers in place while zooming
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el && pendingScroll.current != null) el.scrollTop = pendingScroll.current;
+    pendingScroll.current = null;
+  }, [hourHeight, scrollRef]);
+
+  // latest values for the native gesture listeners
+  const live = useRef({ hourHeight, minH, days, first, onDayCount });
+  live.current = { hourHeight, minH, days, first, onDayCount };
+
+  // Pinch up/down = finer or coarser hour grid, pinch sideways = number of days (1 … 7).
+  // Ctrl + wheel (trackpad pinch on desktop) zooms the hour grid.
+  useEffect(() => {
+    const root = rootRef.current;
+    const body = scrollRef.current;
+    if (!root || !body) return;
+    let g: Pinch | null = null;
+
+    const zoomTo = (h: number, minute: number, clientY: number) => {
+      const next = clamp(h, live.current.minH, MAX_HOUR);
+      pendingScroll.current = minute * next - (clientY - body.getBoundingClientRect().top);
+      setZoom(next);
+      return next;
+    };
+
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) {
+        g = null;
+        return;
+      }
+      const [a, b] = [e.touches[0], e.touches[1]];
+      const L = live.current;
+      const rect = body.getBoundingClientRect();
+      const midX = (a.clientX + b.clientX) / 2;
+      const midY = (a.clientY + b.clientY) / 2;
+      const left = body.querySelector('.tg-col')?.getBoundingClientRect().left ?? rect.left;
+      const frac = clamp((midX - left) / Math.max(1, rect.right - left), 0, 0.999);
+      g = {
+        x0: Math.abs(a.clientX - b.clientX),
+        y0: Math.abs(a.clientY - b.clientY),
+        h0: L.hourHeight,
+        n0: L.days,
+        axis: null,
+        minute0: (body.scrollTop + midY - rect.top) / L.hourHeight,
+        frac,
+        focalDay: addDays(L.first, Math.floor(frac * L.days)),
+        lastN: L.days,
+      };
+    };
+
+    const onMove = (e: TouchEvent) => {
+      if (!g || e.touches.length !== 2) return;
+      if (e.cancelable) e.preventDefault();
+      const [a, b] = [e.touches[0], e.touches[1]];
+      const dx = Math.abs(a.clientX - b.clientX);
+      const dy = Math.abs(a.clientY - b.clientY);
+      if (!g.axis) {
+        const cx = Math.abs(dx - g.x0);
+        const cy = Math.abs(dy - g.y0);
+        if (Math.max(cx, cy) < 14) return;
+        g.axis = cy >= cx ? 'y' : 'x';
+      }
+      if (g.axis === 'y') {
+        zoomTo((g.h0 * Math.max(dy, 40)) / Math.max(g.y0, 40), g.minute0, (a.clientY + b.clientY) / 2);
+        return;
+      }
+      const L = live.current;
+      if (!L.onDayCount) return;
+      const n = clamp(Math.round((g.n0 * Math.max(g.x0, 40)) / Math.max(dx, 40)), 1, 7);
+      if (n === g.lastN) return;
+      g.lastN = n;
+      // keep the day under the fingers at about the same place
+      const start = n === 7 ? g.focalDay : addDays(g.focalDay, -Math.min(n - 1, Math.floor(g.frac * n)));
+      L.onDayCount(n, start);
+    };
+
+    const onEnd = (e: TouchEvent) => {
+      if (!g || e.touches.length >= 2) return;
+      if (g.axis === 'y') saveZoom(live.current.hourHeight);
+      g = null;
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const h = live.current.hourHeight;
+      const minute = (body.scrollTop + e.clientY - body.getBoundingClientRect().top) / h;
+      // trackpad pinch sends small deltas, a mouse wheel notch ~100 → cap per event
+      saveZoom(zoomTo(h * Math.exp(-clamp(e.deltaY, -40, 40) * 0.008), minute, e.clientY));
+    };
+
+    // iOS Safari: suppress its own page zoom gesture
+    const stop = (e: Event) => e.preventDefault();
+
+    root.addEventListener('touchstart', onStart, { passive: true });
+    root.addEventListener('touchmove', onMove, { passive: false });
+    root.addEventListener('touchend', onEnd);
+    root.addEventListener('touchcancel', onEnd);
+    root.addEventListener('wheel', onWheel, { passive: false });
+    root.addEventListener('gesturestart', stop);
+    return () => {
+      root.removeEventListener('touchstart', onStart);
+      root.removeEventListener('touchmove', onMove);
+      root.removeEventListener('touchend', onEnd);
+      root.removeEventListener('touchcancel', onEnd);
+      root.removeEventListener('wheel', onWheel);
+      root.removeEventListener('gesturestart', stop);
+    };
+  }, [scrollRef]);
+
+  const lStep = lineStep(hourHeight);
+  const lines = Array.from({ length: (hours * 60) / lStep }, (_, i) => i * lStep);
+  const tStep = labelStep(hourHeight);
+  const labels = Array.from({ length: Math.ceil((hours * 60) / tStep) }, (_, i) => i * tStep).filter((m) => m > 0);
+  const hm = (min: number) => `${String(h0 + Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+
   const allDay = events.filter((e) => e.allDay);
   const timed = events.filter((e) => !e.allDay);
   const hasAllDay = dayList.some((d) => allDay.some((e) => overlaps(e.start, e.end, d, addDays(d, 1))));
 
   return (
-    <div className={`timegrid days-${days}`}>
+    <div className={`timegrid days-${days}`} ref={rootRef}>
       <div className="tg-head">
         <div className="tg-gutter" />
         {dayList.map((d) => {
@@ -128,9 +303,9 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days }
       <div className="tg-body" ref={bodyRef}>
         <div className="tg-inner" style={{ height: hours * hourHeight }}>
           <div className="tg-gutter tg-hours">
-            {Array.from({ length: hours }, (_, i) => (
-              <div key={i} className="tg-hour-label" style={{ top: i * hourHeight }}>
-                {i === 0 ? '' : `${String(h0 + i).padStart(2, '0')}:00`}
+            {labels.map((m) => (
+              <div key={m} className={`tg-hour-label ${m % 60 ? 'sub' : ''}`} style={{ top: m * pxPerMin }}>
+                {hm(m)}
               </div>
             ))}
           </div>
@@ -145,12 +320,12 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days }
             const nowMin = (now.getTime() - winStart.getTime()) / 60000;
             return (
               <div key={d.toISOString()} className={`tg-col ${isToday ? 'today' : ''} ${markClass(marks.get(dayKey(d)))}`}>
-                {Array.from({ length: hours }, (_, i) => (
-                  <div key={i} className="tg-line" style={{ top: i * hourHeight }} />
+                {lines.map((m) => (
+                  <div key={m} className={`tg-line ${m % 60 ? 'sub' : ''}`} style={{ top: m * pxPerMin }} />
                 ))}
                 {placed.map(({ e, top, bottom, col, cols }) => {
                   const ms = membersOf(e, memberById);
-                  const height = (bottom - top) * pxPerMin - 2;
+                  const height = Math.max(MIN_EVENT_PX, (bottom - top) * pxPerMin - 2);
                   const compact = height < 40;
                   return (
                     <button

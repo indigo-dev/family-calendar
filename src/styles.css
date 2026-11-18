@@ -222,17 +222,39 @@ h2 {
   padding: 3px;
   gap: 2px;
 }
-.segmented button {
+.segmented > button,
+.segmented > .seg-days {
   min-height: 40px;
   padding: 0 16px;
   border-radius: 9px;
   font-weight: 600;
   color: var(--muted);
 }
-.segmented button.active {
+.segmented > .active {
   background: var(--surface);
   color: var(--text);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+/* active N-days tab with − / + */
+.segmented > .seg-days {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+.segmented .seg-days > .seg-step {
+  min-height: 34px;
+  min-width: 34px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--accent, var(--today));
+}
+.segmented .seg-days > .seg-step:disabled {
+  opacity: 0.3;
 }
 .segmented.small button {
   min-height: 34px;
@@ -492,6 +514,18 @@ h2 {
 }
 .tg-line:first-child {
   border-top: 0;
+}
+/* half / quarter hour lines when zoomed in */
+.tg-line.sub {
+  border-top-style: dashed;
+  opacity: 0.55;
+}
+.tg-hour-label.sub {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+.tg-body {
+  touch-action: pan-x pan-y;
 }
 .tg-event {
   position: absolute;
@@ -1050,8 +1084,28 @@ hr {
     order: 3;
     width: 100%;
   }
-  .segmented:not(.small) button {
+  .segmented:not(.small) > button,
+  .segmented:not(.small) > .seg-days {
     flex: 1;
+  }
+  .segmented:not(.small) > button {
+    padding: 0 8px;
+  }
+}
+@media (max-width: 520px) {
+  /* six view tabs have to fit on a phone */
+  .segmented:not(.small) {
+    gap: 0;
+  }
+  .segmented:not(.small) > button,
+  .segmented:not(.small) > .seg-days {
+    padding: 0 3px;
+    font-size: 0.82rem;
+    flex: 1 1 auto;
+  }
+  .segmented .seg-days > .seg-step {
+    min-width: 24px;
+    padding: 0;
   }
   .year {
     grid-template-columns: repeat(3, 1fr);

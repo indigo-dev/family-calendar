@@ -78,6 +78,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dayStartHour: 6,
   dayEndHour: 22,
   defaultView: 'week',
+  multiDays: 3,
   refreshMinutes: 5,
   idleResetMinutes: 3,
   keepAwake: true,
@@ -92,6 +93,11 @@ export const UI_STYLES: { id: UiStyle; label: string }[] = [
   { id: 'flow', label: 'Glas · Flow' },
   { id: 'aurora', label: 'Glas · Aurora' },
 ];
+
+/** Day count of the 'days' view. */
+export function clampDays(n: number): number {
+  return Math.min(6, Math.max(2, Math.round(n) || 3));
+}
 
 export function defaultConfig(): AppConfig {
   return { schemaVersion: 3, settings: { ...DEFAULT_SETTINGS, holidays: { ...DEFAULT_HOLIDAYS } }, members: [], calendars: [], school: { colors: {}, custom: [] } };
@@ -164,6 +170,7 @@ export function parseConfig(raw: unknown): AppConfig {
     if (k in s && typeof s[k] === typeof DEFAULT_SETTINGS[k]) (settings as unknown as Record<string, unknown>)[k] = s[k];
   }
   settings.holidays = { ...DEFAULT_HOLIDAYS, ...obj(s.holidays) } as HolidaySettings;
+  settings.multiDays = clampDays(settings.multiDays);
   if (!UI_STYLES.some((x) => x.id === settings.style)) settings.style = DEFAULT_SETTINGS.style;
 
   return { schemaVersion: 3, settings, members, calendars, school: parseSchool(o.school) };

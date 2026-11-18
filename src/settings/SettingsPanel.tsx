@@ -610,6 +610,7 @@ function DisplayTab() {
   const hours = Array.from({ length: 25 }, (_, i) => i);
   const views: [ViewMode, string][] = [
     ['day', 'Tag'],
+    ['days', `${settings.multiDays} Tage`],
     ['week', 'Woche'],
     ['month', 'Monat'],
     ['year', 'Jahr'],
