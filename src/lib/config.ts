@@ -1,4 +1,5 @@
 import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings } from '../types';
+import { parseSchool, parseTimetable } from './school';
 
 const CONFIG_KEY = 'fc.config.v1';
 
@@ -84,7 +85,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export function defaultConfig(): AppConfig {
-  return { schemaVersion: 3, settings: { ...DEFAULT_SETTINGS, holidays: { ...DEFAULT_HOLIDAYS } }, members: [], calendars: [] };
+  return { schemaVersion: 3, settings: { ...DEFAULT_SETTINGS, holidays: { ...DEFAULT_HOLIDAYS } }, members: [], calendars: [], school: { colors: {}, custom: [] } };
 }
 
 export function uid(): string {
@@ -123,6 +124,7 @@ function parseMember(raw: unknown): Member | null {
     avatar: m.avatar && typeof m.avatar === 'object' ? (m.avatar as Member['avatar']) : { type: 'initials' },
     // v1 stored demo members as source: 'demo'
     demo: m.demo === true || m.source === 'demo' || undefined,
+    timetable: parseTimetable(m.timetable),
   };
 }
 
@@ -154,7 +156,7 @@ export function parseConfig(raw: unknown): AppConfig {
   }
   settings.holidays = { ...DEFAULT_HOLIDAYS, ...obj(s.holidays) } as HolidaySettings;
 
-  return { schemaVersion: 3, settings, members, calendars };
+  return { schemaVersion: 3, settings, members, calendars, school: parseSchool(o.school) };
 }
 
 export function loadConfig(): AppConfig {

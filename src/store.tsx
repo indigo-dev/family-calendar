@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { AppConfig, CalendarSource, Member, Settings } from './types';
+import type { AppConfig, CalendarSource, Member, SchoolConfig, Settings } from './types';
 import { loadConfig, saveConfig } from './lib/config';
 
 const SELECTED_KEY = 'fc.selectedMembers';
@@ -21,6 +21,11 @@ interface Store {
   removeCalendar: (id: string) => void;
   toggleCalendarMember: (calendarId: string, memberId: string) => void;
   replaceConfig: (cfg: AppConfig) => void;
+  /** change a member based on its current state (safe for many quick updates in a row) */
+  updateMember: (id: string, fn: (m: Member) => Partial<Member>) => void;
+  /** family-wide subject colours and own subjects */
+  school: SchoolConfig;
+  updateSchool: (patch: Partial<SchoolConfig>) => void;
   /** person filter: empty = all members, otherwise only these members */
   selectedIds: Set<string>;
   /** tap: show only this member (tapping the only selected member again goes back to all) */
@@ -121,6 +126,14 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
     }));
   }, []);
 
+  const updateMember = useCallback((id: string, fn: (m: Member) => Partial<Member>) => {
+    setConfig((c) => ({ ...c, members: c.members.map((m) => (m.id === id ? { ...m, ...fn(m) } : m)) }));
+  }, []);
+
+  const updateSchool = useCallback((patch: Partial<SchoolConfig>) => {
+    setConfig((c) => ({ ...c, school: { ...c.school, ...patch } }));
+  }, []);
+
   const replaceConfig = useCallback((cfg: AppConfig) => {
     setConfig(cfg);
     setSelected([]);
@@ -150,6 +163,9 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
       removeCalendar,
       toggleCalendarMember,
       replaceConfig,
+      school: config.school,
+      updateMember,
+      updateSchool,
       selectedIds,
       selectOnly,
       toggleSelected,
@@ -168,6 +184,8 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
       removeCalendar,
       toggleCalendarMember,
       replaceConfig,
+      updateMember,
+      updateSchool,
       selectOnly,
       toggleSelected,
       showAll,

@@ -17,8 +17,11 @@ import { normalizeIcsUrl, testCalendarLink } from '../lib/events';
 import { loadHolidays, type Holiday } from '../lib/holidays';
 import { fmt } from '../lib/dates';
 import { Avatar } from '../components/Avatar';
+import { newTimetable, SCHOOL_TYPES } from '../lib/school';
+import { SchoolTab } from './SchoolTab';
 
-type Tab = 'family' | 'calendars' | 'holidays' | 'display' | 'backup';
+export type SettingsTab = 'family' | 'calendars' | 'school' | 'holidays' | 'display' | 'backup';
+type Tab = SettingsTab;
 
 export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; initialTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initialTab ?? 'family');
@@ -32,6 +35,7 @@ export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; in
               [
                 ['family', 'Familie'],
                 ['calendars', 'Kalender'],
+                ['school', 'Schule'],
                 ['holidays', 'Ferien'],
                 ['display', 'Anzeige'],
                 ['backup', 'Sicherung'],
@@ -49,6 +53,7 @@ export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; in
         <div className="settings-body">
           {tab === 'family' && <FamilyTab onGoCalendars={() => setTab('calendars')} />}
           {tab === 'calendars' && <CalendarsTab />}
+          {tab === 'school' && <SchoolTab />}
           {tab === 'holidays' && <HolidaysTab />}
           {tab === 'display' && <DisplayTab />}
           {tab === 'backup' && <BackupTab />}
@@ -234,6 +239,37 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
             Kalender zuordnen …
           </button>
         </div>
+      </div>
+
+      <div className="field">
+        <span>Schule</span>
+        <label className="check">
+          <input
+            type="checkbox"
+            checked={!!member.timetable}
+            onChange={(e) => {
+              if (e.target.checked) set({ timetable: newTimetable('grundschule') });
+              else if (confirm(`Stundenplan von ${member.name} löschen?`)) set({ timetable: undefined });
+            }}
+          />
+          <span>Hat Stundenplan</span>
+        </label>
+        {member.timetable && (
+          <div className="segmented small">
+            {(Object.keys(SCHOOL_TYPES) as (keyof typeof SCHOOL_TYPES)[]).map((t) => (
+              <button
+                key={t}
+                className={member.timetable?.schoolType === t ? 'active' : ''}
+                onClick={() => set({ timetable: { ...member.timetable!, schoolType: t } })}
+              >
+                {SCHOOL_TYPES[t]}
+              </button>
+            ))}
+          </div>
+        )}
+        {member.timetable && (
+          <p className="hint muted">Fächer trägst du im Stundenplan über „Bearbeiten“ ein, Klingelzeiten unter „Schule“.</p>
+        )}
       </div>
 
       <label className="check">

@@ -12,6 +12,37 @@ export interface Member {
   avatar: Avatar;
   /** shows generated sample events for this person */
   demo?: boolean;
+  /** school timetable; present = this person is a school child */
+  timetable?: Timetable;
+}
+
+export type SchoolType = 'grundschule' | 'gymnasium';
+
+/** One lesson slot, times as 'HH:MM' */
+export interface Period {
+  start: string;
+  end: string;
+}
+
+export interface Timetable {
+  schoolType: SchoolType;
+  /** bell times; the number of entries is the number of lessons per day */
+  periods: Period[];
+  /** Mo..Fr (index 0..4) → subject id per lesson, null = free */
+  cells: (string | null)[][];
+}
+
+export interface Subject {
+  id: string;
+  name: string;
+  short: string;
+  color: string;
+}
+
+/** Family-wide subject settings: changed colours of predefined subjects plus own subjects. */
+export interface SchoolConfig {
+  colors: Record<string, string>;
+  custom: Subject[];
 }
 
 /** A calendar subscribed via its ICS link. It survives deleting a person. */
@@ -51,6 +82,7 @@ export interface AppConfig {
   settings: Settings;
   members: Member[];
   calendars: CalendarSource[];
+  school: SchoolConfig;
 }
 
 export interface CalEvent {

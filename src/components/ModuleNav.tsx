@@ -1,7 +1,8 @@
-export type ModuleId = 'calendar' | 'todos';
+export type ModuleId = 'calendar' | 'timetable' | 'todos';
 
-const MODULES: { id: ModuleId; label: string; icon: string }[] = [
+export const MODULES: { id: ModuleId; label: string; icon: string }[] = [
   { id: 'calendar', label: 'Kalender', icon: '📅' },
+  { id: 'timetable', label: 'Stundenplan', icon: '🎒' },
   { id: 'todos', label: 'To-dos', icon: '📌' },
 ];
 

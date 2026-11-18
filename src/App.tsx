@@ -2,16 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { useStore } from './store';
 import { useNow, useWakeLock } from './lib/hooks';
 import { MemberFilter, ModuleHeader } from './components/Header';
-import { ModuleNav, type ModuleId } from './components/ModuleNav';
-import { SettingsPanel } from './settings/SettingsPanel';
+import { MODULES, ModuleNav, type ModuleId } from './components/ModuleNav';
+import { SettingsPanel, type SettingsTab } from './settings/SettingsPanel';
 import { CalendarModule } from './CalendarModule';
 import { TodoBoard } from './todos/TodoBoard';
+import { TimetableModule } from './timetable/TimetableModule';
 
 const MODULE_KEY = 'fc.module';
 
 function loadModule(): ModuleId {
   try {
-    return localStorage.getItem(MODULE_KEY) === 'todos' ? 'todos' : 'calendar';
+    const saved = localStorage.getItem(MODULE_KEY);
+    return MODULES.find((m) => m.id === saved)?.id ?? 'calendar';
   } catch {
     return 'calendar';
   }
@@ -21,6 +23,7 @@ export function App() {
   const { settings, members } = useStore();
   const [module, setModule] = useState<ModuleId>(loadModule);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(members.length === 0);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | undefined>();
   const [reloadKey, setReloadKey] = useState(0);
   const now = useNow();
   const lastInteraction = useRef(Date.now());
@@ -58,18 +61,27 @@ export function App() {
     setModule('calendar');
   }, [now, settings.idleResetMinutes, settingsOpen]);
 
-  const openSettings = () => setSettingsOpen(true);
+  const openSettings = (tab?: SettingsTab) => {
+    setSettingsTab(tab);
+    setSettingsOpen(true);
+  };
 
   return (
     <div className="shell">
       <ModuleNav active={module} onSelect={setModule} />
       <div className="app">
         {module === 'calendar' && (
-          <CalendarModule now={now} reloadKey={reloadKey} settingsOpen={settingsOpen} onSettings={openSettings} />
+          <CalendarModule now={now} reloadKey={reloadKey} settingsOpen={settingsOpen} onSettings={() => openSettings()} />
+        )}
+        {module === 'timetable' && (
+          <>
+            <ModuleHeader title="Stundenplan" now={now} onSettings={() => openSettings('school')} />
+            <TimetableModule now={now} onSettings={() => openSettings('family')} />
+          </>
         )}
         {module === 'todos' && (
           <>
-            <ModuleHeader title="To-dos" now={now} onSettings={openSettings} />
+            <ModuleHeader title="To-dos" now={now} onSettings={() => openSettings()} />
             <MemberFilter issues={{}} onIssue={() => {}} />
             <TodoBoard now={now} />
           </>
@@ -77,6 +89,7 @@ export function App() {
       </div>
       {settingsOpen && (
         <SettingsPanel
+          initialTab={settingsTab}
           onClose={() => {
             setSettingsOpen(false);
             setReloadKey((n) => n + 1);

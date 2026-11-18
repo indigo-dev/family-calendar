@@ -1659,3 +1659,342 @@ hr {
     height: 34px;
   }
 }
+
+/* ---------------------------------------------------------------- Stundenplan */
+.view.tt-view {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.tt-empty {
+  margin: auto;
+  max-width: 420px;
+  text-align: center;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.tt-empty p {
+  margin: 0;
+}
+.tt-sheets {
+  flex: 1;
+  min-height: 100%;
+  display: flex;
+  gap: 18px;
+  padding: 12px 14px 14px;
+}
+.tt-sheet {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tt-view.multi .tt-sheet {
+  min-width: 320px;
+}
+.tt-sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+}
+.tt-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 54px repeat(5, minmax(0, 1fr));
+  gap: 4px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.tt-sheet.editing .tt-grid {
+  touch-action: none;
+}
+.tt-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 2px 6px;
+  border-bottom: 2px solid var(--line);
+  min-width: 0;
+}
+.tt-wd {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.tt-date {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.tt-day.today {
+  border-bottom-color: var(--today);
+}
+.tt-day.today .tt-wd {
+  color: var(--today);
+}
+.tt-off {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--school-text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tt-time {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  padding-right: 6px;
+  line-height: 1.15;
+}
+.tt-time strong {
+  font-size: 0.95rem;
+}
+.tt-time small {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tt-break {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.64rem;
+  color: var(--muted);
+  padding-left: 60px;
+}
+.tt-break::after {
+  content: '';
+  flex: 1;
+  border-top: 1px dashed var(--line-strong);
+}
+.tt-cell {
+  container-type: inline-size;
+  position: relative;
+  min-width: 0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4px;
+  overflow: hidden;
+}
+.tt-cell.free {
+  background: color-mix(in srgb, var(--line) 35%, transparent);
+}
+.tt-cell.filled {
+  background: color-mix(in srgb, var(--c) 28%, var(--surface));
+  box-shadow: inset 4px 0 0 var(--c);
+}
+.tt-cell.today.free {
+  background: color-mix(in srgb, var(--today) 6%, transparent);
+}
+.tt-cell.off {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+}
+.tt-cell.now {
+  outline: 3px solid var(--today);
+  outline-offset: 1px;
+}
+.tt-name {
+  font-weight: 650;
+  font-size: 0.92rem;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+.tt-short {
+  display: none;
+  font-weight: 700;
+}
+.tt-double {
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+@container (max-width: 84px) {
+  .tt-name,
+  .tt-double {
+    display: none;
+  }
+  .tt-short {
+    display: inline;
+  }
+}
+.tt-sheet.editing .tt-cell {
+  cursor: pointer;
+}
+.tt-sheet.editing .tt-cell.free {
+  border: 2px dashed var(--line-strong);
+  background: transparent;
+}
+.tt-hint {
+  margin: 0;
+  text-align: center;
+  font-size: 0.85rem;
+}
+.tt-palette {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tt-palette-hint {
+  margin: 0;
+  font-size: 0.78rem;
+}
+.tt-palette-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-height: 132px;
+  overflow-y: auto;
+}
+.tt-subject {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 600;
+  border: 2px solid var(--c, var(--line-strong));
+  background: color-mix(in srgb, var(--c, transparent) 22%, var(--surface));
+}
+.tt-subject.on {
+  background: var(--c, var(--text));
+  color: #fff;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--c, var(--text)) 35%, transparent);
+}
+.tt-subject.eraser.on {
+  color: var(--bg);
+}
+.tt-subject.add {
+  border-style: dashed;
+}
+.tt-add {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tt-add input {
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--text);
+}
+.tt-add .swatches {
+  flex: 1;
+}
+@media (max-width: 700px) {
+  .tt-sheets {
+    flex-direction: column;
+    padding: 8px;
+  }
+  .tt-grid {
+    grid-template-columns: 40px repeat(5, minmax(0, 1fr));
+    gap: 3px;
+  }
+  .tt-time-end {
+    display: none;
+  }
+  .tt-break {
+    padding-left: 44px;
+  }
+}
+
+/* ---------------------------------------------------------------- Einstellungen: Schule */
+.periods {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.period-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.period-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.period-row strong {
+  width: 26px;
+  text-align: right;
+}
+.period-row input {
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 0 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.period-gap {
+  flex-basis: 100%;
+  font-size: 0.72rem;
+  padding-left: 36px;
+}
+.subject-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.subject-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 6px;
+}
+.subject-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--c) 14%, var(--surface));
+}
+.subject-row .swatch,
+.subject-add .swatch {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+.subject-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+}
+input.subject-name {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 4px 0;
+}
+.subject-add {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.subject-add input:not([type='color']) {
+  flex: 1;
+  min-width: 160px;
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--text);
+}

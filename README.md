@@ -6,6 +6,7 @@ Digitaler Wandkalender für die Familie – läuft komplett im Browser (z. B. au
 - **Kalender getrennt von Personen:** Unter Einstellungen → Kalender fügst du Abo-Links hinzu, gibst jedem Kalender einen Namen und ordnest ihn einer oder mehreren Personen zu. Wird eine Person gelöscht, bleiben die Kalender erhalten.
 - **Feiertage und Schulferien** aller Bundesländer (OpenHolidays API) – personenunabhängig, als Markierung im Kalender, in den Einstellungen ein-/ausschaltbar.
 - **Familienmitglieder** mit Name, Farbe und Avatar (Initialen, Emoji oder Foto).
+- **Stundenplan** als eigenes Modul: pro Kind Mo–Fr × Schulstunden mit Klingelzeiten, Fächer in Farben (vordefiniert für Grundschule und Gymnasium, eigene möglich), Eintragen per Mal-Modus. Heute und die laufende Stunde sind markiert, an Feiertagen und in den Ferien wird der Tag ausgegraut. Einschalten unter Einstellungen → Familie, Klingelzeiten und Farben unter Einstellungen → Schule.
 - **Ansichten:** Tag, Woche, Monat, Jahr, Agenda – Wischen links/rechts blättert.
 - **Personenfilter:** Avatar antippen zeigt nur diese Person (nochmal antippen oder „Alle“ = alle). Lange drücken nimmt eine Person dazu bzw. wieder heraus.
 - Gleiche Termine in mehreren Kalendern werden zu einem Termin mit mehreren Farben zusammengeführt.
