@@ -49,13 +49,36 @@ export function Header({ title, view, now, loading, onView, onStep, onToday, onR
         ))}
       </div>
       <div className="topbar-right">
-        <div className="clock">
-          <span className="clock-time">{fmt(now, { hour: '2-digit', minute: '2-digit' })}</span>
-          <span className="clock-date">{fmt(now, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
-        </div>
+        <Clock now={now} />
         <button className={`icon-btn ${loading ? 'spin' : ''}`} onClick={onRefresh} aria-label="Aktualisieren">
           ⟳
         </button>
+        <button className="icon-btn" onClick={onSettings} aria-label="Einstellungen">
+          ⚙
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function Clock({ now }: { now: Date }) {
+  return (
+    <div className="clock">
+      <span className="clock-time">{fmt(now, { hour: '2-digit', minute: '2-digit' })}</span>
+      <span className="clock-date">{fmt(now, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+    </div>
+  );
+}
+
+/** Simple header for modules without date navigation (to-dos, ...). */
+export function ModuleHeader({ title, now, onSettings }: { title: string; now: Date; onSettings: () => void }) {
+  return (
+    <header className="topbar">
+      <div className="topbar-left">
+        <h1 className="title">{title}</h1>
+      </div>
+      <div className="topbar-right">
+        <Clock now={now} />
         <button className="icon-btn" onClick={onSettings} aria-label="Einstellungen">
           ⚙
         </button>
