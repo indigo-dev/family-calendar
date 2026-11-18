@@ -4,6 +4,7 @@ import { fmt } from '../lib/dates';
 import { useStore } from '../store';
 import { Avatar } from './Avatar';
 import { GlyphIcon } from './Icon';
+import { WeatherChip } from '../weather/WeatherChip';
 
 const VIEWS: { id: ViewMode; label: string }[] = [
   { id: 'day', label: 'Tag' },
@@ -27,9 +28,10 @@ interface Props {
   onToday: () => void;
   onRefresh: () => void;
   onSettings: () => void;
+  onWeather: () => void;
 }
 
-export function Header({ title, view, now, loading, multiDays, onMultiDays, onView, onStep, onToday, onRefresh, onSettings }: Props) {
+export function Header({ title, view, now, loading, multiDays, onMultiDays, onView, onStep, onToday, onRefresh, onSettings, onWeather }: Props) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -67,6 +69,7 @@ export function Header({ title, view, now, loading, multiDays, onMultiDays, onVi
         )}
       </div>
       <div className="topbar-right">
+        <WeatherChip now={now} onClick={onWeather} />
         <Clock now={now} />
         <button className={`icon-btn ${loading ? 'spin' : ''}`} onClick={onRefresh} aria-label="Aktualisieren">
           <GlyphIcon glyph="⟳" name="refresh" />

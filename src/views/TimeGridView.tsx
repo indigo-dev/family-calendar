@@ -6,6 +6,18 @@ import { useSize } from '../lib/hooks';
 import { AvatarStack } from '../components/Avatar';
 import { markClass, membersOf, stripe, tint, type ViewProps } from './common';
 import { AllDayChip } from './AllDayChip';
+import { deg, describe, useHomeDays, type Day } from '../lib/weather';
+
+/** Forecast of the home place in a day column header: icon + max / min. */
+function DayWeather({ day }: { day?: Day }) {
+  if (!day) return null;
+  const w = describe(day.code);
+  return (
+    <span className="tg-wx" title={`${w.text}, ${deg(day.max)} / ${deg(day.min)}, Regen ${day.rainProb} %`}>
+      {w.icon} <b>{deg(day.max)}</b> {deg(day.min)}
+    </span>
+  );
+}
 
 interface Placed {
   e: CalEvent;
@@ -105,6 +117,7 @@ interface Props extends ViewProps {
 
 export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days, onDayCount }: Props) {
   const { settings, memberById } = useStore();
+  const wx = useHomeDays();
   const first = days === 7 ? startOfWeek(date, settings.weekStartsOn) : startOfDay(date);
   const dayList = Array.from({ length: days }, (_, i) => addDays(first, i));
   const h0 = settings.dayStartHour;
@@ -270,6 +283,8 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days, 
             >
               <span className="tg-wd">{fmt(d, { weekday: days === 1 ? 'long' : 'short' })}</span>
               <span className="tg-dn">{d.getDate()}</span>
+              <DayWeather day={wx.get(dayKey(d))} />
+
               {label && <span className="tg-hol" title={label}>{label}</span>}
             </button>
           );

@@ -189,6 +189,15 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
             <input type="checkbox" checked={cfg.clock} onChange={(e) => patchFrameSettings({ clock: e.target.checked })} />
           </label>
           <label className="fr-toggle">
+            Wetter unter der Uhr
+            <input
+              type="checkbox"
+              checked={cfg.weather}
+              disabled={!cfg.clock}
+              onChange={(e) => patchFrameSettings({ weather: e.target.checked })}
+            />
+          </label>
+          <label className="fr-toggle">
             Langsamer Zoom
             <input
               type="checkbox"

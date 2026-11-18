@@ -19,9 +19,10 @@ interface Props {
   reloadKey: number;
   settingsOpen: boolean;
   onSettings: () => void;
+  onWeather: () => void;
 }
 
-export function CalendarModule({ now, reloadKey, settingsOpen, onSettings }: Props) {
+export function CalendarModule({ now, reloadKey, settingsOpen, onSettings, onWeather }: Props) {
   const { settings, updateSettings, members, calendars, selectedIds, memberById } = useStore();
   const nDays = settings.multiDays;
   const [view, setView] = useState<ViewMode>(settings.defaultView);
@@ -138,6 +139,7 @@ export function CalendarModule({ now, reloadKey, settingsOpen, onSettings }: Pro
         onToday={() => setDate(startOfDay(new Date()))}
         onRefresh={() => setNonce((n) => n + 1)}
         onSettings={onSettings}
+        onWeather={onWeather}
       />
       <MemberFilter issues={memberIssues} onIssue={setBanner} />
       {banner && (

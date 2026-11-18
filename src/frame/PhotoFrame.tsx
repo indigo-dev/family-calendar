@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNow, useSize, useSwipe, useWakeLock } from '../lib/hooks';
 import { photoById, shuffle, useFrameSettings, type Photo } from '../lib/frame';
+import { FrameWeather } from '../weather/WeatherChip';
 import './frame.css';
 
 const FADE_MS = 1600;
@@ -148,6 +149,7 @@ export function PhotoFrame({ ids, mode, startId, onClose }: { ids: string[]; mod
         <div className="pf-clock" aria-hidden>
           <div className="pf-time">{time}</div>
           <div className="pf-date">{date}</div>
+          {cfg.weather && <FrameWeather />}
         </div>
       )}
 

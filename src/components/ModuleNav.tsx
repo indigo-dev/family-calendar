@@ -1,12 +1,13 @@
 import { Icon } from './Icon';
 
-export type ModuleId = 'calendar' | 'timetable' | 'todos' | 'shopping' | 'frame';
+export type ModuleId = 'calendar' | 'timetable' | 'todos' | 'shopping' | 'weather' | 'frame';
 
 export const MODULES: { id: ModuleId; label: string; icon: string }[] = [
   { id: 'calendar', label: 'Kalender', icon: '📅' },
   { id: 'timetable', label: 'Stundenplan', icon: '🎒' },
   { id: 'todos', label: 'To-dos', icon: '📌' },
   { id: 'shopping', label: 'Einkauf', icon: '🛒' },
+  { id: 'weather', label: 'Wetter', icon: '⛅' },
   { id: 'frame', label: 'Fotos', icon: '🖼️' },
 ];
 

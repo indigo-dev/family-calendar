@@ -15,6 +15,8 @@ export interface FrameSettings {
   order: FrameOrder;
   fit: FrameFit;
   clock: boolean;
+  /** weather of the home place under the clock */
+  weather: boolean;
   /** slow zoom/pan while a photo is shown */
   motion: boolean;
   /** start the frame as screensaver after this many idle minutes, 0 = off */
@@ -52,6 +54,7 @@ const DEFAULTS: FrameSettings = {
   order: 'seq',
   fit: 'cover',
   clock: true,
+  weather: true,
   motion: true,
   screensaverMin: 0,
 };

@@ -30,6 +30,13 @@ const PATHS = {
       <circle cx="17" cy="19" r="1.4" />
     </>
   ),
+  weather: (
+    <>
+      <circle cx="9" cy="9" r="3.2" />
+      <path d="M9 2.5v1.3M2.5 9h1.3M4.4 4.4l.9.9M13.6 4.4l-.9.9" />
+      <path d="M8 20h9.5a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.2A2.9 2.9 0 0 0 8 20z" />
+    </>
+  ),
   frame: (
     <>
       <rect x="3" y="4" width="18" height="16" rx="2" />

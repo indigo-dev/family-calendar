@@ -11,6 +11,7 @@ import { ShoppingModule } from './shopping/ShoppingModule';
 import { FrameModule } from './frame/FrameModule';
 import { PhotoFrame, type FrameMode } from './frame/PhotoFrame';
 import { useFrameSettings, usePhotos } from './lib/frame';
+import { WeatherModule } from './weather/WeatherModule';
 
 const MODULE_KEY = 'fc.module';
 
@@ -103,7 +104,19 @@ export function App() {
       <ModuleNav active={module} onSelect={setModule} />
       <div className="app">
         {module === 'calendar' && (
-          <CalendarModule now={now} reloadKey={reloadKey} settingsOpen={settingsOpen} onSettings={() => openSettings()} />
+          <CalendarModule
+            now={now}
+            reloadKey={reloadKey}
+            settingsOpen={settingsOpen}
+            onSettings={() => openSettings()}
+            onWeather={() => setModule('weather')}
+          />
+        )}
+        {module === 'weather' && (
+          <>
+            <ModuleHeader title="Wetter" now={now} onSettings={() => openSettings()} />
+            <WeatherModule now={now} />
+          </>
         )}
         {module === 'timetable' && (
           <>
