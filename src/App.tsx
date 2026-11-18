@@ -8,6 +8,9 @@ import { CalendarModule } from './CalendarModule';
 import { TodoBoard } from './todos/TodoBoard';
 import { TimetableModule } from './timetable/TimetableModule';
 import { ShoppingModule } from './shopping/ShoppingModule';
+import { FrameModule } from './frame/FrameModule';
+import { PhotoFrame, type FrameMode } from './frame/PhotoFrame';
+import { useFrameSettings, usePhotos } from './lib/frame';
 
 const MODULE_KEY = 'fc.module';
 
@@ -28,6 +31,11 @@ export function App() {
   const [reloadKey, setReloadKey] = useState(0);
   const now = useNow();
   const lastInteraction = useRef(Date.now());
+  const frameCfg = useFrameSettings();
+  const photos = usePhotos();
+  const [frame, setFrame] = useState<{ mode: FrameMode; startId?: string } | null>(null);
+  // selected photos that still exist, in album order
+  const frameIds = (photos ?? []).filter((p) => frameCfg.selected.includes(p.id)).map((p) => p.id);
 
   useWakeLock(settings.keepAwake);
 
@@ -78,6 +86,13 @@ export function App() {
     setModule('calendar');
   }, [now, settings.idleResetMinutes, settingsOpen]);
 
+  // screensaver: the photo frame after inactivity
+  useEffect(() => {
+    if (!frameCfg.screensaverMin || settingsOpen || frame || frameIds.length === 0) return;
+    if (Date.now() - lastInteraction.current < frameCfg.screensaverMin * 60_000) return;
+    setFrame({ mode: 'screensaver' });
+  }, [now, frameCfg.screensaverMin, settingsOpen, frame, frameIds.length]);
+
   const openSettings = (tab?: SettingsTab) => {
     setSettingsTab(tab);
     setSettingsOpen(true);
@@ -103,6 +118,12 @@ export function App() {
             <TodoBoard now={now} />
           </>
         )}
+        {module === 'frame' && (
+          <>
+            <ModuleHeader title="Fotorahmen" now={now} onSettings={() => openSettings()} />
+            <FrameModule onStart={(startId) => setFrame({ mode: 'manual', startId })} />
+          </>
+        )}
         {module === 'shopping' && (
           <>
             <ModuleHeader title="Einkaufsliste" now={now} onSettings={() => openSettings()} />
@@ -110,6 +131,17 @@ export function App() {
           </>
         )}
       </div>
+      {frame && frameIds.length > 0 && (
+        <PhotoFrame
+          ids={frameIds}
+          mode={frame.mode}
+          startId={frame.startId}
+          onClose={() => {
+            lastInteraction.current = Date.now();
+            setFrame(null);
+          }}
+        />
+      )}
       {settingsOpen && (
         <SettingsPanel
           initialTab={settingsTab}

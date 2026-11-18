@@ -1,12 +1,13 @@
 import { Icon } from './Icon';
 
-export type ModuleId = 'calendar' | 'timetable' | 'todos' | 'shopping';
+export type ModuleId = 'calendar' | 'timetable' | 'todos' | 'shopping' | 'frame';
 
 export const MODULES: { id: ModuleId; label: string; icon: string }[] = [
   { id: 'calendar', label: 'Kalender', icon: '📅' },
   { id: 'timetable', label: 'Stundenplan', icon: '🎒' },
   { id: 'todos', label: 'To-dos', icon: '📌' },
   { id: 'shopping', label: 'Einkauf', icon: '🛒' },
+  { id: 'frame', label: 'Fotos', icon: '🖼️' },
 ];
 
 /** App switcher: side rail on tablets, bottom bar on phones. */

@@ -30,6 +30,13 @@ const PATHS = {
       <circle cx="17" cy="19" r="1.4" />
     </>
   ),
+  frame: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M3 16l5-5 4 4 3-3 6 6" />
+      <circle cx="15.5" cy="8.5" r="1.5" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof PATHS;
