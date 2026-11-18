@@ -7,6 +7,7 @@ import { SettingsPanel, type SettingsTab } from './settings/SettingsPanel';
 import { CalendarModule } from './CalendarModule';
 import { TodoBoard } from './todos/TodoBoard';
 import { TimetableModule } from './timetable/TimetableModule';
+import { ShoppingModule } from './shopping/ShoppingModule';
 
 const MODULE_KEY = 'fc.module';
 
@@ -84,6 +85,12 @@ export function App() {
             <ModuleHeader title="To-dos" now={now} onSettings={() => openSettings()} />
             <MemberFilter issues={{}} onIssue={() => {}} />
             <TodoBoard now={now} />
+          </>
+        )}
+        {module === 'shopping' && (
+          <>
+            <ModuleHeader title="Einkaufsliste" now={now} onSettings={() => openSettings()} />
+            <ShoppingModule />
           </>
         )}
       </div>

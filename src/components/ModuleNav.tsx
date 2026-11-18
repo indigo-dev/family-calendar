@@ -1,9 +1,10 @@
-export type ModuleId = 'calendar' | 'timetable' | 'todos';
+export type ModuleId = 'calendar' | 'timetable' | 'todos' | 'shopping';
 
 export const MODULES: { id: ModuleId; label: string; icon: string }[] = [
   { id: 'calendar', label: 'Kalender', icon: '📅' },
   { id: 'timetable', label: 'Stundenplan', icon: '🎒' },
   { id: 'todos', label: 'To-dos', icon: '📌' },
+  { id: 'shopping', label: 'Einkauf', icon: '🛒' },
 ];
 
 /** App switcher: side rail on tablets, bottom bar on phones. */
