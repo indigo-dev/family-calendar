@@ -14,6 +14,13 @@ export interface Todo {
   /** epoch ms */
   createdAt: number;
   doneAt?: number;
+  /** position on the board in px (per device, like everything in localStorage); unset = auto place */
+  x?: number;
+  y?: number;
+  /** note scale, 1 = normal */
+  size?: number;
+  /** stacking order, higher = on top */
+  z?: number;
 }
 
 function load(): Todo[] {
@@ -57,9 +64,12 @@ export function useTodos() {
   const toggleDone = useCallback((id: string) => {
     setTodos((cur) => cur.map((x) => (x.id === id ? { ...x, done: !x.done, doneAt: x.done ? undefined : Date.now() } : x)));
   }, []);
+  const patchMany = useCallback((patches: Record<string, Partial<Todo>>) => {
+    setTodos((cur) => cur.map((x) => (patches[x.id] ? { ...x, ...patches[x.id] } : x)));
+  }, []);
   const clearDone = useCallback(() => setTodos((cur) => cur.filter((x) => !x.done)), []);
 
-  return { todos, upsert, remove, toggleDone, clearDone };
+  return { todos, upsert, remove, toggleDone, clearDone, patchMany };
 }
 
 /** YYYY-MM-DD of a local date */

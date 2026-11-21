@@ -1,0 +1,321 @@
+/* =====================================================================================
+   To-dos: free board (Freeform/FigJam-like). Flat cards in the person colours on a
+   quiet dot grid. Only theme tokens, so every style and dark mode follow.
+   ===================================================================================== */
+
+.view.todo-view {
+  position: relative;
+  overflow: hidden;
+}
+.todo-canvas {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-x pan-y;
+  background-color: var(--surface);
+  background-image: radial-gradient(color-mix(in srgb, var(--text) 13%, transparent) 1px, transparent 1.4px);
+  background-size: 22px 22px;
+  background-position: 11px 11px;
+  background-attachment: local;
+}
+.todo-canvas.gesturing {
+  touch-action: none;
+}
+.todo-plane {
+  position: relative;
+}
+
+/* ------------------------------------------------------------ note */
+.note-slot {
+  position: absolute;
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: grab;
+  border-radius: 18px;
+  outline: none;
+}
+.note-slot:focus-visible .note {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+.note {
+  position: relative;
+  width: 208px;
+  height: 168px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--note-c) 22%, var(--line));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 6px 18px -8px color-mix(in srgb, var(--note-c) 45%, rgba(0, 0, 0, 0.25));
+  overflow: hidden;
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+/* thin colour edge on top: one colour or the colours of all people */
+.note::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--note-strip);
+}
+.note-slot.lifted {
+  cursor: grabbing;
+}
+.note-slot.lifted .note {
+  transform: scale(1.03);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08), 0 22px 44px -12px rgba(0, 0, 0, 0.35);
+}
+.note-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+.note-head .avatar-stack {
+  flex: 1;
+  min-width: 0;
+}
+.note-check {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--note-c) 55%, var(--line-strong));
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+.note-check svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+@media (hover: hover) {
+  .note-check:hover svg {
+    opacity: 0.35;
+  }
+}
+.note-check:active {
+  transform: scale(0.9);
+}
+.note-check.on {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.note-check.on svg {
+  opacity: 1;
+}
+.note-text {
+  flex: 1;
+  margin: 0;
+  min-height: 0;
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow-wrap: break-word;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+  white-space: pre-wrap;
+}
+.note-text.sm {
+  font-size: 0.98rem;
+  -webkit-line-clamp: 5;
+}
+.note-text.xs {
+  font-size: 0.85rem;
+  -webkit-line-clamp: 6;
+}
+.note-due {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 650;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--text);
+  white-space: nowrap;
+}
+.note-due.today {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.note-due.soon {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: color-mix(in srgb, var(--accent) 75%, var(--text));
+}
+.note-due.late {
+  background: var(--danger);
+  color: #fff;
+}
+.note.late {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--line));
+}
+.note.done .note-text {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+}
+.note.done {
+  opacity: 0.75;
+}
+
+/* corner handle for mouse / trackpad (touch uses two fingers) */
+.note-resize {
+  display: none;
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, color-mix(in srgb, var(--note-c) 50%, var(--muted)) 50% 58%, transparent 58% 70%, color-mix(in srgb, var(--note-c) 50%, var(--muted)) 70% 78%, transparent 78%);
+  border-radius: 0 0 14px 0;
+  opacity: 0.7;
+}
+@media (hover: hover) and (pointer: fine) {
+  .note-slot:hover .note-resize,
+  .note-slot.lifted .note-resize {
+    display: block;
+  }
+}
+
+/* ------------------------------------------------------------ done list, empty */
+.todo-done-grid {
+  flex: 1;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 208px);
+  gap: 14px;
+  padding: 14px;
+  align-content: start;
+}
+.todo-done-grid .note {
+  cursor: pointer;
+}
+.todo-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
+  pointer-events: none;
+}
+.todo-empty-card {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 26px 30px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  color: var(--text);
+}
+.todo-empty-card strong {
+  font-size: 1.15rem;
+}
+.todo-empty-card .btn {
+  margin-top: 6px;
+}
+
+/* ------------------------------------------------------------ editor */
+.todo-editor {
+  width: min(560px, 100%);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.todo-editor-paper {
+  position: relative;
+  border-radius: 18px;
+  padding: 18px 16px 12px;
+  border: 1px solid color-mix(in srgb, var(--note-c) 22%, var(--line));
+  overflow: hidden;
+  transition: background 0.2s ease;
+}
+.todo-editor-paper::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--note-strip);
+}
+.todo-editor-paper textarea {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  resize: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.todo-editor-paper textarea::placeholder {
+  color: var(--muted);
+}
+.todo-editor-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.todo-editor-members {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.todo-editor-due {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.todo-date {
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.todo-date.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.todo-editor-actions {
+  gap: 10px;
+  margin-top: 0;
+}
+
+@media (max-width: 640px) {
+  .todo-done-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .todo-done-grid .note {
+    width: auto;
+  }
+}
