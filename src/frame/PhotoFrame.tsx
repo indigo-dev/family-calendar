@@ -191,12 +191,15 @@ function SlideView({ slide, fit, motion, clock, durationSec, size }: {
 
   if (fit === 'mat') {
     // a framed picture with passe-partout, sized to the photo's aspect ratio
-    const short = Math.min(size.width, size.height) || 800;
+    // until the first measurement arrives the window size is a good stand-in
+    const W = size.width || window.innerWidth;
+    const H = size.height || window.innerHeight;
+    const short = Math.min(W, H);
     const mat = Math.round(short * 0.065);
     const border = Math.round(short * 0.016);
-    const availW = size.width * 0.88 - 2 * (mat + border);
+    const availW = W * 0.88 - 2 * (mat + border);
     // with the clock the picture hangs a bit higher and leaves room for it below
-    const availH = size.height * (clock ? 0.76 : 0.86) - 2 * (mat + border);
+    const availH = H * (clock ? 0.76 : 0.86) - 2 * (mat + border);
     const f = Math.min(availW / photo.width, availH / photo.height);
     const w = Math.max(1, Math.round(photo.width * f));
     const h = Math.max(1, Math.round(photo.height * f));
