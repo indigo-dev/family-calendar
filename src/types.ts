@@ -91,7 +91,7 @@ export interface Settings {
 
 export type ColorPalette = 'vivid' | 'muted' | 'core';
 
-export type UiStyle = 'classic' | 'sonoma' | 'liquid' | 'flow' | 'aurora';
+export type UiStyle = 'classic' | 'sonoma' | 'liquid' | 'flow' | 'aurora' | 'n8n' | 'stately' | 'braun';
 
 export interface AppConfig {
   schemaVersion: 3;

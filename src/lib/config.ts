@@ -94,6 +94,9 @@ export const UI_STYLES: { id: UiStyle; label: string }[] = [
   { id: 'liquid', label: 'Cupertino · Liquid Glass' },
   { id: 'flow', label: 'Glas · Flow' },
   { id: 'aurora', label: 'Glas · Aurora' },
+  { id: 'n8n', label: 'Workflow · n8n' },
+  { id: 'stately', label: 'Diagramm · Stately' },
+  { id: 'braun', label: 'Braun · Rams' },
 ];
 
 /** Day count of the 'days' view. */

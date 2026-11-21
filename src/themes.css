@@ -1,6 +1,6 @@
 /* =====================================================================================
    Styles (Einstellungen → Stil). Independent of light/dark:
-   - <html data-style="classic|sonoma|liquid|flow|aurora">
+   - <html data-style="classic|sonoma|liquid|flow|aurora|n8n|stately|braun">
    - <html data-mode="light|dark">  (resolved from the theme setting + system, set in App.tsx)
    "classic" is styles.css as is. Every other style redefines the tokens and adjusts the
    shared components. Each style defines ALL its tokens in the light block and again in the
@@ -926,5 +926,644 @@
     border-top-color: var(--panel-border);
     -webkit-backdrop-filter: blur(24px) saturate(160%);
     backdrop-filter: blur(24px) saturate(160%);
+  }
+}
+
+/* =====================================================================================
+   WORKFLOW · N8N  –  the n8n editor: dot canvas, solid white nodes with grey 2px edges,
+   connection ports, coral primary, Open Sans. Unlike Flow: no glass, no mono digits.
+   ===================================================================================== */
+:root[data-style='n8n'] {
+  --bg: #f3f3f4;
+  --bg-image: radial-gradient(rgba(30, 40, 60, 0.2) 1px, transparent 1.3px);
+  --bg-size: 20px 20px;
+  --surface: #ffffff;
+  --surface-2: #f2f3f5;
+  --tint-base: #ffffff;
+  --line: #e4e6eb;
+  --line-strong: #c9ced8;
+  --text: #2a2d35;
+  --muted: #7d838f;
+  --accent: #ff6d5a;
+  --accent-text: #ffffff;
+  --today: #ff6d5a;
+  --today-text: #ffffff;
+  --danger: #f45959;
+  --ok: #29a568;
+  --radius: 8px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --node-border: #d4d8e0;
+  --holiday: #e2552f;
+  --school-text: #2a7bd6;
+  --school: color-mix(in srgb, #2a7bd6 8%, transparent);
+  color-scheme: light;
+  font-family: 'Open Sans Variable', 'Segoe UI', system-ui, sans-serif;
+}
+:root[data-style='n8n'][data-mode='dark'] {
+  --bg: #1d1e20;
+  --bg-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1.3px);
+  --bg-size: 20px 20px;
+  --surface: #2a2b2f;
+  --surface-2: #33353a;
+  --tint-base: #2a2b2f;
+  --line: #3a3c42;
+  --line-strong: #4b4e55;
+  --text: #e6e7ea;
+  --muted: #9b9fa8;
+  --accent: #ff6d5a;
+  --accent-text: #ffffff;
+  --today: #ff6d5a;
+  --today-text: #ffffff;
+  --danger: #ff6b6b;
+  --ok: #3fbf7f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --node-border: #46484e;
+  --holiday: #ff8f6b;
+  --school-text: #6fb1ff;
+  --school: color-mix(in srgb, #6fb1ff 9%, transparent);
+  color-scheme: dark;
+}
+[data-style='n8n'] .view,
+[data-style='n8n'] .dw {
+  border: 2px solid var(--node-border);
+  box-shadow: var(--shadow);
+}
+/* connection ports left and right of every widget, like n8n nodes */
+[data-style='n8n'] .dash:not(.editing) .dw::before,
+[data-style='n8n'] .dash:not(.editing) .dw::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--node-border);
+  z-index: 1;
+  pointer-events: none;
+}
+[data-style='n8n'] .dash:not(.editing) .dw::before {
+  left: -7px;
+}
+[data-style='n8n'] .dash:not(.editing) .dw::after {
+  right: -7px;
+}
+[data-style='n8n'] .btn,
+[data-style='n8n'] .icon-btn {
+  border-radius: 6px;
+  border: 1px solid var(--line-strong);
+}
+[data-style='n8n'] .btn {
+  font-weight: 600;
+}
+[data-style='n8n'] .btn.primary,
+[data-style='n8n'] .nav .btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+[data-style='n8n'] .btn.danger {
+  color: var(--danger);
+}
+[data-style='n8n'] .title {
+  font-weight: 600;
+}
+[data-style='n8n'] .title-year {
+  font-weight: 400;
+  color: var(--muted);
+}
+[data-style='n8n'] .segmented {
+  border-radius: 6px;
+}
+[data-style='n8n'] .segmented > button,
+[data-style='n8n'] .segmented > .seg-days {
+  border-radius: 4px;
+}
+[data-style='n8n'] .segmented > .active {
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.12);
+}
+[data-style='n8n'] .chip {
+  border-radius: 6px;
+  border-width: 1.5px;
+}
+[data-style='n8n'] .chip.all.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+[data-style='n8n'] .month-cell.today {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+[data-style='n8n'] .month-cell.other {
+  background: transparent;
+}
+[data-style='n8n'] .month-cell.other .month-dn {
+  opacity: 0.45;
+}
+[data-style='n8n'] .month-dn {
+  font-weight: 600;
+}
+[data-style='n8n'] .chip-event {
+  border-radius: 4px;
+}
+[data-style='n8n'] .tg-event {
+  border-radius: 6px;
+}
+[data-style='n8n'] .agenda-item {
+  background: var(--surface);
+  border: 1.5px solid var(--node-border);
+  border-radius: 8px;
+}
+[data-style='n8n'] .modal {
+  border: 1px solid var(--node-border);
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+}
+[data-style='n8n'] .field input:not([type='checkbox']):not([type='color']),
+[data-style='n8n'] .field select {
+  border-radius: 6px;
+}
+[data-style='n8n'] .field input:focus,
+[data-style='n8n'] .field select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+[data-style='n8n'] .switch input:checked + .switch-track {
+  background: var(--accent);
+}
+[data-style='n8n'] .module-btn {
+  border-radius: 6px;
+}
+[data-style='n8n'] .module-btn.active {
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: none;
+}
+[data-style='n8n'] .module-btn.active .module-svg {
+  color: var(--accent);
+}
+@media (min-width: 641px) {
+  [data-style='n8n'] .module-nav {
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    padding-right: 8px;
+  }
+  [data-style='n8n'] .module-btn {
+    width: 66px;
+    font-size: 0.7rem;
+  }
+}
+
+/* =====================================================================================
+   DIAGRAMM · STATELY  –  visual state machine editor: line grid, states as boxes with
+   a header, events as pills, the selected state outlined, modules joined by transitions
+   ===================================================================================== */
+:root[data-style='stately'] {
+  --bg: #f4f5f8;
+  --bg-image: linear-gradient(rgba(40, 50, 80, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(40, 50, 80, 0.055) 1px, transparent 1px);
+  --bg-size: 24px 24px;
+  --surface: #ffffff;
+  --surface-2: #f0f1f5;
+  --tint-base: #ffffff;
+  --line: #e3e5ec;
+  --line-strong: #c8ccd8;
+  --text: #1c1e29;
+  --muted: #6b7088;
+  --accent: #4f6bff;
+  --accent-text: #ffffff;
+  --today: #4f6bff;
+  --today-text: #ffffff;
+  --danger: #e5484d;
+  --ok: #22a06b;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(20, 24, 40, 0.06);
+  --state-border: #cfd3de;
+  --state-head: #f6f7fa;
+  --edge: #9aa1b8;
+  --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
+  --holiday: #d9480f;
+  --school-text: #3b5bdb;
+  --school: color-mix(in srgb, #4f6bff 7%, transparent);
+  color-scheme: light;
+  font-family: 'Inter Variable', -apple-system, 'Segoe UI', system-ui, sans-serif;
+}
+:root[data-style='stately'][data-mode='dark'] {
+  --bg: #0e0f15;
+  --bg-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  --bg-size: 24px 24px;
+  --surface: #181a23;
+  --surface-2: #20232e;
+  --tint-base: #1b1d27;
+  --line: #2a2d3a;
+  --line-strong: #3a3e4f;
+  --text: #e8e9f1;
+  --muted: #9094ab;
+  --accent: #7b93ff;
+  --accent-text: #0b0d16;
+  --today: #7b93ff;
+  --today-text: #0b0d16;
+  --danger: #ff6369;
+  --ok: #3dd68c;
+  --shadow: none;
+  --state-border: #333747;
+  --state-head: #1f2230;
+  --edge: #5b6180;
+  --holiday: #ff9466;
+  --school-text: #8aa2ff;
+  --school: color-mix(in srgb, #7b93ff 9%, transparent);
+  color-scheme: dark;
+}
+[data-style='stately'] .view,
+[data-style='stately'] .dw,
+[data-style='stately'] .modal {
+  border: 1px solid var(--state-border);
+  box-shadow: var(--shadow);
+}
+/* widget title = state name in the node header */
+[data-style='stately'] .dw-head {
+  background: var(--state-head);
+  border-bottom: 1px solid var(--state-border);
+  padding: 9px 14px;
+  margin-bottom: 6px;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+[data-style='stately'] .btn,
+[data-style='stately'] .icon-btn {
+  border-radius: 8px;
+  border: 1px solid var(--state-border);
+}
+[data-style='stately'] .btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+[data-style='stately'] .nav .btn {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+[data-style='stately'] .btn.danger {
+  color: var(--danger);
+}
+[data-style='stately'] .title {
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+[data-style='stately'] .title-year {
+  font-weight: 400;
+  color: var(--muted);
+}
+[data-style='stately'] .segmented {
+  background: var(--surface);
+  border: 1px solid var(--state-border);
+  border-radius: 10px;
+}
+[data-style='stately'] .segmented > button,
+[data-style='stately'] .segmented > .seg-days {
+  border-radius: 7px;
+}
+[data-style='stately'] .segmented > .active {
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+[data-style='stately'] .chip {
+  border-width: 1.5px;
+}
+[data-style='stately'] .chip.all.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+/* events and weekdays read like event names on transitions */
+[data-style='stately'] .month-head > div,
+[data-style='stately'] .chip-event .t,
+[data-style='stately'] .more,
+[data-style='stately'] .tg-event .ev-time,
+[data-style='stately'] .tg-hour-label,
+[data-style='stately'] .agenda-time,
+[data-style='stately'] .month-wk {
+  font-family: var(--mono);
+}
+[data-style='stately'] .month-head > div {
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+[data-style='stately'] .month-cell.other {
+  background: transparent;
+}
+[data-style='stately'] .month-cell.other .month-dn {
+  opacity: 0.45;
+}
+/* today = the active state: filled dot with a ring */
+[data-style='stately'] .month-cell.today .month-dn,
+[data-style='stately'] .tg-dayhead.today .tg-dn {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--accent);
+}
+[data-style='stately'] .chip-event {
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background-color: var(--surface-2);
+  padding: 0 7px;
+}
+[data-style='stately'] .chip-event.solid {
+  border-color: transparent;
+}
+[data-style='stately'] .chip-event .t {
+  font-size: 0.72rem;
+}
+[data-style='stately'] .tg-event {
+  border-radius: 8px;
+}
+[data-style='stately'] .agenda-item {
+  background: var(--surface);
+  border: 1px solid var(--state-border);
+  border-radius: 10px;
+}
+[data-style='stately'] .modal {
+  border-radius: 12px;
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.25);
+}
+[data-style='stately'] .field input:not([type='checkbox']):not([type='color']),
+[data-style='stately'] .field select {
+  border-radius: 8px;
+}
+[data-style='stately'] .switch input:checked + .switch-track {
+  background: var(--accent);
+}
+[data-style='stately'] .module-btn {
+  position: relative;
+  border: 1px solid var(--state-border);
+  background: var(--surface);
+  border-radius: 10px;
+}
+[data-style='stately'] .module-btn.active {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+@media (min-width: 641px) {
+  [data-style='stately'] .module-nav {
+    gap: 16px;
+  }
+  [data-style='stately'] .module-btn {
+    width: 70px;
+    font-size: 0.7rem;
+  }
+  /* transitions between the modules: a line with an arrow head */
+  [data-style='stately'] .module-btn + .module-btn::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -17px;
+    height: 12px;
+    border-left: 1.5px solid var(--edge);
+    pointer-events: none;
+  }
+  [data-style='stately'] .module-btn + .module-btn::after {
+    content: '';
+    position: absolute;
+    left: calc(50% - 3.5px);
+    top: -7px;
+    border: 4px solid transparent;
+    border-top: 5px solid var(--edge);
+    border-bottom: 0;
+    pointer-events: none;
+  }
+}
+@media (max-width: 640px) {
+  [data-style='stately'] .module-btn {
+    border-color: transparent;
+    background: transparent;
+  }
+}
+
+/* =====================================================================================
+   BRAUN · RAMS  –  "Weniger, aber besser": warm grey plastic, round dark keys, one orange
+   switch, speaker-grille perforation, light grotesk type, lowercase labels, yellow
+   second hand for the current time
+   ===================================================================================== */
+:root[data-style='braun'] {
+  --bg: #ecebe6;
+  --surface: #f8f7f3;
+  --surface-2: #e5e3dd;
+  --tint-base: #f8f7f3;
+  --line: #dcd9d1;
+  --line-strong: #c4c0b6;
+  --text: #1f1e1c;
+  --muted: #7c786f;
+  --accent: #e5531a;
+  --accent-text: #ffffff;
+  --today: #e5531a;
+  --today-text: #ffffff;
+  --signal: #f2b705;
+  --ok: #3e8e41;
+  --danger: #c8381b;
+  --radius: 6px;
+  --shadow: none;
+  --key: #3f3d39;
+  --key-text: #f3f2ee;
+  --grille: rgba(60, 55, 45, 0.2);
+  --holiday: #c2410c;
+  --school-text: #2f6f8f;
+  --school: color-mix(in srgb, #2f6f8f 8%, transparent);
+  color-scheme: light;
+  font-family: 'Inter Tight Variable', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+:root[data-style='braun'][data-mode='dark'] {
+  --bg: #1f1e1c;
+  --surface: #2b2a27;
+  --surface-2: #36342f;
+  --tint-base: #2b2a27;
+  --line: #3b3934;
+  --line-strong: #4f4c45;
+  --text: #ecebe5;
+  --muted: #a29e94;
+  --accent: #ef6a2e;
+  --accent-text: #ffffff;
+  --today: #ef6a2e;
+  --today-text: #ffffff;
+  --signal: #f2c230;
+  --ok: #6db36f;
+  --danger: #ff6a4d;
+  --shadow: none;
+  --key: #4a4843;
+  --key-text: #f1efe9;
+  --grille: rgba(255, 255, 255, 0.09);
+  --holiday: #ff9a66;
+  --school-text: #8cc3dc;
+  --school: color-mix(in srgb, #8cc3dc 9%, transparent);
+  color-scheme: dark;
+}
+[data-style='braun'] .ui-icon {
+  stroke-width: 1.5;
+}
+[data-style='braun'] .view,
+[data-style='braun'] .dw {
+  border: 1px solid var(--line);
+}
+[data-style='braun'] .title {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+[data-style='braun'] .title-year {
+  color: var(--muted);
+  font-weight: 400;
+}
+[data-style='braun'] .clock-time {
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+/* round dark keys (ET 66) */
+[data-style='braun'] .icon-btn {
+  border-radius: 50%;
+  border: 0;
+  background: var(--key);
+  color: var(--key-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+[data-style='braun'] .btn {
+  border: 0;
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-weight: 500;
+}
+[data-style='braun'] .btn.primary,
+[data-style='braun'] .nav .btn {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+[data-style='braun'] .btn.ghost {
+  background: transparent;
+  border: 1px dashed var(--line-strong);
+}
+[data-style='braun'] .btn.danger {
+  color: var(--danger);
+}
+[data-style='braun'] .segmented {
+  border-radius: 6px;
+}
+[data-style='braun'] .segmented > button,
+[data-style='braun'] .segmented > .seg-days {
+  border-radius: 4px;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+[data-style='braun'] .segmented > .active {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+[data-style='braun'] .chip {
+  border-width: 1.5px;
+  font-weight: 500;
+}
+[data-style='braun'] .chip.all.on {
+  background: var(--key);
+  border-color: var(--key);
+  color: var(--key-text);
+}
+[data-style='braun'] .month-head > div,
+[data-style='braun'] .tg-wd,
+[data-style='braun'] .dw-head {
+  text-transform: lowercase;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+[data-style='braun'] .month-cell.other {
+  background: transparent;
+}
+[data-style='braun'] .month-cell.other .month-dn {
+  opacity: 0.4;
+}
+[data-style='braun'] .month-dn,
+[data-style='braun'] .tg-dn,
+[data-style='braun'] .agenda-dn {
+  font-weight: 400;
+}
+[data-style='braun'] .chip-event,
+[data-style='braun'] .tg-event {
+  border-radius: 3px;
+}
+[data-style='braun'] .agenda-item {
+  border-radius: 6px;
+}
+/* the current time is the yellow second hand of a Braun clock */
+[data-style='braun'] .tg-now,
+[data-style='braun'] .tg-now::before {
+  background: var(--signal);
+}
+[data-style='braun'] .modal {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+[data-style='braun'] .field input:not([type='checkbox']):not([type='color']),
+[data-style='braun'] .field select {
+  border-radius: 4px;
+}
+[data-style='braun'] .switch input:checked + .switch-track {
+  background: var(--ok);
+}
+/* modules: round keys, the active one is the orange switch */
+[data-style='braun'] .module-btn,
+[data-style='braun'] .module-btn.active {
+  background: transparent;
+  box-shadow: none;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+[data-style='braun'] .module-svg.ui-icon {
+  box-sizing: content-box;
+  width: 22px;
+  height: 22px;
+  padding: 11px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+[data-style='braun'] .module-btn.active {
+  color: var(--text);
+}
+[data-style='braun'] .module-btn.active .module-svg {
+  background: var(--accent);
+  color: #fff;
+}
+@media (min-width: 641px) {
+  /* speaker grille */
+  [data-style='braun'] .module-nav {
+    background: radial-gradient(var(--grille) 1.3px, transparent 1.7px) 0 0 / 9px 9px, var(--surface);
+    border-right: 1px solid var(--line);
+    padding-right: 8px;
+  }
+  [data-style='braun'] .module-btn {
+    width: 70px;
+    font-size: 0.72rem;
+  }
+  [data-style='braun'] .module-label {
+    background: var(--surface);
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+}
+@media (max-width: 640px) {
+  [data-style='braun'] .module-svg.ui-icon {
+    width: 20px;
+    height: 20px;
+    padding: 7px;
+  }
+}
+@media (min-width: 641px) {
+  /* the overview is the initial state: no divider, the transition arrow leads on */
+  [data-style='stately'] .module-btn.pinned::after {
+    display: none;
   }
 }

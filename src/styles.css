@@ -1292,6 +1292,69 @@ h4 {
   background: linear-gradient(90deg, #a78bfa, #22d3ee);
   box-shadow: 0 0 12px rgba(167, 139, 250, 0.7);
 }
+.st-n8n {
+  background: radial-gradient(#c9ccd3 1px, transparent 1.3px) 0 0 / 9px 9px, #eff0f2;
+}
+.st-n8n i {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 0 0 1.5px #d4d7de;
+}
+.st-n8n .st-bar {
+  background: #fff;
+}
+.st-n8n .st-b {
+  background: #ff6d5a;
+  box-shadow: none;
+  border-radius: 14px 6px 6px 14px;
+}
+.st-n8n .st-c {
+  box-shadow: 0 0 0 1.5px #ff6d5a;
+}
+.st-stately {
+  background: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 12px 12px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 12px 12px, #111219;
+}
+.st-stately i {
+  background: #1d1f2a;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #343747;
+}
+.st-stately .st-a {
+  box-shadow: 0 0 0 1.5px #6e8bff;
+}
+.st-stately .st-b {
+  height: 12px;
+  border-radius: 999px;
+  background: #262a3c;
+  box-shadow: 0 0 0 1px #4b5271;
+}
+.st-braun {
+  background: #ecebe6;
+}
+.st-braun i {
+  background: #f8f7f3;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px #d6d3cb;
+}
+.st-braun .st-a {
+  background: radial-gradient(#b9b5ab 1.1px, transparent 1.4px) 0 0 / 6px 6px, #f8f7f3;
+}
+.st-braun .st-b {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #e5531a;
+  box-shadow: none;
+}
+.st-braun .st-c {
+  width: 22px;
+  height: 22px;
+  right: 38px;
+  border-radius: 50%;
+  background: #3f3d39;
+  box-shadow: none;
+}
 .mode-thumb {
   display: flex;
   width: 100%;

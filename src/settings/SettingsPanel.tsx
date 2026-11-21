@@ -696,6 +696,9 @@ const STYLE_NOTES: Record<Settings['style'], string> = {
   liquid: 'Glas wie iOS 26',
   flow: 'Technisch, Punktraster',
   aurora: 'Farbverläufe, Leuchten',
+  n8n: 'Knoten auf Punktraster',
+  stately: 'Zustände und Übergänge',
+  braun: 'Weniger, aber besser',
 };
 
 function DesignTab() {
