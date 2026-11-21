@@ -1,5 +1,6 @@
 import type { Period, SchoolConfig, SchoolType, Subject, Timetable } from '../types';
 import { uid } from './config';
+import { paint } from './colors';
 
 export const SCHOOL_TYPES: Record<SchoolType, string> = {
   grundschule: 'Grundschule',
@@ -75,23 +76,30 @@ export function newSubject(name: string, color: string): Subject {
   return { id: 'c-' + uid(), name: n, short: n.slice(0, 3), color };
 }
 
-/** All subjects with the family's colours applied, lookup by id. */
-export function subjectMap(school: SchoolConfig): Map<string, Subject> {
+/** All subjects with the family's colours applied (as stored), lookup by id. */
+function rawSubjectMap(school: SchoolConfig): Map<string, Subject> {
   const map = new Map<string, Subject>();
   for (const s of CATALOG) map.set(s.id, { id: s.id, name: s.name, short: s.short, color: school.colors[s.id] ?? s.color });
   for (const s of school.custom) map.set(s.id, s);
   return map;
 }
 
+/** All subjects for display: colours mapped to the chosen palette, lookup by id. Cheap – no memo needed. */
+export function subjectMap(school: SchoolConfig): Map<string, Subject> {
+  const map = rawSubjectMap(school);
+  for (const [id, s] of map) map.set(id, { ...s, color: paint(s.color) });
+  return map;
+}
+
 /** Subjects offered for a school type: predefined ones of that type, then the family's own subjects. */
 export function subjectsFor(type: SchoolType, school: SchoolConfig): Subject[] {
   const map = subjectMap(school);
-  return [...CATALOG.filter((s) => s.schools.includes(type)).map((s) => map.get(s.id)!), ...school.custom];
+  return [...CATALOG.filter((s) => s.schools.includes(type)).map((s) => map.get(s.id)!), ...school.custom.map((s) => map.get(s.id)!)];
 }
 
 /** Predefined subjects grouped by school type (for the settings). */
 export function catalogGroups(school: SchoolConfig): { label: string; subjects: Subject[] }[] {
-  const map = subjectMap(school);
+  const map = rawSubjectMap(school);
   const both = CATALOG.filter((s) => s.schools.length > 1);
   const only = (t: SchoolType) => CATALOG.filter((s) => s.schools.length === 1 && s.schools[0] === t);
   return [

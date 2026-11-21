@@ -12,6 +12,7 @@ import {
 import { useTapOrLongPress } from '../lib/hooks';
 import { Sym } from '../components/Sym';
 import './shopping.css';
+import { paint } from '../lib/colors';
 
 type Pane = 'list' | 'pantry';
 
@@ -40,17 +41,18 @@ function CategoryChip({ cat, active, dimmed, onTap, onLongPress }: {
   onLongPress: () => void;
 }) {
   const press = useTapOrLongPress(onTap, onLongPress);
+  const color = paint(cat.color);
   return (
     <button
       className={`chip shop-cat-chip ${active ? 'on' : ''} ${dimmed ? 'off' : ''}`}
       style={{
-        borderColor: dimmed ? undefined : cat.color,
-        background: active ? `color-mix(in srgb, ${cat.color} 22%, var(--surface))` : undefined,
+        borderColor: dimmed ? undefined : color,
+        background: active ? `color-mix(in srgb, ${color} 22%, var(--surface))` : undefined,
       }}
       aria-pressed={active}
       {...press}
     >
-      <span className="shop-cat-icon" style={{ ['--cat' as string]: cat.color }}>
+      <span className="shop-cat-icon" style={{ ['--cat' as string]: color }}>
         <Sym emoji={cat.icon} />
       </span>
       {cat.short}
@@ -69,7 +71,7 @@ function ItemSym({ item }: { item: ShopItem }) {
     </span>
   );
 }
-const tileStyle = (item: ShopItem): CSSProperties => ({ ['--cat' as string]: catColor.get(item.cat) ?? '#8a8f98' });
+const tileStyle = (item: ShopItem): CSSProperties => ({ ['--cat' as string]: paint(catColor.get(item.cat)) ?? '#8a8f98' });
 
 export function ShoppingModule() {
   const shop = useShopping();
@@ -295,7 +297,7 @@ export function ShoppingModule() {
               </button>
             )}
             {pantryGroups.map(({ cat, items: catItems }) => (
-              <div key={cat.id} className="shop-group" style={{ ['--cat' as string]: cat.color }}>
+              <div key={cat.id} className="shop-group" style={{ ['--cat' as string]: paint(cat.color) }}>
                 <div className="shop-group-head">
                   <Sym emoji={cat.icon} className="shop-head-sym" /> {cat.label}
                 </div>
@@ -390,8 +392,8 @@ function ItemEditor({ initial, onSave, onClose }: {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal shop-editor" style={{ ['--cat' as string]: catColor.get(cat) }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neuer Artikel">
-        <div className="shop-editor-preview" style={{ ['--cat' as string]: catColor.get(cat) }}>
+      <div className="modal shop-editor" style={{ ['--cat' as string]: paint(catColor.get(cat)) }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neuer Artikel">
+        <div className="shop-editor-preview" style={{ ['--cat' as string]: paint(catColor.get(cat)) }}>
           <span className="shop-emoji">
             <Sym emoji={emoji} />
           </span>
@@ -421,7 +423,7 @@ function ItemEditor({ initial, onSave, onClose }: {
               <button
                 key={c.id}
                 className={`chip ${cat === c.id ? 'on' : 'off'}`}
-                style={{ paddingLeft: 12, borderColor: cat === c.id ? c.color : undefined }}
+                style={{ paddingLeft: 12, borderColor: cat === c.id ? paint(c.color) : undefined }}
                 aria-pressed={cat === c.id}
                 onClick={() => setCat(c.id)}
               >

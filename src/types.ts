@@ -83,7 +83,13 @@ export interface Settings {
   style: UiStyle;
   /** how emoji symbols are drawn (shopping list, ...) */
   symbols: SymbolSet;
+  /** how people, subjects and departments are coloured */
+  palette: ColorPalette;
+  /** base colour of the 'core' palette */
+  coreColor: string;
 }
+
+export type ColorPalette = 'vivid' | 'muted' | 'core';
 
 export type UiStyle = 'classic' | 'sonoma' | 'liquid' | 'flow' | 'aurora';
 

@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { AppConfig, CalendarSource, Member, SchoolConfig, Settings } from './types';
 import { loadConfig, saveConfig } from './lib/config';
+import { paint, setColorScheme } from './lib/colors';
 
 const SELECTED_KEY = 'fc.selectedMembers';
 
@@ -146,13 +147,19 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
   );
   const showAll = useCallback(() => setSelected([]), []);
 
+  // people are handed out in the chosen palette; the settings edit the stored colours via `config`
+  const members = useMemo(() => {
+    setColorScheme(config.settings.palette, config.settings.coreColor);
+    return config.members.map((m) => ({ ...m, color: paint(m.color) }));
+  }, [config.members, config.settings.palette, config.settings.coreColor]);
+
   const value = useMemo<Store>(
     () => ({
       config,
-      members: config.members,
+      members,
       calendars: config.calendars,
       settings: config.settings,
-      memberById: new Map(config.members.map((m) => [m.id, m])),
+      memberById: new Map(members.map((m) => [m.id, m])),
       updateSettings,
       upsertMember,
       patchMember,
@@ -173,6 +180,7 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
     }),
     [
       config,
+      members,
       selectedIds,
       updateSettings,
       upsertMember,

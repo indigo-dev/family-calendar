@@ -23,6 +23,7 @@ import {
 } from '../lib/weather';
 import { thumbUrl, useFrameSettings, usePhotos, type Photo } from '../lib/frame';
 import { Avatar, AvatarStack } from '../components/Avatar';
+import { paint } from '../lib/colors';
 
 /* ------------------------------------------------------------------ shared data */
 
@@ -343,7 +344,7 @@ function TimetableWidget({ size }: WidgetProps) {
   const { now, marks, openSettings } = useDash();
   const { members, school } = useStore();
   const kids = members.filter((m) => m.timetable);
-  const subjects = useMemo(() => subjectMap(school), [school]);
+  const subjects = subjectMap(school);
   if (kids.length === 0) return <Empty action="Einrichten" onAction={() => openSettings('family')}>Noch kein Stundenplan</Empty>;
   const { day, offToday } = nextSchoolDay(now, marks, kids);
   const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -531,7 +532,7 @@ function ShoppingWidget({ size }: WidgetProps) {
       <div className={`dw-body dw-scroll ${size === 'm' || size === 'l' ? 'tiles' : ''}`}>
         {list.length === 0 && <div className="dw-none">Liste ist leer</div>}
         {list.map(({ e, item }) => {
-          const color = CATEGORIES.find((c) => c.id === item.cat)?.color;
+          const color = paint(CATEGORIES.find((c) => c.id === item.cat)?.color);
           return (
             <button
               key={e.itemId}
@@ -681,7 +682,7 @@ function HolidaysWidget({ size }: WidgetProps) {
 function FamilyWidget({ size }: WidgetProps) {
   const { now, events, todos, marks } = useDash();
   const { members, school } = useStore();
-  const subjects = useMemo(() => subjectMap(school), [school]);
+  const subjects = subjectMap(school);
   const tomorrow = addDays(startOfDay(now), 1);
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const m = marks.get(dayKey(now));

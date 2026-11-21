@@ -1,13 +1,11 @@
 import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings, UiStyle } from '../types';
 import { parseSchool, parseTimetable } from './school';
 import { DEFAULT_SYMBOL_SET, isSymbolSet } from './symbols';
+import { DEFAULT_CORE_COLOR, PALETTE, PALETTES } from './colors';
 
 const CONFIG_KEY = 'fc.config.v1';
 
-export const PALETTE = [
-  '#3b82f6', '#e8613c', '#22a06b', '#a855f7', '#eab308', '#ec4899',
-  '#14b8a6', '#f97316', '#6366f1', '#84cc16', '#ef4444', '#64748b',
-];
+export { PALETTE };
 
 export const EMOJIS = [
   '👨', '👩', '👧', '👦', '👶', '👴', '👵', '🧑',
@@ -86,6 +84,8 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'auto',
   style: 'classic',
   symbols: DEFAULT_SYMBOL_SET,
+  palette: 'vivid',
+  coreColor: DEFAULT_CORE_COLOR,
 };
 
 export const UI_STYLES: { id: UiStyle; label: string }[] = [
@@ -175,6 +175,8 @@ export function parseConfig(raw: unknown): AppConfig {
   settings.multiDays = clampDays(settings.multiDays);
   if (!UI_STYLES.some((x) => x.id === settings.style)) settings.style = DEFAULT_SETTINGS.style;
   if (!isSymbolSet(settings.symbols)) settings.symbols = DEFAULT_SETTINGS.symbols;
+  if (!PALETTES.some((x) => x.id === settings.palette)) settings.palette = DEFAULT_SETTINGS.palette;
+  if (!/^#[0-9a-f]{6}$/i.test(settings.coreColor)) settings.coreColor = DEFAULT_CORE_COLOR;
 
   return { schemaVersion: 3, settings, members, calendars, school: parseSchool(o.school) };
 }

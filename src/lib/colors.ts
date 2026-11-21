@@ -1,0 +1,171 @@
+import type { ColorPalette } from '../types';
+
+/**
+ * Colour palettes. Stored colours (people, subjects, shopping departments) stay unchanged in the config;
+ * `paint()` maps them to the chosen palette when they are drawn. Colours from the base palette keep
+ * their slot (Papa stays "the first colour"), other colours are mapped by hue.
+ */
+
+/** base palette – the vivid colours people pick from */
+export const PALETTE = [
+  '#3b82f6', '#e8613c', '#22a06b', '#a855f7', '#eab308', '#ec4899',
+  '#14b8a6', '#f97316', '#6366f1', '#84cc16', '#ef4444', '#64748b',
+];
+
+/** "Edel": muted, slightly greyed tones in the spirit of fashion colour cards */
+const MUTED = [
+  '#4f6d9a', // Dusty Blue
+  '#c4705a', // Terrakotta
+  '#5f8a6e', // Salbei
+  '#8b74a6', // Lavendel
+  '#c9a24a', // Ocker
+  '#c27a8e', // Altrosa
+  '#4f8f8a', // Petrol
+  '#d08a52', // Bernstein
+  '#6c70a8', // Immergrün
+  '#93a35e', // Moos
+  '#a9545c', // Marsala
+  '#7b8590', // Schiefer
+];
+
+export const PALETTES: { id: ColorPalette; label: string; note: string }[] = [
+  { id: 'vivid', label: 'Kräftig', note: 'Klare, leuchtende Farben' },
+  { id: 'muted', label: 'Edel', note: 'Gedeckte Töne wie auf einer Farbkarte' },
+  { id: 'core', label: 'Kernfarbe', note: 'Variationen einer Farbe deiner Wahl' },
+];
+
+export const DEFAULT_CORE_COLOR = '#4f6d9a';
+
+/** suggestions for the core colour */
+export const CORE_SUGGESTIONS = ['#4f6d9a', '#5f8a6e', '#c4705a', '#8b74a6', '#4f8f8a', '#b0855a', '#a9545c', '#5b6b7d'];
+
+/* ---------------------------------------------------------------- colour maths */
+
+type Hsl = [h: number, s: number, l: number];
+
+function hexToHsl(hex: string): Hsl | null {
+  const m = /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.exec(hex.trim());
+  if (!m) return null;
+  let v = m[1];
+  if (v.length === 3) v = v.replace(/./g, (c) => c + c);
+  const r = parseInt(v.slice(0, 2), 16) / 255;
+  const g = parseInt(v.slice(2, 4), 16) / 255;
+  const b = parseInt(v.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l * 100];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h *= 60;
+  return [h, s * 100, l * 100];
+}
+
+function hslToHex([h, s, l]: Hsl): string {
+  h = ((h % 360) + 360) % 360;
+  s = Math.max(0, Math.min(100, s)) / 100;
+  l = Math.max(0, Math.min(100, l)) / 100;
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const x = (v: number) =>
+    Math.round(v * 255)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${x(f(0))}${x(f(8))}${x(f(4))}`;
+}
+
+const hueDist = (a: number, b: number) => {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+};
+
+/** slot of the base palette that is closest in hue (greys go to the grey slot) */
+function nearestSlot(hsl: Hsl): number {
+  if (hsl[1] < 12) return PALETTE.length - 1;
+  let best = 0;
+  let bestD = Infinity;
+  PALETTE.slice(0, -1).forEach((c, i) => {
+    const d = hueDist(hexToHsl(c)![0], hsl[0]);
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  });
+  return best;
+}
+
+/**
+ * Twelve variations of one colour: neighbouring hues plus lighter and darker shades, ordered so that
+ * the first colours (the ones the family members get first) differ most from each other.
+ */
+export function corePalette(core: string): string[] {
+  const [h, s0, l0] = hexToHsl(core) ?? hexToHsl(DEFAULT_CORE_COLOR)!;
+  const s = Math.max(22, Math.min(62, s0));
+  const l = Math.max(38, Math.min(58, l0));
+  const steps: [dh: number, ds: number, dl: number][] = [
+    [0, 0, 0],
+    [-38, 0, 8],
+    [34, -4, -8],
+    [-16, 6, -20],
+    [0, -8, 22],
+    [62, -8, 6],
+    [-62, -6, 2],
+    [16, 6, 14],
+    [0, 2, -24],
+    [-38, -4, -12],
+    [34, -8, 22],
+    [0, -100, 0],
+  ];
+  return steps.map(([dh, ds, dl], i) =>
+    i === steps.length - 1 ? hslToHex([h, Math.min(10, s * 0.2), Math.max(44, Math.min(56, l))]) : hslToHex([h + dh, s + ds, l + dl]),
+  );
+}
+
+/* ---------------------------------------------------------------- current scheme */
+
+let scheme: { palette: ColorPalette; colors: string[] } = { palette: 'vivid', colors: PALETTE };
+const cache = new Map<string, string>();
+
+/** Sets the palette used by `paint()`. Called by the store whenever the settings change. */
+export function setColorScheme(palette: ColorPalette, coreColor: string) {
+  const colors = palette === 'muted' ? MUTED : palette === 'core' ? corePalette(coreColor) : PALETTE;
+  if (scheme.palette === palette && scheme.colors.join() === colors.join()) return;
+  scheme = { palette, colors };
+  cache.clear();
+}
+
+/** the palette people choose from in the settings (in the current scheme) */
+export function paletteColors(palette: ColorPalette = scheme.palette, coreColor?: string): string[] {
+  if (palette === scheme.palette && coreColor === undefined) return scheme.colors;
+  return palette === 'muted' ? MUTED : palette === 'core' ? corePalette(coreColor ?? DEFAULT_CORE_COLOR) : PALETTE;
+}
+
+/** Maps a stored colour to the current palette. */
+export function paint(color: string): string;
+export function paint(color: string | undefined): string | undefined;
+export function paint(color: string | undefined): string | undefined {
+  if (!color) return color;
+  if (scheme.palette === 'vivid') return color;
+  const key = color.toLowerCase();
+  const hit = cache.get(key);
+  if (hit) return hit;
+  let out = color;
+  const slot = PALETTE.indexOf(key);
+  if (slot >= 0) out = scheme.colors[slot];
+  else {
+    const hsl = hexToHsl(color);
+    if (hsl) {
+      if (scheme.palette === 'muted') {
+        // greyed, calmer and with medium lightness
+        out = hslToHex([hsl[0], Math.min(hsl[1] * 0.55, 48), 40 + (hsl[2] - 40) * 0.45]);
+      } else {
+        out = scheme.colors[nearestSlot(hsl)];
+      }
+    }
+  }
+  cache.set(key, out);
+  return out;
+}
+

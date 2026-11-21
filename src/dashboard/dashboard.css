@@ -10,10 +10,15 @@
   grid-auto-flow: row dense;
   gap: var(--gap);
   align-content: start;
-  padding: 2px;
-  margin: -2px;
+  /* room for the wiggle and the remove buttons: transformed widgets must never reach the edge of the
+     scroll area, otherwise classic scrollbars (Edge/Windows) appear and vanish and the grid jumps */
+  padding: 10px;
+  margin: -10px -10px 0;
 }
 .dash-toolbar {
+  /* stays clickable above the grid's padding (see .dash) */
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -54,24 +59,29 @@
   flex: 1;
   min-height: 0;
 }
+/* the wiggle angle (--wig) is set per widget so that every widget's corners move by about one pixel –
+   a fixed angle makes big widgets swing far more than small ones */
 .dash.editing .dw {
   touch-action: none;
   cursor: grab;
-  animation: dw-wiggle 0.32s ease-in-out infinite alternate;
-  animation-delay: calc(var(--i) * -0.07s);
+  will-change: transform;
+  backface-visibility: hidden;
+  animation: dw-wiggle 0.34s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -0.11s);
 }
 .dash.editing .dw-inner {
   pointer-events: none;
 }
-.dash.dragging .dw {
+.dash.dragging .dw,
+.dash.editing .dw.menu-open {
   animation: none;
 }
 @keyframes dw-wiggle {
   from {
-    transform: rotate(-0.5deg);
+    transform: rotate(calc(-1 * var(--wig, 0.3deg)));
   }
   to {
-    transform: rotate(0.5deg);
+    transform: rotate(var(--wig, 0.3deg));
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -108,8 +118,8 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 .dw-remove {
-  top: -9px;
-  left: -9px;
+  top: -8px;
+  left: -8px;
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -121,13 +131,109 @@
 .dw-resize {
   right: 8px;
   bottom: 8px;
-  height: 32px;
-  padding: 0 12px;
-  border-radius: 16px;
+  height: 34px;
+  padding: 0 12px 0 10px;
+  display: flex;
+  gap: 7px;
+  border-radius: 17px;
   background: var(--text);
   color: var(--surface);
   font-size: 0.8rem;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.dw-resize .size-glyph {
+  --cell: 6px;
+  --on: var(--surface);
+  --off: color-mix(in srgb, var(--surface) 28%, transparent);
+}
+
+/* ---------------- size menu */
+.size-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+}
+.size-menu {
+  position: fixed;
+  z-index: 61;
+  width: 250px;
+  padding: 8px;
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transform-origin: var(--origin, bottom right);
+  animation: size-menu-in 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes size-menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+}
+.size-menu-title {
+  padding: 6px 10px 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.size-opt {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 4px 10px;
+  border-radius: 11px;
+  text-align: left;
+  transition: background 0.12s;
+}
+.size-opt:hover {
+  background: var(--surface-2);
+}
+.size-opt.on {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+}
+.size-opt-label {
+  font-weight: 600;
+}
+.size-opt-dim {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.size-opt.on .size-opt-dim {
+  color: var(--accent);
+}
+.size-opt-glyph {
+  display: grid;
+  place-items: center;
+}
+/* footprint of a size in a 3×2 grid */
+.size-glyph {
+  --cell: 11px;
+  --on: var(--accent);
+  --off: var(--line-strong);
+  display: inline-grid;
+  grid-template-columns: repeat(3, var(--cell));
+  grid-auto-rows: var(--cell);
+  gap: calc(var(--cell) / 5);
+}
+.size-glyph > i {
+  border-radius: calc(var(--cell) / 4);
+  background: var(--off);
+}
+.size-glyph > i.on {
+  background: var(--on);
+}
+.size-opt:not(.on) .size-glyph {
+  --on: var(--text);
 }
 
 /* ---------------- shared widget parts */
@@ -992,8 +1098,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  gap: 4px;
+  justify-content: center;
+  gap: 5px;
   min-width: 54px;
   min-height: 54px;
   padding: 6px;
@@ -1002,11 +1108,11 @@
   font-size: 0.72rem;
   font-weight: 600;
 }
-.dash-size-shape {
-  display: block;
-  border-radius: 3px;
-  background: var(--accent);
-  opacity: 0.8;
+.dash-size-btn .size-glyph {
+  --cell: 8px;
+}
+.dash-size-btn:hover {
+  background: var(--surface-2);
 }
 @media (max-width: 640px) {
   .dash-hint {

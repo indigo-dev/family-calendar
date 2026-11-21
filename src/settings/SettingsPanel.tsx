@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { CalendarSource, Member, Settings, ViewMode } from '../types';
 import { useStore } from '../store';
 import {
@@ -9,7 +9,6 @@ import {
   LINK_HELP,
   newCalendar,
   newMember,
-  PALETTE,
   readConfigFile,
   REGIONS,
   UI_STYLES,
@@ -22,46 +21,120 @@ import { newTimetable, SCHOOL_TYPES } from '../lib/school';
 import { SchoolTab } from './SchoolTab';
 import { Sym } from '../components/Sym';
 import { SYMBOL_SETS, type SymbolSet } from '../lib/symbols';
+import { CORE_SUGGESTIONS, PALETTE, PALETTES, paletteColors } from '../lib/colors';
 
-export type SettingsTab = 'family' | 'calendars' | 'school' | 'holidays' | 'display' | 'backup';
+export type SettingsTab = 'family' | 'calendars' | 'holidays' | 'school' | 'design' | 'view' | 'device' | 'backup';
 type Tab = SettingsTab;
+
+/** order: set up the family and its data first, then the look, the device and the backup */
+const TABS: { id: Tab; icon: string; label: string; note: string }[] = [
+  { id: 'family', icon: '👨‍👩‍👧', label: 'Familie', note: 'Personen, Farben und Avatare' },
+  { id: 'calendars', icon: '📅', label: 'Kalender', note: 'Abo-Links und Zuordnung zu Personen' },
+  { id: 'holidays', icon: '🏖️', label: 'Ferien & Feiertage', note: 'Bundesland, Feiertage, Schulferien' },
+  { id: 'school', icon: '🎒', label: 'Schule', note: 'Klingelzeiten und Fächer' },
+  { id: 'design', icon: '🎨', label: 'Design', note: 'Stil, Hell/Dunkel, Farben, Symbole' },
+  { id: 'view', icon: '🗓️', label: 'Kalenderansicht', note: 'Startansicht, Wochenbeginn, Tageszeiten' },
+  { id: 'device', icon: '📱', label: 'Gerät', note: 'Aktualisierung, Ruhezustand' },
+  { id: 'backup', icon: '💾', label: 'Sicherung', note: 'Export, Import, Zurücksetzen' },
+];
 
 export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; initialTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initialTab ?? 'family');
+  const info = TABS.find((t) => t.id === tab)!;
+  // on phones the categories scroll sideways – keep the active one visible
+  useEffect(() => {
+    document.querySelector('.settings-nav-item.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [tab]);
   return (
     <div className="modal-backdrop">
-      <div className="modal settings" role="dialog" aria-modal="true">
-        <div className="settings-head">
+      <div className="modal settings" role="dialog" aria-modal="true" aria-label="Einstellungen">
+        <nav className="settings-nav" aria-label="Bereiche">
           <h2>Einstellungen</h2>
-          <div className="segmented small">
-            {(
-              [
-                ['family', 'Familie'],
-                ['calendars', 'Kalender'],
-                ['school', 'Schule'],
-                ['holidays', 'Ferien'],
-                ['display', 'Anzeige'],
-                ['backup', 'Sicherung'],
-              ] as [Tab, string][]
-            ).map(([id, label]) => (
-              <button key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>
-                {label}
-              </button>
-            ))}
+          {TABS.map((t) => (
+            <button key={t.id} className={`settings-nav-item ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)} aria-current={tab === t.id}>
+              <span className="settings-nav-icon" aria-hidden>
+                {t.icon}
+              </span>
+              <span className="settings-nav-label">{t.label}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="settings-main">
+          <div className="settings-head">
+            <div className="settings-title">
+              <h3>{info.label}</h3>
+              <span className="muted">{info.note}</span>
+            </div>
+            <button className="btn primary" onClick={onClose}>
+              Fertig
+            </button>
           </div>
-          <button className="btn primary" onClick={onClose}>
-            Fertig
-          </button>
-        </div>
-        <div className="settings-body">
-          {tab === 'family' && <FamilyTab onGoCalendars={() => setTab('calendars')} />}
-          {tab === 'calendars' && <CalendarsTab />}
-          {tab === 'school' && <SchoolTab />}
-          {tab === 'holidays' && <HolidaysTab />}
-          {tab === 'display' && <DisplayTab />}
-          {tab === 'backup' && <BackupTab />}
+          <div className="settings-body" key={tab}>
+            {tab === 'family' && <FamilyTab onGoCalendars={() => setTab('calendars')} />}
+            {tab === 'calendars' && <CalendarsTab />}
+            {tab === 'holidays' && <HolidaysTab />}
+            {tab === 'school' && <SchoolTab />}
+            {tab === 'design' && <DesignTab />}
+            {tab === 'view' && <ViewTab />}
+            {tab === 'device' && <DeviceTab />}
+            {tab === 'backup' && <BackupTab />}
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- building blocks */
+
+function Group({ title, note, children }: { title?: string; note?: ReactNode; children: ReactNode }) {
+  return (
+    <section className="set-group">
+      {title && <h4 className="set-group-title">{title}</h4>}
+      {children}
+      {note && <p className="set-note">{note}</p>}
+    </section>
+  );
+}
+
+function Row({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="set-row">
+      <div className="set-row-label">
+        <span>{label}</span>
+        {hint && <small>{hint}</small>}
+      </div>
+      <div className="set-row-ctrl">{children}</div>
+    </div>
+  );
+}
+
+function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="switch">
+      <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)} aria-label={label} />
+      <span className="switch-track" aria-hidden />
+    </label>
+  );
+}
+
+function Stepper({ value, min, max, unit, onChange }: { value: number; min: number; max: number; unit: string; onChange: (v: number) => void }) {
+  return (
+    <div className="stepper">
+      <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label="weniger">
+        −
+      </button>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(e) => onChange(Math.min(max, Math.max(min, Number(e.target.value) || min)))}
+      />
+      <span className="stepper-unit">{unit}</span>
+      <button onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label="mehr">
+        +
+      </button>
     </div>
   );
 }
@@ -126,7 +199,10 @@ function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
 }
 
 function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; onGoCalendars: () => void; onDeleted: () => void }) {
-  const { patchMember, removeMember, moveMember, calendars } = useStore();
+  const { patchMember, removeMember, moveMember, calendars, config, settings } = useStore();
+  // `member` is drawn in the chosen palette; the swatches edit the stored colour
+  const rawColor = config.members.find((m) => m.id === member.id)?.color ?? member.color;
+  const shown = paletteColors();
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const set = (patch: Partial<Member>) => patchMember(member.id, patch);
@@ -175,20 +251,26 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
       <div className="field">
         <span>Farbe</span>
         <div className="swatches">
-          {PALETTE.map((c) => (
+          {PALETTE.map((c, i) => (
             <button
               key={c}
-              className={`swatch ${member.color === c ? 'on' : ''}`}
-              style={{ background: c }}
+              className={`swatch ${rawColor === c ? 'on' : ''}`}
+              style={{ background: shown[i] }}
               onClick={() => set({ color: c })}
-              aria-label={c}
+              aria-label={`Farbe ${i + 1}`}
             />
           ))}
-          <label className="swatch custom" style={{ background: PALETTE.includes(member.color) ? undefined : member.color }}>
-            <input type="color" value={member.color} onChange={(e) => set({ color: e.target.value })} />
-            +
+          <label
+            className={`swatch custom ${PALETTE.includes(rawColor) ? '' : 'on'}`}
+            style={{ background: PALETTE.includes(rawColor) ? undefined : member.color }}
+            title="Eigene Farbe"
+          >
+            <input type="color" value={rawColor} onChange={(e) => set({ color: e.target.value })} />+
           </label>
         </div>
+        {settings.palette !== 'vivid' && !PALETTE.includes(rawColor) && (
+          <p className="hint muted">Eigene Farben werden an die gewählte Farbpalette angepasst (Einstellungen → Design).</p>
+        )}
       </div>
 
       <div className="field">
@@ -539,30 +621,31 @@ function HolidaysTab() {
   const span = (x: Holiday) => (x.start === x.end ? day(x.start) : `${day(x.start)} – ${day(x.end)}`);
 
   return (
-    <div className="form narrow">
-      <p className="help">
-        Feiertage und Schulferien gelten für die ganze Familie. Sie erscheinen nicht als Person, sondern als Markierung im Kalender:
-        Feiertage farbig am Datum, Ferien als leicht eingefärbte Tage.
-      </p>
-      <label className="field">
-        <span>Bundesland</span>
-        <select value={h.region} onChange={(e) => set({ region: e.target.value })}>
-          <option value="">– keine Ferien/Feiertage anzeigen –</option>
-          {REGIONS.map(([code, name]) => (
-            <option key={code} value={code}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="check">
-        <input type="checkbox" checked={h.showPublic} disabled={!h.region} onChange={(e) => set({ showPublic: e.target.checked })} />
-        <span>Gesetzliche Feiertage anzeigen</span>
-      </label>
-      <label className="check">
-        <input type="checkbox" checked={h.showSchool} disabled={!h.region} onChange={(e) => set({ showSchool: e.target.checked })} />
-        <span>Schulferien anzeigen</span>
-      </label>
+    <div className="form">
+      <Group note="Feiertage und Schulferien gelten für die ganze Familie: Feiertage erscheinen farbig am Datum, Ferien als leicht eingefärbte Tage.">
+        <div className="set-card">
+          <Row label="Bundesland">
+            <select value={h.region} onChange={(e) => set({ region: e.target.value })}>
+              <option value="">– keine –</option>
+              {REGIONS.map(([code, name]) => (
+                <option key={code} value={code}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </Row>
+          {h.region && (
+            <>
+              <Row label="Gesetzliche Feiertage anzeigen">
+                <Switch checked={h.showPublic} onChange={(showPublic) => set({ showPublic })} label="Gesetzliche Feiertage anzeigen" />
+              </Row>
+              <Row label="Schulferien anzeigen">
+                <Switch checked={h.showSchool} onChange={(showSchool) => set({ showSchool })} label="Schulferien anzeigen" />
+              </Row>
+            </>
+          )}
+        </div>
+      </Group>
 
       {h.region && (
         <div className="field">
@@ -605,9 +688,136 @@ function FragmentRow({ dt, dd }: { dt: string; dd: string }) {
   );
 }
 
-/* ---------------------------------------------------------------- Anzeige */
+/* ---------------------------------------------------------------- Design */
 
-function DisplayTab() {
+const STYLE_NOTES: Record<Settings['style'], string> = {
+  classic: 'Schlicht und klar',
+  sonoma: 'Wie der Mac-Kalender',
+  liquid: 'Glas wie iOS 26',
+  flow: 'Technisch, Punktraster',
+  aurora: 'Farbverläufe, Leuchten',
+};
+
+function DesignTab() {
+  const { settings, updateSettings } = useStore();
+  return (
+    <div className="form">
+      <Group title="Stil">
+        <div className="pick-grid" role="radiogroup" aria-label="Stil">
+          {UI_STYLES.map((s) => (
+            <button
+              key={s.id}
+              role="radio"
+              aria-checked={settings.style === s.id}
+              className={`pick-card ${settings.style === s.id ? 'on' : ''}`}
+              onClick={() => updateSettings({ style: s.id })}
+            >
+              <span className={`style-thumb st-${s.id}`} aria-hidden>
+                <i className="st-bar" />
+                <i className="st-a" />
+                <i className="st-b" />
+                <i className="st-c" />
+              </span>
+              <span className="pick-label">{s.label}</span>
+              <span className="pick-note">{STYLE_NOTES[s.id]}</span>
+            </button>
+          ))}
+        </div>
+      </Group>
+
+      <Group title="Hell / Dunkel">
+        <div className="pick-grid three" role="radiogroup" aria-label="Hell / Dunkel">
+          {(
+            [
+              ['auto', 'Automatisch', 'folgt dem Gerät'],
+              ['light', 'Hell', 'immer hell'],
+              ['dark', 'Dunkel', 'immer dunkel'],
+            ] as [Settings['theme'], string, string][]
+          ).map(([id, label, note]) => (
+            <button
+              key={id}
+              role="radio"
+              aria-checked={settings.theme === id}
+              className={`pick-card ${settings.theme === id ? 'on' : ''}`}
+              onClick={() => updateSettings({ theme: id })}
+            >
+              <span className={`mode-thumb mode-${id}`} aria-hidden>
+                <i />
+                <i />
+              </span>
+              <span className="pick-label">{label}</span>
+              <span className="pick-note">{note}</span>
+            </button>
+          ))}
+        </div>
+      </Group>
+
+      <Group
+        title="Farben"
+        note="Gilt für Personen, Schulfächer und Abteilungen der Einkaufsliste. Die gewählten Farben bleiben gespeichert – es ändert sich nur die Darstellung."
+      >
+        <div className="pick-grid three" role="radiogroup" aria-label="Farbpalette">
+          {PALETTES.map((p) => (
+            <button
+              key={p.id}
+              role="radio"
+              aria-checked={settings.palette === p.id}
+              className={`pick-card ${settings.palette === p.id ? 'on' : ''}`}
+              onClick={() => updateSettings({ palette: p.id })}
+            >
+              <span className="palette-thumb" aria-hidden>
+                {paletteColors(p.id, settings.coreColor)
+                  .slice(0, 6)
+                  .map((c, i) => (
+                    <i key={i} style={{ background: c }} />
+                  ))}
+              </span>
+              <span className="pick-label">{p.label}</span>
+              <span className="pick-note">{p.note}</span>
+            </button>
+          ))}
+        </div>
+        {settings.palette === 'core' && (
+          <div className="set-card">
+            <Row label="Kernfarbe" hint="Daraus entstehen alle anderen Farben">
+              <div className="swatches">
+                {CORE_SUGGESTIONS.map((c) => (
+                  <button
+                    key={c}
+                    className={`swatch ${settings.coreColor.toLowerCase() === c ? 'on' : ''}`}
+                    style={{ background: c }}
+                    onClick={() => updateSettings({ coreColor: c })}
+                    aria-label={c}
+                  />
+                ))}
+                <label
+                  className={`swatch custom ${CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? '' : 'on'}`}
+                  style={{ background: CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? undefined : settings.coreColor }}
+                  title="Eigene Farbe"
+                >
+                  <input type="color" value={settings.coreColor} onChange={(e) => updateSettings({ coreColor: e.target.value })} />+
+                </label>
+              </div>
+            </Row>
+            <div className="core-strip" aria-label="Erzeugte Farben">
+              {paletteColors('core', settings.coreColor).map((c, i) => (
+                <i key={i} style={{ background: c }} />
+              ))}
+            </div>
+          </div>
+        )}
+      </Group>
+
+      <Group title="Symbole (Einkaufsliste)">
+        <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
+      </Group>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Kalenderansicht */
+
+function ViewTab() {
   const { settings, updateSettings } = useStore();
   const hours = Array.from({ length: 25 }, (_, i) => i);
   const views: [ViewMode, string][] = [
@@ -619,93 +829,79 @@ function DisplayTab() {
     ['agenda', 'Agenda'],
   ];
   return (
-    <div className="form narrow">
-      <label className="field">
-        <span>Startansicht</span>
-        <select value={settings.defaultView} onChange={(e) => updateSettings({ defaultView: e.target.value as ViewMode })}>
-          {views.map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="field">
-        <span>Woche beginnt am</span>
-        <select value={settings.weekStartsOn} onChange={(e) => updateSettings({ weekStartsOn: Number(e.target.value) as 0 | 1 })}>
-          <option value={1}>Montag</option>
-          <option value={0}>Sonntag</option>
-        </select>
-      </label>
-      <div className="field-row">
-        <label className="field">
-          <span>Tag beginnt um</span>
-          <select value={settings.dayStartHour} onChange={(e) => updateSettings({ dayStartHour: Number(e.target.value) })}>
-            {hours.slice(0, 23).map((h) => (
-              <option key={h} value={h}>
-                {h}:00
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>Tag endet um</span>
-          <select value={settings.dayEndHour} onChange={(e) => updateSettings({ dayEndHour: Number(e.target.value) })}>
-            {hours.slice(settings.dayStartHour + 1).map((h) => (
-              <option key={h} value={h}>
-                {h}:00
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <div className="field-row">
-        <label className="field">
-          <span>Stil</span>
-          <select value={settings.style} onChange={(e) => updateSettings({ style: e.target.value as Settings['style'] })}>
-            {UI_STYLES.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          <span>Hell / Dunkel</span>
-          <select value={settings.theme} onChange={(e) => updateSettings({ theme: e.target.value as Settings['theme'] })}>
-            <option value="auto">Automatisch (System)</option>
-            <option value="light">Hell</option>
-            <option value="dark">Dunkel</option>
-          </select>
-        </label>
-      </div>
-      <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
-      <div className="field-row">
-        <label className="field">
-          <span>Aktualisieren alle (Min.)</span>
-          <input
-            type="number"
-            min={1}
-            max={120}
-            value={settings.refreshMinutes}
-            onChange={(e) => updateSettings({ refreshMinutes: Math.max(1, Number(e.target.value) || 5) })}
-          />
-        </label>
-        <label className="field">
-          <span>Zurück zur Übersicht nach (Min., 0 = aus)</span>
-          <input
-            type="number"
-            min={0}
-            max={120}
-            value={settings.idleResetMinutes}
-            onChange={(e) => updateSettings({ idleResetMinutes: Math.max(0, Number(e.target.value) || 0) })}
-          />
-        </label>
-      </div>
-      <label className="check">
-        <input type="checkbox" checked={settings.keepAwake} onChange={(e) => updateSettings({ keepAwake: e.target.checked })} />
-        <span>Bildschirm wach halten</span>
-      </label>
+    <div className="form">
+      <Group>
+        <div className="set-card">
+          <Row label="Startansicht" hint="So öffnet sich der Kalender">
+            <select value={settings.defaultView} onChange={(e) => updateSettings({ defaultView: e.target.value as ViewMode })}>
+              {views.map(([v, l]) => (
+                <option key={v} value={v}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </Row>
+          <Row label="Woche beginnt am">
+            <div className="segmented">
+              {(
+                [
+                  [1, 'Montag'],
+                  [0, 'Sonntag'],
+                ] as [0 | 1, string][]
+              ).map(([v, l]) => (
+                <button key={v} className={settings.weekStartsOn === v ? 'active' : ''} onClick={() => updateSettings({ weekStartsOn: v })}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </Row>
+        </div>
+      </Group>
+      <Group title="Sichtbare Tageszeit" note="Im Tages- und Wochenraster sichtbarer Bereich.">
+        <div className="set-card">
+          <Row label="Tag beginnt um">
+            <select value={settings.dayStartHour} onChange={(e) => updateSettings({ dayStartHour: Number(e.target.value) })}>
+              {hours.slice(0, 23).map((h) => (
+                <option key={h} value={h}>
+                  {h}:00 Uhr
+                </option>
+              ))}
+            </select>
+          </Row>
+          <Row label="Tag endet um">
+            <select value={settings.dayEndHour} onChange={(e) => updateSettings({ dayEndHour: Number(e.target.value) })}>
+              {hours.slice(settings.dayStartHour + 1).map((h) => (
+                <option key={h} value={h}>
+                  {h}:00 Uhr
+                </option>
+              ))}
+            </select>
+          </Row>
+        </div>
+      </Group>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Gerät */
+
+function DeviceTab() {
+  const { settings, updateSettings } = useStore();
+  return (
+    <div className="form">
+      <Group>
+        <div className="set-card">
+          <Row label="Termine aktualisieren" hint="Wie oft die Kalender neu geladen werden">
+            <Stepper value={settings.refreshMinutes} min={1} max={120} unit="Min." onChange={(v) => updateSettings({ refreshMinutes: v })} />
+          </Row>
+          <Row label="Zurück zur Übersicht" hint="Nach so vielen Minuten ohne Bedienung · 0 = nie">
+            <Stepper value={settings.idleResetMinutes} min={0} max={120} unit="Min." onChange={(v) => updateSettings({ idleResetMinutes: v })} />
+          </Row>
+          <Row label="Bildschirm wach halten" hint="Das Tablet geht nicht in den Ruhezustand">
+            <Switch checked={settings.keepAwake} onChange={(keepAwake) => updateSettings({ keepAwake })} label="Bildschirm wach halten" />
+          </Row>
+        </div>
+      </Group>
     </div>
   );
 }
@@ -723,7 +919,6 @@ function SymbolPicker({ value, onChange }: { value: SymbolSet; onChange: (v: Sym
   const groups = [...new Set(SYMBOL_SETS.map((s) => s.group))];
   return (
     <div className="field">
-      <span>Symbole (Einkaufsliste)</span>
       {groups.map((g) => (
         <div key={g} className="sym-picker-group">
           <div className="muted small">{g}</div>

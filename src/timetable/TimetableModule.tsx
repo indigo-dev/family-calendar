@@ -47,7 +47,7 @@ export function TimetableModule({ now, onSettings }: { now: Date; onSettings: ()
   const range = useMemo(() => ({ start: new Date(monday), end: addDays(new Date(monday), 7) }), [monday]);
   const { marks } = useHolidayMarks(range, settings.holidays);
   const days = useMemo(() => schoolWeek(now, marks), [now, marks]);
-  const subjects = useMemo(() => subjectMap(school), [school]);
+  const subjects = subjectMap(school);
 
   // works on the current state: a fast stroke paints several cells before the next render
   const paint = (member: Member, day: number, period: number, value: string | null) =>

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from 'react';
 import { useStore } from '../store';
 import { addDays, dayKey, startOfDay } from '../lib/dates';
 import { useEvents } from '../lib/events';
@@ -17,6 +17,7 @@ import {
   widgetDef,
   WIDGETS,
   type WidgetInstance,
+  type WidgetSize,
 } from '../lib/dashboard';
 import type { ModuleId } from '../components/ModuleNav';
 import type { SettingsTab } from '../settings/SettingsPanel';
@@ -194,10 +195,48 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
     if (mod) openModule(mod);
   };
 
-  const cycleSize = (w: WidgetInstance) => {
-    const sizes = widgetDef(w.type).sizes;
-    resizeWidget(w.id, sizes[(sizes.indexOf(w.size) + 1) % sizes.length]);
-  };
+  /* ---------------- size menu */
+  const [sizeMenu, setSizeMenu] = useState<{ id: string; rect: DOMRect } | null>(null);
+  useEffect(() => {
+    if (!editing) setSizeMenu(null);
+  }, [editing]);
+  const menuWidget = sizeMenu && layout.find((w) => w.id === sizeMenu.id);
+
+  /* ---------------- smooth layout changes (FLIP): widgets glide from their old place and size */
+  const boxes = useRef(new Map<string, { x: number; y: number; w: number; h: number; size: WidgetSize }>());
+  useLayoutEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prev = boxes.current;
+    const next = new Map<string, { x: number; y: number; w: number; h: number; size: WidgetSize }>();
+    grid.querySelectorAll<HTMLElement>(':scope > [data-wid]').forEach((el) => {
+      const id = el.dataset.wid!;
+      const box = { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight, size: el.dataset.size as WidgetSize };
+      next.set(id, box);
+      if (reduce || !el.animate) return;
+      const old = prev.get(id);
+      if (!old) {
+        if (prev.size > 0) el.animate([{ opacity: 0, scale: '0.9' }, { opacity: 1, scale: '1' }], { duration: 280, easing: 'cubic-bezier(.2,.8,.2,1)' });
+        return;
+      }
+      const dx = old.x + old.w / 2 - (box.x + box.w / 2);
+      const dy = old.y + old.h / 2 - (box.y + box.h / 2);
+      const sx = old.w / box.w;
+      const sy = old.h / box.h;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.005 && Math.abs(sy - 1) < 0.005) return;
+      // `translate`/`scale` are separate from `transform`, so the wiggle keeps running
+      el.animate([{ translate: `${dx}px ${dy}px`, scale: `${sx} ${sy}` }, { translate: '0 0', scale: '1 1' }], {
+        duration: 380,
+        easing: 'cubic-bezier(.2,.8,.2,1)',
+      });
+      // new size: let the content fade in instead of showing it stretched
+      if (old.size !== box.size) {
+        el.querySelector('.dw-inner')?.animate([{ opacity: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1 }], { duration: 380 });
+      }
+    });
+    boxes.current = next;
+  }, [layout, cols, rowH, size.width, gridRef]);
 
   const dragged = drag && layout.find((w) => w.id === drag.id);
 
@@ -205,7 +244,7 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
     <DashCtx.Provider value={data}>
       {editing && (
         <div className="dash-toolbar">
-          <span className="dash-hint muted">Ziehen zum Verschieben · ⤢ ändert die Größe</span>
+          <span className="dash-hint muted">Ziehen zum Verschieben · Größe über den Knopf unten rechts</span>
           <span className="board-spacer" />
           <button className="btn ghost" onClick={() => confirm('Standard-Anordnung wiederherstellen?') && resetLayout()}>
             Zurücksetzen
@@ -227,12 +266,17 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
           layout.map((w, i) => {
             const s = SIZES[w.size];
             const Comp = WIDGET_COMPONENTS[w.type];
+            const span = Math.min(s.w, cols);
+            // wiggle angle so the corners move ~1.2px whatever the widget's size
+            const halfDiag = Math.hypot(span * cellW + (span - 1) * GAP, s.h * rowH + (s.h - 1) * GAP) / 2;
+            const wig = Math.min(0.9, Math.max(0.12, (1.2 / halfDiag) * (180 / Math.PI)));
             return (
               <section
                 key={w.id}
                 data-wid={w.id}
-                className={`dw dw-${w.type} size-${w.size} ${drag?.id === w.id ? 'placeholder' : ''}`}
-                style={{ gridColumn: `span ${Math.min(s.w, cols)}`, gridRow: `span ${s.h}`, '--i': i } as CSSProperties}
+                data-size={w.size}
+                className={`dw dw-${w.type} size-${w.size} ${drag?.id === w.id ? 'placeholder' : ''} ${sizeMenu?.id === w.id ? 'menu-open' : ''}`}
+                style={{ gridColumn: `span ${span}`, gridRow: `span ${s.h}`, '--i': i, '--wig': `${wig.toFixed(3)}deg` } as CSSProperties}
                 onPointerDown={onPointerDown(w)}
                 onPointerUp={endPress}
                 onClick={onClick(w)}
@@ -256,13 +300,17 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
                     {widgetDef(w.type).sizes.length > 1 && (
                       <button
                         className="dw-edit-btn dw-resize"
-                        aria-label="Größe ändern"
+                        aria-label={`Größe ändern, jetzt ${SIZES[w.size].label} ${s.w} mal ${s.h}`}
+                        aria-haspopup="menu"
+                        aria-expanded={sizeMenu?.id === w.id}
                         onClick={(e) => {
                           e.stopPropagation();
-                          cycleSize(w);
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          setSizeMenu((m) => (m?.id === w.id ? null : { id: w.id, rect }));
                         }}
                       >
-                        ⤢ {SIZES[w.size].label}
+                        <SizeGlyph size={w.size} />
+                        {s.w}×{s.h}
                       </button>
                     )}
                   </>
@@ -297,7 +345,88 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
         </div>
       )}
       {gallery && <Gallery onClose={() => setGallery(false)} />}
+      {sizeMenu && menuWidget && (
+        <SizeMenu
+          widget={menuWidget}
+          anchor={sizeMenu.rect}
+          onPick={(s) => {
+            resizeWidget(menuWidget.id, s);
+            setSizeMenu(null);
+          }}
+          onClose={() => setSizeMenu(null)}
+        />
+      )}
     </DashCtx.Provider>
+  );
+}
+
+/** footprint of a widget size, drawn in a 3×2 grid */
+function SizeGlyph({ size }: { size: WidgetSize }) {
+  const { w, h } = SIZES[size];
+  return (
+    <span className="size-glyph" aria-hidden>
+      {Array.from({ length: 6 }, (_, i) => (
+        <i key={i} className={i % 3 < w && Math.floor(i / 3) < h ? 'on' : ''} />
+      ))}
+    </span>
+  );
+}
+
+const MENU_W = 250;
+
+/** pick one of the sizes the widget offers – shown next to the size button, outside the wiggling grid */
+function SizeMenu({
+  widget,
+  anchor,
+  onPick,
+  onClose,
+}: {
+  widget: WidgetInstance;
+  anchor: DOMRect;
+  onPick: (s: WidgetSize) => void;
+  onClose: () => void;
+}) {
+  const def = widgetDef(widget.type);
+  const height = 44 + def.sizes.length * 54;
+  const below = anchor.bottom + 8 + height < window.innerHeight;
+  const top = below ? anchor.bottom + 8 : Math.max(8, anchor.top - 8 - height);
+  const left = Math.min(window.innerWidth - MENU_W - 8, Math.max(8, anchor.right - MENU_W));
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  return (
+    <>
+      <div className="size-menu-backdrop" onPointerDown={onClose} />
+      <div
+        className="size-menu"
+        role="menu"
+        aria-label={`Größe: ${def.title}`}
+        style={{ top, left, '--origin': below ? 'top right' : 'bottom right' } as CSSProperties}
+      >
+        <div className="size-menu-title">Größe · {def.title}</div>
+        {def.sizes.map((s) => (
+          <button
+            key={s}
+            role="menuitemradio"
+            aria-checked={widget.size === s}
+            className={`size-opt ${widget.size === s ? 'on' : ''}`}
+            onClick={() => onPick(s)}
+          >
+            <span className="size-opt-glyph">
+              <SizeGlyph size={s} />
+            </span>
+            <span className="size-opt-label">{SIZES[s].label}</span>
+            <span className="size-opt-dim">
+              {SIZES[s].w} × {SIZES[s].h}
+            </span>
+          </button>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -330,11 +459,10 @@ function Gallery({ onClose }: { onClose: () => void }) {
                       onClose();
                     }}
                   >
-                    <span
-                      className="dash-size-shape"
-                      style={{ width: SIZES[s].w * 9 + (SIZES[s].w - 1) * 2, height: SIZES[s].h * 9 + (SIZES[s].h - 1) * 2 }}
-                    />
-                    {SIZES[s].label}
+                    <SizeGlyph size={s} />
+                    <span>
+                      {SIZES[s].w}×{SIZES[s].h}
+                    </span>
                   </button>
                 ))}
               </div>
