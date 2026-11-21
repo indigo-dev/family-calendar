@@ -7,7 +7,8 @@
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "symbols": "node scripts/fetch-symbols.mjs"
   },
   "dependencies": {
     "@azure/msal-browser": "^4.0.0",

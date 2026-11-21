@@ -39,6 +39,17 @@
   display: inline-grid;
   place-items: center;
 }
+.shop-cats {
+  padding: 10px 14px 4px;
+  flex: none;
+}
+.shop-cat-chip {
+  padding-left: 10px;
+}
+.shop-cat-icon {
+  font-size: 1.3rem;
+  line-height: 1;
+}
 .shop-scroll {
   flex: 1;
   min-height: 0;
@@ -412,4 +423,18 @@
   .shop-list .shop-pane-head {
     display: none;
   }
+}
+
+/* one-colour symbol styles take the department colour, darkened a little for contrast */
+.shop-group,
+.shop-tile,
+.shop-cat-icon,
+.shop-editor {
+  --sym-tint: color-mix(in srgb, var(--cat, currentColor) 78%, var(--text));
+}
+.shop-head-sym {
+  font-size: 1.1rem;
+}
+.shop-emoji-grid .sym {
+  font-size: 1.5rem;
 }

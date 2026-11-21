@@ -1,4 +1,5 @@
-import { useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { useTapOrLongPress } from '../lib/hooks';
 import type { Member, ViewMode } from '../types';
 import { fmt } from '../lib/dates';
 import { useStore } from '../store';
@@ -84,7 +85,7 @@ export function Header({ title, view, now, loading, multiDays, onMultiDays, onVi
 
 /** "November 2026" -> month bold, year as its own span (some styles set it lighter). */
 function Title({ text }: { text: string }) {
-  const m = /^(.*S)s+(d{4})$/.exec(text);
+  const m = /^(.*\S)\s+(\d{4})$/.exec(text);
   return (
     <h1 className="title">
       {m ? (
@@ -137,8 +138,6 @@ export function ModuleHeader({
   );
 }
 
-const LONG_PRESS_MS = 450;
-
 /** Tap = only this person, long press = add/remove this person to/from the selection. */
 function MemberChip({ member, active, dimmed, onTap, onLongPress }: {
   member: Member;
@@ -147,16 +146,7 @@ function MemberChip({ member, active, dimmed, onTap, onLongPress }: {
   onTap: () => void;
   onLongPress: () => void;
 }) {
-  const timer = useRef<number | undefined>(undefined);
-  const start = useRef<{ x: number; y: number } | null>(null);
-  const fired = useRef(false);
-
-  const cancel = () => {
-    window.clearTimeout(timer.current);
-    timer.current = undefined;
-    start.current = null;
-  };
-
+  const press = useTapOrLongPress(onTap, onLongPress);
   return (
     <button
       className={`chip ${active ? 'on' : ''} ${dimmed ? 'off' : ''}`}
@@ -165,31 +155,7 @@ function MemberChip({ member, active, dimmed, onTap, onLongPress }: {
         background: active ? `color-mix(in srgb, ${member.color} 22%, var(--surface))` : undefined,
       }}
       aria-pressed={active}
-      onPointerDown={(e) => {
-        fired.current = false;
-        start.current = { x: e.clientX, y: e.clientY };
-        timer.current = window.setTimeout(() => {
-          fired.current = true;
-          timer.current = undefined;
-          onLongPress();
-        }, LONG_PRESS_MS);
-      }}
-      onPointerMove={(e) => {
-        // finger moves (e.g. scrolling the chip bar) -> no long press
-        const s = start.current;
-        if (s && Math.hypot(e.clientX - s.x, e.clientY - s.y) > 10) cancel();
-      }}
-      onPointerUp={cancel}
-      onPointerLeave={cancel}
-      onPointerCancel={cancel}
-      onContextMenu={(e) => e.preventDefault()}
-      onClick={() => {
-        if (fired.current) {
-          fired.current = false; // click after a long press is swallowed
-          return;
-        }
-        onTap();
-      }}
+      {...press}
     >
       <Avatar member={member} size={30} ring={false} />
       {member.name}

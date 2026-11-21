@@ -1,5 +1,6 @@
 import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings, UiStyle } from '../types';
 import { parseSchool, parseTimetable } from './school';
+import { DEFAULT_SYMBOL_SET, isSymbolSet } from './symbols';
 
 const CONFIG_KEY = 'fc.config.v1';
 
@@ -84,6 +85,7 @@ export const DEFAULT_SETTINGS: Settings = {
   keepAwake: true,
   theme: 'auto',
   style: 'classic',
+  symbols: DEFAULT_SYMBOL_SET,
 };
 
 export const UI_STYLES: { id: UiStyle; label: string }[] = [
@@ -172,6 +174,7 @@ export function parseConfig(raw: unknown): AppConfig {
   settings.holidays = { ...DEFAULT_HOLIDAYS, ...obj(s.holidays) } as HolidaySettings;
   settings.multiDays = clampDays(settings.multiDays);
   if (!UI_STYLES.some((x) => x.id === settings.style)) settings.style = DEFAULT_SETTINGS.style;
+  if (!isSymbolSet(settings.symbols)) settings.symbols = DEFAULT_SETTINGS.symbols;
 
   return { schemaVersion: 3, settings, members, calendars, school: parseSchool(o.school) };
 }

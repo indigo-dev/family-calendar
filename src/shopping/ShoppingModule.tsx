@@ -9,6 +9,8 @@ import {
   type ListEntry,
   type ShopItem,
 } from '../lib/shopping';
+import { useTapOrLongPress } from '../lib/hooks';
+import { Sym } from '../components/Sym';
 import './shopping.css';
 
 type Pane = 'list' | 'pantry';
@@ -18,7 +20,55 @@ const CHECK_MS = 450;
 const UNDO_MS = 5000;
 const FREQUENT_MAX = 12;
 
+const CATS_KEY = 'fc.shopping.cats';
+
+function loadCats(): CategoryId[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(CATS_KEY) ?? '[]');
+    return Array.isArray(v) ? v.filter((id): id is CategoryId => CATEGORIES.some((c) => c.id === id)) : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Tap = only this department, long press = add/remove it (same as the person chips). */
+function CategoryChip({ cat, active, dimmed, onTap, onLongPress }: {
+  cat: (typeof CATEGORIES)[number];
+  active: boolean;
+  dimmed: boolean;
+  onTap: () => void;
+  onLongPress: () => void;
+}) {
+  const press = useTapOrLongPress(onTap, onLongPress);
+  return (
+    <button
+      className={`chip shop-cat-chip ${active ? 'on' : ''} ${dimmed ? 'off' : ''}`}
+      style={{
+        borderColor: dimmed ? undefined : cat.color,
+        background: active ? `color-mix(in srgb, ${cat.color} 22%, var(--surface))` : undefined,
+      }}
+      aria-pressed={active}
+      {...press}
+    >
+      <span className="shop-cat-icon" style={{ ['--cat' as string]: cat.color }}>
+        <Sym emoji={cat.icon} />
+      </span>
+      {cat.short}
+    </button>
+  );
+}
+
 const catColor = new Map(CATEGORIES.map((c) => [c.id, c.color]));
+const catIcon = new Map(CATEGORIES.map((c) => [c.id, c.icon]));
+
+/** item picture in the chosen symbol style; the department icon stands in if the style lacks it */
+function ItemSym({ item }: { item: ShopItem }) {
+  return (
+    <span className="shop-emoji">
+      <Sym emoji={item.emoji} fallback={catIcon.get(item.cat)} />
+    </span>
+  );
+}
 const tileStyle = (item: ShopItem): CSSProperties => ({ ['--cat' as string]: catColor.get(item.cat) ?? '#8a8f98' });
 
 export function ShoppingModule() {
@@ -26,6 +76,8 @@ export function ShoppingModule() {
   const [pane, setPane] = useState<Pane>('list');
   const [query, setQuery] = useState('');
   const [editMode, setEditMode] = useState(false);
+  /** pantry filter; empty = all departments */
+  const [cats, setCats] = useState<CategoryId[]>(loadCats);
   const [leaving, setLeaving] = useState<Set<string>>(new Set());
   const [undo, setUndo] = useState<{ entry: ListEntry; name: string } | null>(null);
   const [creating, setCreating] = useState<{ name: string; cat: CategoryId } | null>(null);
@@ -49,22 +101,34 @@ export function ShoppingModule() {
   const listCount = listed.length;
 
   const q = norm(query);
+  // "Sonstiges" only gets a chip once it has items
+  const filterCats = useMemo(() => CATEGORIES.filter((c) => c.id !== 'other' || items.some((i) => i.cat === 'other')), [items]);
+  const allCats = cats.length === 0;
+  // a search always looks through the whole pantry, so nothing is hidden by a forgotten filter
+  const catOk = (cat: CategoryId) => q !== '' || allCats || cats.includes(cat);
   const pantryGroups = useMemo(() => {
     const match = (i: ShopItem) => !q || norm(i.name).includes(q);
-    return CATEGORIES.map((c) => ({ cat: c, items: items.filter((i) => i.cat === c.id && match(i)) })).filter(
-      (g) => g.items.length > 0 || (!q && g.cat.id !== 'other'),
-    );
-  }, [items, q]);
+    return CATEGORIES.filter((c) => catOk(c.id))
+      .map((c) => ({ cat: c, items: items.filter((i) => i.cat === c.id && match(i)) }))
+      .filter((g) => g.items.length > 0 || (!q && g.cat.id !== 'other'));
+  }, [items, q, cats]);
   const frequent = useMemo(() => {
     if (q || editMode) return [];
     return items
-      .filter((i) => (shop.bought[i.id] ?? 0) >= 2)
+      .filter((i) => (shop.bought[i.id] ?? 0) >= 2 && catOk(i.cat))
       .sort((a, b) => shop.bought[b.id] - shop.bought[a.id] || a.name.localeCompare(b.name, 'de'))
       .slice(0, FREQUENT_MAX);
-  }, [items, shop.bought, q, editMode]);
+  }, [items, shop.bought, q, editMode, cats]);
   const exact = q && items.some((i) => norm(i.name) === q);
 
   useEffect(() => () => window.clearTimeout(undoTimer.current), []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(CATS_KEY, JSON.stringify(cats));
+    } catch {
+      /* ignore */
+    }
+  }, [cats]);
 
   const checkOff = (entry: ListEntry, item: ShopItem) => {
     if (leaving.has(entry.itemId)) return;
@@ -130,9 +194,7 @@ export function ShoppingModule() {
                         onClick={() => checkOff(entry, item)}
                         aria-label={`${item.name}${entry.qty > 1 ? `, ${entry.qty} Stück` : ''} abhaken`}
                       >
-                        <span className="shop-emoji" aria-hidden>
-                          {item.emoji}
-                        </span>
+                        <ItemSym item={item} />
                         <span className="shop-name">{item.name}</span>
                         {entry.qty > 1 && <span className="shop-qty">×{entry.qty}</span>}
                         <span className="shop-check" aria-hidden>
@@ -186,6 +248,21 @@ export function ShoppingModule() {
               {editMode ? 'Fertig' : 'Bearbeiten'}
             </button>
           </div>
+          <nav className="filterbar shop-cats" aria-label="Kategorien">
+            <button className={`chip all ${allCats ? 'on' : ''}`} aria-pressed={allCats} onClick={() => setCats([])}>
+              Alle
+            </button>
+            {filterCats.map((c) => (
+              <CategoryChip
+                key={c.id}
+                cat={c}
+                active={cats.includes(c.id)}
+                dimmed={!allCats && !cats.includes(c.id)}
+                onTap={() => setCats((cur) => (cur.length === 1 && cur[0] === c.id ? [] : [c.id]))}
+                onLongPress={() => setCats((cur) => (cur.includes(c.id) ? cur.filter((x) => x !== c.id) : [...cur, c.id]))}
+              />
+            ))}
+          </nav>
           {editMode && (
             <div className="shop-edit-hint">
               Antippen entfernt einen Artikel aus dem Vorrat.
@@ -218,9 +295,9 @@ export function ShoppingModule() {
               </button>
             )}
             {pantryGroups.map(({ cat, items: catItems }) => (
-              <div key={cat.id} className="shop-group">
+              <div key={cat.id} className="shop-group" style={{ ['--cat' as string]: cat.color }}>
                 <div className="shop-group-head">
-                  <span aria-hidden>{cat.icon}</span> {cat.label}
+                  <Sym emoji={cat.icon} className="shop-head-sym" /> {cat.label}
                 </div>
                 <div className="shop-grid">
                   {catItems.map((item) => (
@@ -280,9 +357,7 @@ function PantryTile({ item, qty, editMode, onTap, onLess }: {
         onClick={() => onTap(item)}
         aria-label={editMode ? `${item.name} entfernen` : qty > 0 ? `${item.name}: noch eins mehr (jetzt ${qty})` : `${item.name} auf die Liste`}
       >
-        <span className="shop-emoji" aria-hidden>
-          {item.emoji}
-        </span>
+        <ItemSym item={item} />
         <span className="shop-name">{item.name}</span>
         {!editMode && qty > 0 && <span className="shop-qty">{qty > 1 ? `×${qty}` : '✓'}</span>}
         {editMode && (
@@ -315,9 +390,11 @@ function ItemEditor({ initial, onSave, onClose }: {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal shop-editor" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neuer Artikel">
+      <div className="modal shop-editor" style={{ ['--cat' as string]: catColor.get(cat) }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neuer Artikel">
         <div className="shop-editor-preview" style={{ ['--cat' as string]: catColor.get(cat) }}>
-          <span className="shop-emoji">{emoji}</span>
+          <span className="shop-emoji">
+            <Sym emoji={emoji} />
+          </span>
           <input
             ref={ref}
             value={name}
@@ -331,8 +408,8 @@ function ItemEditor({ initial, onSave, onClose }: {
           <div className="muted small">Bild</div>
           <div className="shop-emoji-grid">
             {EMOJI_CHOICES.map((e) => (
-              <button key={e} className={emoji === e ? 'on' : ''} onClick={() => setEmoji(e)} aria-pressed={emoji === e}>
-                {e}
+              <button key={e} className={emoji === e ? 'on' : ''} onClick={() => setEmoji(e)} aria-pressed={emoji === e} aria-label={e}>
+                <Sym emoji={e} />
               </button>
             ))}
           </div>

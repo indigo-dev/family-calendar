@@ -20,6 +20,8 @@ import { fmt } from '../lib/dates';
 import { Avatar } from '../components/Avatar';
 import { newTimetable, SCHOOL_TYPES } from '../lib/school';
 import { SchoolTab } from './SchoolTab';
+import { Sym } from '../components/Sym';
+import { SYMBOL_SETS, type SymbolSet } from '../lib/symbols';
 
 export type SettingsTab = 'family' | 'calendars' | 'school' | 'holidays' | 'display' | 'backup';
 type Tab = SettingsTab;
@@ -677,6 +679,7 @@ function DisplayTab() {
           </select>
         </label>
       </div>
+      <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
       <div className="field-row">
         <label className="field">
           <span>Aktualisieren alle (Min.)</span>
@@ -703,6 +706,55 @@ function DisplayTab() {
         <input type="checkbox" checked={settings.keepAwake} onChange={(e) => updateSettings({ keepAwake: e.target.checked })} />
         <span>Bildschirm wach halten</span>
       </label>
+    </div>
+  );
+}
+
+/** sample symbols with their department colour (one-colour styles are tinted with it) */
+const SYMBOL_PREVIEW: [string, string][] = [
+  ['🍎', '#4caf50'],
+  ['🥕', '#4caf50'],
+  ['🧀', '#e3b72c'],
+  ['☕', '#a0673c'],
+  ['🧴', '#b06ad1'],
+];
+
+function SymbolPicker({ value, onChange }: { value: SymbolSet; onChange: (v: SymbolSet) => void }) {
+  const groups = [...new Set(SYMBOL_SETS.map((s) => s.group))];
+  return (
+    <div className="field">
+      <span>Symbole (Einkaufsliste)</span>
+      {groups.map((g) => (
+        <div key={g} className="sym-picker-group">
+          <div className="muted small">{g}</div>
+          <div className="sym-picker" role="radiogroup" aria-label={`Symbole: ${g}`}>
+            {SYMBOL_SETS.filter((s) => s.group === g).map((s) => (
+              <button
+                key={s.id}
+                role="radio"
+                aria-checked={value === s.id}
+                className={`sym-card ${value === s.id ? 'on' : ''}`}
+                onClick={() => onChange(s.id)}
+                title={s.note}
+              >
+                <span className="sym-card-row">
+                  {SYMBOL_PREVIEW.map(([e, color]) => (
+                    <span key={e} style={{ ['--sym-tint' as string]: color }}>
+                      <Sym emoji={e} set={s.id} />
+                    </span>
+                  ))}
+                </span>
+                <span className="sym-card-label">{s.label}</span>
+                {s.note && <span className="sym-card-note">{s.note}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      <span className="sym-credits">
+        Fluent Emoji © Microsoft (MIT) · Noto Emoji © Google (Apache 2.0) · Twemoji © Twitter, Inc. u. a. (CC BY 4.0) · OpenMoji
+        (CC BY-SA 4.0) · Tabler, Phosphor (MIT) · Lucide (ISC)
+      </span>
     </div>
   );
 }

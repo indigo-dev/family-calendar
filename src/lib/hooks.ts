@@ -82,3 +82,48 @@ export function useSwipe(onSwipe: (dir: 1 | -1) => void) {
     },
   };
 }
+
+const LONG_PRESS_MS = 450;
+
+/**
+ * Tap vs. long press on one button (filter chips): returns the handlers to spread onto it.
+ * A finger that moves (scrolling the chip bar) cancels the long press; the click after a long press is swallowed.
+ */
+export function useTapOrLongPress(onTap: () => void, onLongPress: () => void) {
+  const timer = useRef<number | undefined>(undefined);
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const fired = useRef(false);
+
+  const cancel = () => {
+    window.clearTimeout(timer.current);
+    timer.current = undefined;
+    start.current = null;
+  };
+
+  return {
+    onPointerDown: (e: { clientX: number; clientY: number }) => {
+      fired.current = false;
+      start.current = { x: e.clientX, y: e.clientY };
+      timer.current = window.setTimeout(() => {
+        fired.current = true;
+        timer.current = undefined;
+        onLongPress();
+      }, LONG_PRESS_MS);
+    },
+    onPointerMove: (e: { clientX: number; clientY: number }) => {
+      const s = start.current;
+      if (s && Math.hypot(e.clientX - s.x, e.clientY - s.y) > 10) cancel();
+    },
+    onPointerUp: cancel,
+    onPointerLeave: cancel,
+    onPointerCancel: cancel,
+    onContextMenu: (e: { preventDefault: () => void }) => e.preventDefault(),
+    onClick: () => {
+      if (fired.current) {
+        fired.current = false;
+        return;
+      }
+      onTap();
+    },
+  };
+}

@@ -17,18 +17,18 @@ export type CategoryId =
   | 'other';
 
 /** Order roughly follows a walk through a German supermarket. */
-export const CATEGORIES: { id: CategoryId; label: string; icon: string; color: string }[] = [
-  { id: 'produce', label: 'Obst & Gemüse', icon: '🥦', color: '#4caf50' },
-  { id: 'bakery', label: 'Brot & Backwaren', icon: '🥐', color: '#c58b45' },
-  { id: 'dairy', label: 'Milch, Käse & Eier', icon: '🧀', color: '#e3b72c' },
-  { id: 'meat', label: 'Fleisch, Wurst & Fisch', icon: '🥩', color: '#d9534f' },
-  { id: 'pantry', label: 'Nudeln, Backen & Würzen', icon: '🍝', color: '#d98a3a' },
-  { id: 'breakfast', label: 'Frühstück, Kaffee & Süßes', icon: '🍯', color: '#a0673c' },
-  { id: 'drinks', label: 'Getränke', icon: '🥤', color: '#3b8fd9' },
-  { id: 'frozen', label: 'Tiefkühl', icon: '🧊', color: '#5bb8d6' },
-  { id: 'care', label: 'Drogerie & Pflege', icon: '🧴', color: '#b06ad1' },
-  { id: 'household', label: 'Haushalt', icon: '🧻', color: '#7d8a99' },
-  { id: 'other', label: 'Sonstiges', icon: '🛒', color: '#8a8f98' },
+export const CATEGORIES: { id: CategoryId; label: string; /** chip label */ short: string; icon: string; color: string }[] = [
+  { id: 'produce', label: 'Obst & Gemüse', short: 'Obst & Gemüse', icon: '🥦', color: '#4caf50' },
+  { id: 'bakery', label: 'Brot & Backwaren', short: 'Brot', icon: '🥐', color: '#c58b45' },
+  { id: 'dairy', label: 'Milch, Käse & Eier', short: 'Milch & Käse', icon: '🧀', color: '#e3b72c' },
+  { id: 'meat', label: 'Fleisch, Wurst & Fisch', short: 'Fleisch & Wurst', icon: '🥩', color: '#d9534f' },
+  { id: 'pantry', label: 'Nudeln, Backen & Würzen', short: 'Nudeln & Co.', icon: '🍝', color: '#d98a3a' },
+  { id: 'breakfast', label: 'Frühstück, Kaffee & Süßes', short: 'Frühstück & Süßes', icon: '🍯', color: '#a0673c' },
+  { id: 'drinks', label: 'Getränke', short: 'Getränke', icon: '🥤', color: '#3b8fd9' },
+  { id: 'frozen', label: 'Tiefkühl', short: 'Tiefkühl', icon: '🧊', color: '#5bb8d6' },
+  { id: 'care', label: 'Drogerie & Pflege', short: 'Drogerie', icon: '🧴', color: '#b06ad1' },
+  { id: 'household', label: 'Haushalt', short: 'Haushalt', icon: '🧻', color: '#7d8a99' },
+  { id: 'other', label: 'Sonstiges', short: 'Sonstiges', icon: '🛒', color: '#8a8f98' },
 ];
 
 export interface ShopItem {

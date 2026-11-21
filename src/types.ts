@@ -1,3 +1,5 @@
+import type { SymbolSet } from './lib/symbols';
+
 export type ViewMode = 'day' | 'days' | 'week' | 'month' | 'year' | 'agenda';
 
 export type Avatar =
@@ -79,6 +81,8 @@ export interface Settings {
   theme: 'auto' | 'light' | 'dark';
   /** visual style, independent of light/dark */
   style: UiStyle;
+  /** how emoji symbols are drawn (shopping list, ...) */
+  symbols: SymbolSet;
 }
 
 export type UiStyle = 'classic' | 'sonoma' | 'liquid' | 'flow' | 'aurora';
