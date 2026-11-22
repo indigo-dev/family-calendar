@@ -5,6 +5,7 @@ import { dayKey, type Todo } from '../lib/todos';
 import { Avatar } from '../components/Avatar';
 
 import { noteStyle } from './layout';
+import { Modal } from '../components/Modal';
 
 type DueChoice = 'none' | 'today' | 'tomorrow' | 'date';
 
@@ -39,8 +40,8 @@ export function TodoEditor({
   const preview = members.filter((m) => memberIds.includes(m.id));
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal todo-editor" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+    <Modal onClose={onClose} label={isNew ? 'Neuer Zettel' : 'Zettel bearbeiten'}>
+      <div className="modal todo-editor">
         <div className="todo-editor-paper" style={noteStyle(preview)}>
           <textarea
             ref={ref}
@@ -124,6 +125,6 @@ export function TodoEditor({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

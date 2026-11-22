@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-
+import { Modal } from '../components/Modal';
 import {
   LocateError,
   addPlace,
@@ -16,14 +16,9 @@ import {
 
 export function PlacesSheet({ onClose }: { onClose: () => void }) {
   const { places, activeId } = useWeatherSettings();
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
   return (
-    <div className="wx-sheet-backdrop" onClick={onClose}>
-      <div className="wx-sheet" role="dialog" aria-label="Orte" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} layerClass="wx-sheet-backdrop" label="Orte">
+      <div className="wx-sheet">
         <div className="wx-sheet-head">
           <h2>Orte</h2>
           <button className="btn primary" onClick={onClose}>
@@ -41,7 +36,7 @@ export function PlacesSheet({ onClose }: { onClose: () => void }) {
         <h3 className="wx-h">Ort hinzufügen</h3>
         <AddPlace onAdded={onClose} />
       </div>
-    </div>
+    </Modal>
   );
 }
 

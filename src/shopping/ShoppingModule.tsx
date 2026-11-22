@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { BUILTIN, CATEGORIES, EMOJI_CHOICES, norm, useShopping, type CategoryId, type ListEntry, type ShopItem } from '../lib/shopping';
 import { useTapOrLongPress } from '../lib/hooks';
 import { Sym } from '../components/Sym';
+import { Modal } from '../components/Modal';
 import type { Paint } from '../lib/colors';
 import { useStore } from '../store';
 import { arrayOf, persisted, usePersisted } from '../lib/persisted';
@@ -411,15 +412,8 @@ function ItemEditor({
   const save = () => valid && onSave(name.trim(), emoji, cat);
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div
-        className="modal shop-editor"
-        style={{ ['--cat' as string]: paint(catColor.get(cat)) }}
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Neuer Artikel"
-      >
+    <Modal onClose={onClose} label="Neuer Artikel">
+      <div className="modal shop-editor" style={{ ['--cat' as string]: paint(catColor.get(cat)) }}>
         <div className="shop-editor-preview" style={{ ['--cat' as string]: paint(catColor.get(cat)) }}>
           <span className="shop-emoji">
             <Sym emoji={emoji} />
@@ -469,6 +463,6 @@ function ItemEditor({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

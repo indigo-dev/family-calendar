@@ -862,6 +862,26 @@ h4 {
 }
 
 /* ------------------------------------------------------------ modal */
+/* native <dialog> as the full-screen layer of a modal (components/Modal.tsx); the layer class adds the look */
+dialog.dialog-layer {
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  color: inherit;
+  overflow: hidden;
+}
+dialog.dialog-layer:not([open]) {
+  display: none;
+}
+dialog.dialog-layer::backdrop {
+  background: transparent;
+}
 .modal-backdrop {
   position: fixed;
   inset: 0;

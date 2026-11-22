@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { SchoolTab } from './SchoolTab';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { Modal } from '../components/Modal';
 import { FamilyTab } from './FamilyTab';
 import { CalendarsTab } from './CalendarsTab';
 import { HolidaysTab } from './HolidaysTab';
@@ -32,8 +33,8 @@ export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; in
     document.querySelector('.settings-nav-item.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [tab]);
   return (
-    <div className="modal-backdrop">
-      <div className="modal settings" role="dialog" aria-modal="true" aria-label="Einstellungen">
+    <Modal onClose={onClose} label="Einstellungen" dismissible={false}>
+      <div className="modal settings">
         <nav className="settings-nav" aria-label="Bereiche">
           <h2>Einstellungen</h2>
           {TABS.map((t) => (
@@ -74,6 +75,6 @@ export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; in
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

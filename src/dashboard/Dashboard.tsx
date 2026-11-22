@@ -21,6 +21,7 @@ import {
 } from '../lib/dashboard';
 import type { ModuleId } from '../components/ModuleNav';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { Modal } from '../components/Modal';
 import type { SettingsTab } from '../settings/SettingsPanel';
 import { DashCtx, WIDGET_COMPONENTS, type DashData } from './widgets';
 import './dashboard.css';
@@ -448,8 +449,8 @@ function SizeMenu({
 
 function Gallery({ onClose }: { onClose: () => void }) {
   return (
-    <div className="dash-gallery-backdrop" onClick={onClose}>
-      <div className="dash-gallery" role="dialog" aria-label="Widget hinzufügen" onClick={(e) => e.stopPropagation()}>
+    <Modal onClose={onClose} layerClass="dash-gallery-backdrop" label="Widget hinzufügen">
+      <div className="dash-gallery">
         <div className="dash-gallery-head">
           <h2>Widget hinzufügen</h2>
           <button className="btn" onClick={onClose}>
@@ -486,6 +487,6 @@ function Gallery({ onClose }: { onClose: () => void }) {
           ))}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

@@ -2,6 +2,7 @@ import type { CalEvent, Member } from '../types';
 import { useStore } from '../store';
 import { addDays, fmt, fmtTime, isSameDay } from '../lib/dates';
 import { Avatar } from './Avatar';
+import { Modal } from './Modal';
 
 export function describeWhen(e: CalEvent): string {
   if (e.allDay) {
@@ -20,8 +21,8 @@ export function EventDetail({ event, onClose }: { event: CalEvent; onClose: () =
   const { memberById } = useStore();
   const members = event.memberIds.map((id) => memberById.get(id)).filter((m): m is Member => !!m);
   return (
-    <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal event-detail" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+    <Modal onClose={onClose} label={event.title}>
+      <div className="modal event-detail">
         <div className="event-detail-bar" style={{ background: members[0]?.color }} />
         <h2>{event.title}</h2>
         <p className="muted">{describeWhen(event)}</p>
@@ -42,6 +43,6 @@ export function EventDetail({ event, onClose }: { event: CalEvent; onClose: () =
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
