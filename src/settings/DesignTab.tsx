@@ -21,12 +21,13 @@ const STYLE_NOTES: Record<Settings['style'], string> = {
   braun: 'Weniger, aber besser',
 };
 
-type DesignSection = 'style' | 'colors' | 'symbols' | 'motion';
+type DesignSection = 'style' | 'colors' | 'weather' | 'shopping' | 'motion';
 
 const SECTIONS: { id: DesignSection; label: string }[] = [
   { id: 'style', label: 'Stil' },
   { id: 'colors', label: 'Farben' },
-  { id: 'symbols', label: 'Symbole' },
+  { id: 'weather', label: 'Wetter-Symbole' },
+  { id: 'shopping', label: 'Einkaufs-Symbole' },
   { id: 'motion', label: 'Übergänge' },
 ];
 
@@ -201,19 +202,19 @@ export function DesignTab() {
         </Group>
       )}
 
-      {section === 'symbols' && (
-        <>
-          <Group
-            title="Wetter-Symbole"
-            note="Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht."
-          >
-            <WeatherIconPicker value={settings.weatherIcons} onChange={(weatherIcons) => updateSettings({ weatherIcons })} />
-          </Group>
+      {section === 'weather' && (
+        <Group
+          title="Wetter-Symbole"
+          note="Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht."
+        >
+          <WeatherIconPicker value={settings.weatherIcons} onChange={(weatherIcons) => updateSettings({ weatherIcons })} />
+        </Group>
+      )}
 
-          <Group title="Symbole (Einkaufsliste)">
-            <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
-          </Group>
-        </>
+      {section === 'shopping' && (
+        <Group title="Symbole der Einkaufsliste">
+          <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
+        </Group>
       )}
     </div>
   );
