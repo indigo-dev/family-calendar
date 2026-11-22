@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- generated from public/icon.svg (HomeWally icon) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <path android:fillColor="#2F3B52" android:pathData="M112,0h288a112,112 0 0 1 112,112v288a112,112 0 0 1 -112,112h-288a112,112 0 0 1 -112,-112v-288a112,112 0 0 1 112,-112z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M132,128h248a36,36 0 0 1 36,36v216a36,36 0 0 1 -36,36h-248a36,36 0 0 1 -36,-36v-216a36,36 0 0 1 36,-36z" />
+    <path android:fillColor="#E8613C" android:pathData="M132,128h248a36,36 0 0 1 36,36v4a36,36 0 0 1 -36,36h-248a36,36 0 0 1 -36,-36v-4a36,36 0 0 1 36,-36z" />
+    <path android:fillColor="#E8613C" android:pathData="M96,168h320v36h-320z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M178,96h0a14,14 0 0 1 14,14v44a14,14 0 0 1 -14,14h-0a14,14 0 0 1 -14,-14v-44a14,14 0 0 1 14,-14z" />
+    <path android:fillColor="#FFFFFF" android:pathData="M334,96h0a14,14 0 0 1 14,14v44a14,14 0 0 1 -14,14h-0a14,14 0 0 1 -14,-14v-44a14,14 0 0 1 14,-14z" />
+    <path android:fillColor="#3B82F6" android:pathData="M154,268a22,22 0 1 0 44,0a22,22 0 1 0 -44,0z" />
+    <path android:fillColor="#E8613C" android:pathData="M234,268a22,22 0 1 0 44,0a22,22 0 1 0 -44,0z" />
+    <path android:fillColor="#22A06B" android:pathData="M314,268a22,22 0 1 0 44,0a22,22 0 1 0 -44,0z" />
+    <path android:fillColor="#A855F7" android:pathData="M154,346a22,22 0 1 0 44,0a22,22 0 1 0 -44,0z" />
+    <path android:fillColor="#EAB308" android:pathData="M234,346a22,22 0 1 0 44,0a22,22 0 1 0 -44,0z" />
+</vector>
