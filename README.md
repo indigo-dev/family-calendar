@@ -90,7 +90,7 @@ Die Links sind geheim: Wer sie kennt, kann die Termine lesen. Änderungen kommen
 
 1. Im Repo: **Settings → Pages → Source: GitHub Actions**.
 2. Der Workflow `.github/workflows/deploy.yml` baut und veröffentlicht bei jedem Push.
-   Adresse danach: `https://<dein-github-name>.github.io/family-calendar/`
+   Adresse danach: `https://<dein-github-name>.github.io/homewally/`
 
 ## iPad einrichten
 
