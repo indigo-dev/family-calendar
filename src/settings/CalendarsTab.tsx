@@ -64,7 +64,7 @@ export function CalendarsTab() {
           {proxyTest && !proxyTest.busy && <p className={proxyTest.ok ? 'success' : 'error'}>{proxyTest.text}</p>}
           {!settings.proxyUrl && (
             <p className="help">
-              Ohne Weiterleitung kann die App die Kalender-Links nicht laden (Google und Microsoft blockieren direkte Zugriffe aus dem
+              Ohne Weiterleitung kann die App die Kalender-Links nicht laden (die Kalender-Anbieter blockieren direkte Zugriffe aus dem
               Browser).
             </p>
           )}

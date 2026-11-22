@@ -125,14 +125,23 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export const UI_STYLES: { id: UiStyle; label: string }[] = [
   { id: 'classic', label: 'Klassisch' },
-  { id: 'sonoma', label: 'Cupertino · Sonoma' },
-  { id: 'liquid', label: 'Cupertino · Liquid Glass' },
+  { id: 'soft', label: 'Hell · Sanft' },
+  { id: 'clear', label: 'Glas · Klar' },
   { id: 'flow', label: 'Glas · Flow' },
   { id: 'aurora', label: 'Glas · Aurora' },
-  { id: 'n8n', label: 'Workflow · n8n' },
-  { id: 'stately', label: 'Diagramm · Stately' },
-  { id: 'braun', label: 'Braun · Rams' },
+  { id: 'nodes', label: 'Workflow · Knoten' },
+  { id: 'states', label: 'Diagramm · Zustände' },
+  { id: 'minimal', label: 'Minimal · Funktional' },
 ];
+
+/** Style ids of earlier versions (named after products) → today's ids, so saved settings and backups keep their style. */
+const LEGACY_STYLES: Record<string, UiStyle> = {
+  sonoma: 'soft',
+  liquid: 'clear',
+  n8n: 'nodes',
+  stately: 'states',
+  braun: 'minimal',
+};
 
 /** Day count of the 'days' view. */
 export function clampDays(n: number): number {
@@ -240,6 +249,7 @@ export function parseConfig(raw: unknown): AppConfig {
   }
   settings.holidays = { ...DEFAULT_HOLIDAYS, ...obj(s.holidays) } as HolidaySettings;
   settings.multiDays = clampDays(settings.multiDays);
+  settings.style = (LEGACY_STYLES[settings.style] ?? settings.style) as UiStyle;
   if (!UI_STYLES.some((x) => x.id === settings.style)) settings.style = DEFAULT_SETTINGS.style;
   if (!isSymbolSet(settings.symbols)) settings.symbols = DEFAULT_SETTINGS.symbols;
   if (!isWeatherIconSet(settings.weatherIcons)) settings.weatherIcons = DEFAULT_SETTINGS.weatherIcons;

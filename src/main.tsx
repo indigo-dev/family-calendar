@@ -13,7 +13,7 @@ import '@fontsource-variable/sora/wght.css';
 import '@fontsource-variable/manrope/wght.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
-// n8n, Stately and Braun
+// Workflow, Diagramm and Minimal styles
 import '@fontsource-variable/open-sans/wght.css';
 import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/inter-tight/wght.css';

@@ -12,13 +12,13 @@ import { MODULE_TRANSITIONS } from '../lib/transition';
 
 const STYLE_NOTES: Record<Settings['style'], string> = {
   classic: 'Schlicht und klar',
-  sonoma: 'Wie der Mac-Kalender',
-  liquid: 'Glas wie iOS 26',
+  soft: 'Weiß, feine Linien, ruhig',
+  clear: 'Schwebendes Glas, Kapseln',
   flow: 'Technisch, Punktraster',
   aurora: 'Farbverläufe, Leuchten',
-  n8n: 'Knoten auf Punktraster',
-  stately: 'Zustände und Übergänge',
-  braun: 'Weniger, aber besser',
+  nodes: 'Knoten auf Punktraster',
+  states: 'Zustände und Übergänge',
+  minimal: 'Reduziert, warme Grautöne',
 };
 
 type DesignSection = 'style' | 'colors' | 'weather' | 'shopping' | 'motion';

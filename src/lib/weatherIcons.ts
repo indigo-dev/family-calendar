@@ -39,9 +39,9 @@ export const WEATHER_ICON_SETS: WeatherIconSetInfo[] = [
   { id: 'mc-flat', label: 'Meteocons Flach', note: 'Klare Flächen, animiert', mode: 'image', ext: 'svg', padded: true },
   { id: 'mc-line', label: 'Meteocons Linie', note: 'Farbige Umrisse, animiert', mode: 'image', ext: 'svg', padded: true },
   { id: 'mc-mono', label: 'Meteocons Einfarbig', note: 'In der Textfarbe, zurückhaltend', mode: 'mask', ext: 'svg', padded: true },
-  { id: 'material', label: 'Material Rund', note: 'Google-Stil, in der Textfarbe', mode: 'mask', ext: 'svg' },
-  { id: 'fluent-3d', label: 'Fluent 3D', note: 'Microsoft, plastisch', mode: 'image', ext: 'png' },
-  { id: 'fluent-flat', label: 'Fluent Flach', note: 'Microsoft, flach und freundlich', mode: 'image', ext: 'svg' },
+  { id: 'material', label: 'Material Rund', note: 'Abgerundet, in der Textfarbe', mode: 'mask', ext: 'svg' },
+  { id: 'fluent-3d', label: 'Fluent 3D', note: 'Plastisch, 3D', mode: 'image', ext: 'png' },
+  { id: 'fluent-flat', label: 'Fluent Flach', note: 'Flach und freundlich', mode: 'image', ext: 'svg' },
   { id: 'system', label: 'Geräte-Emoji', note: 'Sieht je nach Gerät anders aus', mode: 'native' },
 ];
 

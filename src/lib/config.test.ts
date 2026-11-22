@@ -23,6 +23,16 @@ describe('parseConfig', () => {
     expect(cfg.settings.multiDays).toBe(6);
   });
 
+  it('maps the style ids of earlier versions to the new ones', () => {
+    const style = (s: string) => parseConfig({ ...base, settings: { style: s } }).settings.style;
+    expect(style('sonoma')).toBe('soft');
+    expect(style('liquid')).toBe('clear');
+    expect(style('n8n')).toBe('nodes');
+    expect(style('stately')).toBe('states');
+    expect(style('braun')).toBe('minimal');
+    expect(style('aurora')).toBe('aurora');
+  });
+
   it('drops calendar assignments to people that do not exist', () => {
     const cfg = parseConfig({
       ...base,
