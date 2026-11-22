@@ -1,8 +1,9 @@
 name: Android (HomeWally)
 
 # Builds the Android app from the same web code as the website.
-# - every push to main: build check, the signed AAB is kept as a download (Actions > run > Artifacts)
-# - "Run workflow" with "Play" ticked, or a tag v*: additionally uploaded to Google Play (internal testing)
+# - every push to main: signed AAB as a download (Actions > run > Artifacts) and, once the Play service
+#   account is stored, automatically uploaded to Google Play (internal testing) – the tablets update themselves
+# - "Run workflow": the same by hand; untick "Play" for a build without upload
 #
 # Repository secrets (Settings > Secrets and variables > Actions):
 #   HOMEWALLY_KEYSTORE_BASE64    upload key (upload.p12) as base64 text
@@ -19,7 +20,7 @@ on:
       play:
         description: 'Zu Google Play hochladen (interner Test)'
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -33,6 +34,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HOMEWALLY_VERSION_CODE: ${{ github.run_number }}
+      # only to check in "if:" whether the secrets exist (secrets cannot be used there directly)
+      HAS_PLAY_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+      HAS_UPLOAD_KEY: ${{ secrets.HOMEWALLY_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -79,7 +83,9 @@ jobs:
           retention-days: 30
 
       - name: Zu Google Play hochladen (interner Test)
-        if: (github.event_name == 'workflow_dispatch' && inputs.play) || startsWith(github.ref, 'refs/tags/v')
+        if: >-
+          env.HAS_PLAY_ACCOUNT == 'true' && env.HAS_UPLOAD_KEY == 'true' &&
+          (github.event_name == 'push' || inputs.play)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
