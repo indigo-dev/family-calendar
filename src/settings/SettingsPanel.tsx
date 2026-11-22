@@ -20,6 +20,7 @@ import { Avatar } from '../components/Avatar';
 import { newTimetable, SCHOOL_TYPES } from '../lib/school';
 import { SchoolTab } from './SchoolTab';
 import { Sym } from '../components/Sym';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { SYMBOL_SETS, type SymbolSet } from '../lib/symbols';
 import { WEATHER_ICON_SETS, type WeatherIconSet, type WeatherKey } from '../lib/weatherIcons';
 import { WxIcon } from '../weather/WxIcon';
@@ -72,14 +73,16 @@ export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; in
             </button>
           </div>
           <div className="settings-body" key={tab}>
-            {tab === 'family' && <FamilyTab onGoCalendars={() => setTab('calendars')} />}
-            {tab === 'calendars' && <CalendarsTab />}
-            {tab === 'holidays' && <HolidaysTab />}
-            {tab === 'school' && <SchoolTab />}
-            {tab === 'design' && <DesignTab />}
-            {tab === 'view' && <ViewTab />}
-            {tab === 'device' && <DeviceTab />}
-            {tab === 'backup' && <BackupTab />}
+            <ErrorBoundary label={info.label} resetKey={tab} retrySec={0}>
+              {tab === 'family' && <FamilyTab onGoCalendars={() => setTab('calendars')} />}
+              {tab === 'calendars' && <CalendarsTab />}
+              {tab === 'holidays' && <HolidaysTab />}
+              {tab === 'school' && <SchoolTab />}
+              {tab === 'design' && <DesignTab />}
+              {tab === 'view' && <ViewTab />}
+              {tab === 'device' && <DeviceTab />}
+              {tab === 'backup' && <BackupTab />}
+            </ErrorBoundary>
           </div>
         </div>
       </div>
@@ -526,6 +529,14 @@ function AddCalendar() {
   );
 }
 
+function hostOf(url: string): string {
+  try {
+    return new URL(normalizeIcsUrl(url)).hostname;
+  } catch {
+    return 'ungültiger Link';
+  }
+}
+
 function CalendarRow({ cal }: { cal: CalendarSource }) {
   const { members, patchCalendar, removeCalendar, toggleCalendarMember, settings } = useStore();
   const [test, setTest] = useState<TestState | null>(null);
@@ -540,12 +551,7 @@ function CalendarRow({ cal }: { cal: CalendarSource }) {
     }
   };
 
-  let host = '';
-  try {
-    host = new URL(normalizeIcsUrl(cal.url)).hostname;
-  } catch {
-    host = 'ungültiger Link';
-  }
+  const host = hostOf(cal.url);
 
   return (
     <div className={`cal-row ${cal.enabled ? '' : 'disabled'}`}>
@@ -602,16 +608,17 @@ function HolidaysTab() {
   const { settings, updateSettings } = useStore();
   const h = settings.holidays;
   const set = (patch: Partial<typeof h>) => updateSettings({ holidays: { ...h, ...patch } });
-  const [preview, setPreview] = useState<{ list?: Holiday[]; error?: string }>({});
+  const [loaded, setLoaded] = useState<{ region: string; list?: Holiday[]; error?: string }>({ region: '' });
+  const preview: { list?: Holiday[]; error?: string } = h.region && loaded.region === h.region ? loaded : {};
 
   useEffect(() => {
-    if (!h.region) return setPreview({});
+    if (!h.region) return;
+    const region = h.region;
     let alive = true;
     const y = new Date().getFullYear();
-    setPreview({});
-    loadHolidays(h.region, [y, y + 1])
-      .then((list) => alive && setPreview({ list }))
-      .catch((e) => alive && setPreview({ error: e instanceof Error ? e.message : String(e) }));
+    loadHolidays(region, [y, y + 1])
+      .then((list) => alive && setLoaded({ region, list }))
+      .catch((e) => alive && setLoaded({ region, error: e instanceof Error ? e.message : String(e) }));
     return () => {
       alive = false;
     };

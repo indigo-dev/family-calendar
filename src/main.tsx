@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { StoreProvider } from './store';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { loadConfig } from './lib/config';
 import './styles.css';
 // self-hosted fonts for the Flow and Aurora styles (only downloaded when a style uses them)
@@ -23,9 +24,11 @@ document.documentElement.setAttribute('data-style', config.settings.style);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <StoreProvider initial={config}>
-      <App />
-    </StoreProvider>
+    <ErrorBoundary label="Die App">
+      <StoreProvider initial={config}>
+        <App />
+      </StoreProvider>
+    </ErrorBoundary>
   </StrictMode>,
 );
 

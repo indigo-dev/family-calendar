@@ -30,7 +30,8 @@ export function CalendarModule({ now, reloadKey, settingsOpen, onSettings, onWea
   const [selected, setSelected] = useState<CalEvent | null>(null);
   const [nonce, setNonce] = useState(0);
   const [banner, setBanner] = useState<string | undefined>();
-  const lastInteraction = useRef(Date.now());
+  const [mountedAt] = useState(Date.now);
+  const lastInteraction = useRef(mountedAt);
 
   const firstReload = useRef(true);
   useEffect(() => {

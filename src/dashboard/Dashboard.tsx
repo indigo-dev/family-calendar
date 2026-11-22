@@ -20,6 +20,7 @@ import {
   type WidgetSize,
 } from '../lib/dashboard';
 import type { ModuleId } from '../components/ModuleNav';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import type { SettingsTab } from '../settings/SettingsPanel';
 import { DashCtx, WIDGET_COMPONENTS, type DashData } from './widgets';
 import './dashboard.css';
@@ -197,9 +198,11 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
 
   /* ---------------- size menu */
   const [sizeMenu, setSizeMenu] = useState<{ id: string; rect: DOMRect } | null>(null);
-  useEffect(() => {
+  const [wasEditing, setWasEditing] = useState(editing);
+  if (wasEditing !== editing) {
+    setWasEditing(editing);
     if (!editing) setSizeMenu(null);
-  }, [editing]);
+  }
   const menuWidget = sizeMenu && layout.find((w) => w.id === sizeMenu.id);
 
   /* ---------------- smooth layout changes (FLIP): widgets glide from their old place and size */
@@ -283,7 +286,9 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
                 onContextMenu={(e) => e.preventDefault()}
               >
                 <div className="dw-inner">
-                  <Comp size={w.size} />
+                  <ErrorBoundary label={widgetDef(w.type).title} compact>
+                    <Comp size={w.size} />
+                  </ErrorBoundary>
                 </div>
                 {editing && (
                   <>

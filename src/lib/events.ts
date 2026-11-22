@@ -141,6 +141,8 @@ export function useEvents(
     lastNonce.current = refreshNonce;
     const demo = demoEvents(members, range);
     const cached = readCache(key);
+    // show cached events at once while the calendars load
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setState((s) => ({ ...s, events: merge([demo, cached ?? []]), loading: active.length > 0 }));
 
     if (active.length === 0) {

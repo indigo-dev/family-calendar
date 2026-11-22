@@ -10,6 +10,7 @@ import { addDays, dayKey } from './dates';
 const API = 'https://openholidaysapi.org';
 const CACHE_PREFIX = 'fc.hol.';
 const MAX_AGE_MS = 14 * 86400000;
+const NO_HOLIDAYS: Holiday[] = [];
 
 export interface Holiday {
   id: string;
@@ -50,7 +51,7 @@ async function loadYear(region: string, year: number): Promise<Holiday[]> {
   try {
     cached = JSON.parse(localStorage.getItem(key) ?? 'null');
   } catch {
-    cached = null;
+    /* corrupt cache entry – load again */
   }
   if (cached && Date.now() - cached.at < MAX_AGE_MS) return cached.list;
 
@@ -101,10 +102,7 @@ export function useHolidayMarks(range: DateRange, settings: HolidaySettings): { 
   const [state, setState] = useState<{ list: Holiday[]; error?: string }>({ list: [] });
 
   useEffect(() => {
-    if (!enabled) {
-      setState({ list: [] });
-      return;
-    }
+    if (!enabled) return;
     let alive = true;
     const years = Array.from({ length: y1 - y0 + 1 }, (_, i) => y0 + i);
     loadHolidays(region, years)
@@ -115,9 +113,10 @@ export function useHolidayMarks(range: DateRange, settings: HolidaySettings): { 
     };
   }, [enabled, region, y0, y1]);
 
+  const list = enabled ? state.list : NO_HOLIDAYS;
   const marks = useMemo(() => {
     const map = new Map<string, DayMarks>();
-    for (const h of state.list) {
+    for (const h of list) {
       if (h.type === 'public' ? !showPublic : !showSchool) continue;
       const end = parseDay(h.end);
       for (let d = parseDay(h.start); d <= end; d = addDays(d, 1)) {
@@ -129,7 +128,7 @@ export function useHolidayMarks(range: DateRange, settings: HolidaySettings): { 
       }
     }
     return map;
-  }, [state.list, showPublic, showSchool, range.start, range.end]);
+  }, [list, showPublic, showSchool, range.start, range.end]);
 
-  return { marks, error: state.error };
+  return { marks, error: enabled ? state.error : undefined };
 }

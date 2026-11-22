@@ -156,7 +156,9 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days, 
 
   // latest values for the native gesture listeners
   const live = useRef({ hourHeight, minH, days, first, onDayCount });
-  live.current = { hourHeight, minH, days, first, onDayCount };
+  useLayoutEffect(() => {
+    live.current = { hourHeight, minH, days, first, onDayCount };
+  });
 
   // Pinch up/down = finer or coarser hour grid, pinch sideways = number of days (1 … 7).
   // Ctrl + wheel (trackpad pinch on desktop) zooms the hour grid.

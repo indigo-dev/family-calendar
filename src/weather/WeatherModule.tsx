@@ -514,10 +514,7 @@ function AddPlace({ first = false, onAdded }: { first?: boolean; onAdded?: () =>
   // search while typing (debounced)
   useEffect(() => {
     const q = query.trim();
-    if (q.length < 2) {
-      setHits(null);
-      return;
-    }
+    if (q.length < 2) return;
     const ctrl = new AbortController();
     const t = window.setTimeout(() => {
       searchPlaces(q, ctrl.signal)
@@ -578,7 +575,7 @@ function AddPlace({ first = false, onAdded }: { first?: boolean; onAdded?: () =>
         autoComplete="off"
         aria-label="Ort suchen"
       />
-      {hits && (
+      {hits && query.trim().length >= 2 && (
         <ul className="wx-hits">
           {hits.length === 0 && (
             <li className="muted wx-nohit">{/^\d+$/.test(query.trim()) ? 'Bitte den Ortsnamen statt der Postleitzahl eingeben.' : 'Kein Ort gefunden.'}</li>

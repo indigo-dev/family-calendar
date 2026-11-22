@@ -562,12 +562,14 @@ function ShoppingWidget({ size }: WidgetProps) {
 function useFullUrl(photo: Photo | undefined, enabled: boolean): string | undefined {
   const [url, setUrl] = useState<string>();
   useEffect(() => {
-    if (!photo || !enabled) return setUrl(undefined);
+    if (!photo || !enabled) return;
     const u = URL.createObjectURL(photo.full);
+    // the URL is an external resource: created here, freed in the cleanup
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUrl(u);
     return () => URL.revokeObjectURL(u);
   }, [photo, enabled]);
-  return url;
+  return photo && enabled ? url : undefined;
 }
 
 function PhotosWidget({ size }: WidgetProps) {

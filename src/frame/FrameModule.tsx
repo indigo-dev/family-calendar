@@ -241,27 +241,26 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
 /** Free photos from picsum.photos (Unsplash licence). A tap downloads the motif into the album. */
 function MotifBrowser() {
   const photos = usePhotos();
-  const pages = useRef(shuffledPages());
+  const [pages] = useState(shuffledPages);
   const [motifs, setMotifs] = useState<Motif[]>([]);
   const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(false);
+  // page 0 starts loading right away; the buttons set the flags for the next page / retry
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [retry, setRetry] = useState(0);
 
   useEffect(() => {
-    if (page >= pages.current.length) return;
+    if (page >= pages.length) return;
     let cancelled = false;
-    setLoading(true);
-    setError(false);
-    fetchMotifs(pages.current[page])
+    fetchMotifs(pages[page])
       .then((list) => !cancelled && setMotifs((m) => [...m, ...list]))
       .catch(() => !cancelled && setError(true))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
     };
-  }, [page, retry]);
+  }, [pages, page, retry]);
 
   const inAlbum = new Map((photos ?? []).filter((p) => p.motifId).map((p) => [p.motifId!, p.id]));
 
@@ -314,14 +313,21 @@ function MotifBrowser() {
       {error && (
         <div className="fr-empty">
           <p>Motive konnten nicht geladen werden. Ist das Gerät online?</p>
-          <button className="btn" onClick={() => setRetry((r) => r + 1)}>
+          <button className="btn" onClick={() => {
+              setLoading(true);
+              setError(false);
+              setRetry((r) => r + 1);
+            }}>
             Erneut versuchen
           </button>
         </div>
       )}
-      {!error && page < pages.current.length - 1 && (
+      {!error && page < pages.length - 1 && (
         <div className="fr-more">
-          <button className="btn" disabled={loading} onClick={() => setPage((p) => p + 1)}>
+          <button className="btn" disabled={loading} onClick={() => {
+              setLoading(true);
+              setPage((p) => p + 1);
+            }}>
             {loading ? 'Lädt …' : 'Mehr Motive'}
           </button>
         </div>

@@ -226,7 +226,9 @@ function Canvas({ all, visible, membersOf, today, onOpen, onToggle, onNew, patch
   const liveRef = useRef<Live | null>(null);
   const gesture = useRef<Gesture | null>(null);
   const allRef = useRef(all);
-  allRef.current = all;
+  useLayoutEffect(() => {
+    allRef.current = all;
+  });
 
   useLayoutEffect(() => {
     const el = ref.current;

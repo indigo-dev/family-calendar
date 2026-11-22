@@ -75,7 +75,9 @@ export function PhotoFrame({ ids, mode, startId, onClose }: { ids: string[]; mod
   }, [slides]);
 
   const slidesRef = useRef(slides);
-  slidesRef.current = slides;
+  useEffect(() => {
+    slidesRef.current = slides;
+  });
   useEffect(() => () => slidesRef.current.forEach((x) => URL.revokeObjectURL(x.url)), []);
 
   // next photo after the interval (a single photo just stays)

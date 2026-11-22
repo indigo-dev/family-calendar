@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import {
   BUILTIN,
   CATEGORIES,
@@ -107,20 +107,20 @@ export function ShoppingModule() {
   const filterCats = useMemo(() => CATEGORIES.filter((c) => c.id !== 'other' || items.some((i) => i.cat === 'other')), [items]);
   const allCats = cats.length === 0;
   // a search always looks through the whole pantry, so nothing is hidden by a forgotten filter
-  const catOk = (cat: CategoryId) => q !== '' || allCats || cats.includes(cat);
+  const catOk = useCallback((cat: CategoryId) => q !== '' || allCats || cats.includes(cat), [q, allCats, cats]);
   const pantryGroups = useMemo(() => {
     const match = (i: ShopItem) => !q || norm(i.name).includes(q);
     return CATEGORIES.filter((c) => catOk(c.id))
       .map((c) => ({ cat: c, items: items.filter((i) => i.cat === c.id && match(i)) }))
       .filter((g) => g.items.length > 0 || (!q && g.cat.id !== 'other'));
-  }, [items, q, cats]);
+  }, [items, q, catOk]);
   const frequent = useMemo(() => {
     if (q || editMode) return [];
     return items
       .filter((i) => (shop.bought[i.id] ?? 0) >= 2 && catOk(i.cat))
       .sort((a, b) => shop.bought[b.id] - shop.bought[a.id] || a.name.localeCompare(b.name, 'de'))
       .slice(0, FREQUENT_MAX);
-  }, [items, shop.bought, q, editMode, cats]);
+  }, [items, shop.bought, q, editMode, catOk]);
   const exact = q && items.some((i) => norm(i.name) === q);
 
   useEffect(() => () => window.clearTimeout(undoTimer.current), []);

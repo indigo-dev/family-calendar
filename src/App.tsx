@@ -14,6 +14,7 @@ import { useFrameSettings, usePhotos } from './lib/frame';
 import { WeatherModule } from './weather/WeatherModule';
 import { Dashboard } from './dashboard/Dashboard';
 import { GlyphIcon } from './components/Icon';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const MODULE_KEY = 'fc.module';
 
@@ -34,7 +35,8 @@ export function App() {
   const [reloadKey, setReloadKey] = useState(0);
   const [dashEditing, setDashEditing] = useState(false);
   const now = useNow();
-  const lastInteraction = useRef(Date.now());
+  const [mountedAt] = useState(Date.now);
+  const lastInteraction = useRef(mountedAt);
   const frameCfg = useFrameSettings();
   const photos = usePhotos();
   const [frame, setFrame] = useState<{ mode: FrameMode; startId?: string } | null>(null);
@@ -113,83 +115,87 @@ export function App() {
         }}
       />
       <div className="app">
-        {module === 'dashboard' && (
-          <>
-            <ModuleHeader
-              title={greeting(now)}
-              now={now}
-              clock={false}
-              onSettings={() => openSettings()}
-              actions={
-                !dashEditing && (
-                  <button className="icon-btn" onClick={() => setDashEditing(true)} aria-label="Dashboard bearbeiten" title="Bearbeiten">
-                    <GlyphIcon glyph="✎" name="edit" />
-                  </button>
-                )
-              }
-            />
-            <Dashboard
+        <ErrorBoundary label={MODULES.find((m) => m.id === module)?.label ?? 'Modul'} resetKey={module}>
+          {module === 'dashboard' && (
+            <>
+              <ModuleHeader
+                title={greeting(now)}
+                now={now}
+                clock={false}
+                onSettings={() => openSettings()}
+                actions={
+                  !dashEditing && (
+                    <button className="icon-btn" onClick={() => setDashEditing(true)} aria-label="Dashboard bearbeiten" title="Bearbeiten">
+                      <GlyphIcon glyph="✎" name="edit" />
+                    </button>
+                  )
+                }
+              />
+              <Dashboard
+                now={now}
+                reloadKey={reloadKey}
+                editing={dashEditing}
+                onEditing={setDashEditing}
+                openModule={setModule}
+                startFrame={(startId) => setFrame({ mode: 'manual', startId })}
+                openSettings={openSettings}
+              />
+            </>
+          )}
+          {module === 'calendar' && (
+            <CalendarModule
               now={now}
               reloadKey={reloadKey}
-              editing={dashEditing}
-              onEditing={setDashEditing}
-              openModule={setModule}
-              startFrame={(startId) => setFrame({ mode: 'manual', startId })}
-              openSettings={openSettings}
+              settingsOpen={settingsOpen}
+              onSettings={() => openSettings()}
+              onWeather={() => setModule('weather')}
             />
-          </>
-        )}
-        {module === 'calendar' && (
-          <CalendarModule
-            now={now}
-            reloadKey={reloadKey}
-            settingsOpen={settingsOpen}
-            onSettings={() => openSettings()}
-            onWeather={() => setModule('weather')}
-          />
-        )}
-        {module === 'weather' && (
-          <>
-            <ModuleHeader title="Wetter" now={now} onSettings={() => openSettings()} />
-            <WeatherModule now={now} />
-          </>
-        )}
-        {module === 'timetable' && (
-          <>
-            <ModuleHeader title="Stundenplan" now={now} onSettings={() => openSettings('school')} />
-            <TimetableModule now={now} onSettings={() => openSettings('family')} />
-          </>
-        )}
-        {module === 'todos' && (
-          <>
-            <ModuleHeader title="To-dos" now={now} onSettings={() => openSettings()} />
-            <MemberFilter issues={{}} onIssue={() => {}} />
-            <TodoBoard now={now} />
-          </>
-        )}
-        {module === 'frame' && (
-          <>
-            <ModuleHeader title="Fotorahmen" now={now} onSettings={() => openSettings()} />
-            <FrameModule onStart={(startId) => setFrame({ mode: 'manual', startId })} />
-          </>
-        )}
-        {module === 'shopping' && (
-          <>
-            <ModuleHeader title="Einkaufsliste" now={now} onSettings={() => openSettings()} />
-            <ShoppingModule />
-          </>
-        )}
+          )}
+          {module === 'weather' && (
+            <>
+              <ModuleHeader title="Wetter" now={now} onSettings={() => openSettings()} />
+              <WeatherModule now={now} />
+            </>
+          )}
+          {module === 'timetable' && (
+            <>
+              <ModuleHeader title="Stundenplan" now={now} onSettings={() => openSettings('school')} />
+              <TimetableModule now={now} onSettings={() => openSettings('family')} />
+            </>
+          )}
+          {module === 'todos' && (
+            <>
+              <ModuleHeader title="To-dos" now={now} onSettings={() => openSettings()} />
+              <MemberFilter issues={{}} onIssue={() => {}} />
+              <TodoBoard now={now} />
+            </>
+          )}
+          {module === 'frame' && (
+            <>
+              <ModuleHeader title="Fotorahmen" now={now} onSettings={() => openSettings()} />
+              <FrameModule onStart={(startId) => setFrame({ mode: 'manual', startId })} />
+            </>
+          )}
+          {module === 'shopping' && (
+            <>
+              <ModuleHeader title="Einkaufsliste" now={now} onSettings={() => openSettings()} />
+              <ShoppingModule />
+            </>
+          )}
+        </ErrorBoundary>
       </div>
       {frame && frameIds.length > 0 && (
-        <PhotoFrame
-          ids={frameIds}
-          mode={frame.mode}
-          startId={frame.startId}
-          onClose={() => {
-            lastInteraction.current = Date.now();
-            setFrame(null);
-          }}
-        />
+        <ErrorBoundary label="Fotorahmen" fallback={null} retrySec={0} onError={() => setFrame(null)}>
+          <PhotoFrame
+            ids={frameIds}
+            mode={frame.mode}
+            startId={frame.startId}
+            onClose={() => {
+              lastInteraction.current = Date.now();
+              setFrame(null);
+            }}
+          />
+        </ErrorBoundary>
       )}
       {settingsOpen && (
         <SettingsPanel

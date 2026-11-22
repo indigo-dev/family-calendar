@@ -1,0 +1,35 @@
+import js from '@eslint/js';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+import reactHooks from 'eslint-plugin-react-hooks';
+
+export default tseslint.config(
+  { ignores: ['dist', 'node_modules', 'public/symbols', 'public/weather-icons'] },
+  {
+    // Cloudflare worker and service worker run in a worker scope
+    files: ['worker/**/*.js', 'public/sw.js'],
+    extends: [js.configs.recommended],
+    languageOptions: { globals: globals.serviceworker },
+  },
+  {
+    files: ['*.config.ts'],
+    extends: [...tseslint.configs.recommended],
+    languageOptions: { globals: globals.node },
+  },
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended, reactHooks.configs.flat.recommended],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: globals.browser,
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    files: ['scripts/**/*.mjs', 'eslint.config.js'],
+    extends: [js.configs.recommended],
+    languageOptions: { globals: globals.node },
+  },
+);

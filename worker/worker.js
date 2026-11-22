@@ -55,7 +55,7 @@ export default {
         cf: { cacheTtl: 300, cacheEverything: true },
         redirect: 'follow',
       });
-    } catch (e) {
+    } catch {
       return fail(502, 'Kalender nicht erreichbar', origin);
     }
     if (!upstream.ok) return fail(upstream.status, 'Kalender-Anbieter antwortet mit ' + upstream.status, origin);
