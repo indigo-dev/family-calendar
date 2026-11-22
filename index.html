@@ -12,6 +12,11 @@
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <title>Familienkalender</title>
+    <!-- Cascade layer order. Module styles are loaded later (code splitting), so their position in the
+         page must not decide the result: themes always win over module and app styles. -->
+    <style>
+      @layer app, modules, themes;
+    </style>
   </head>
   <body>
     <div id="root"></div>
