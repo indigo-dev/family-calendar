@@ -5,6 +5,7 @@ import { addDays, dayKey, fmt, startOfDay, startOfWeek } from '../lib/dates';
 import { useHolidayMarks } from '../lib/holidays';
 import { minutes, newSubject, SCHOOL_DAYS, SCHOOL_TYPES, SUBJECT_COLORS, subjectMap, subjectsFor } from '../lib/school';
 import { Avatar } from '../components/Avatar';
+import { MemberChip } from '../components/Header';
 import { useMinute } from '../lib/clock';
 
 /** Breaks of at least this many minutes get their own row. */
@@ -34,16 +35,20 @@ export function TimetableModule({ onSettings }: { onSettings: () => void }) {
   const now = useMinute();
   const { members, school, updateMember, updateSchool, selectedIds, settings, paint: paintColor } = useStore();
   const kids = members.filter((m) => m.timetable);
-  const [choice, setChoice] = useState<string | null>(() => {
-    const sel = kids.filter((k) => selectedIds.has(k.id));
-    return sel.length === 1 ? sel[0].id : null;
-  });
+  // chosen children, empty = all; starts with the children picked in the person filter
+  const [chosen, setChosen] = useState<string[]>(() => kids.filter((k) => selectedIds.has(k.id)).map((k) => k.id));
   const [editing, setEditing] = useState(false);
   const [brush, setBrush] = useState<string | null>(null);
 
-  // null = all children (or the only one)
-  const active = kids.find((k) => k.id === choice) ?? (kids.length === 1 ? kids[0] : null);
-  const shown = active ? [active] : kids;
+  // same logic as the person filter elsewhere: tap = only this child (again = all), long press = add / remove
+  const chooseOnly = (id: string) => setChosen((cur) => (cur.length === 1 && cur[0] === id ? [] : [id]));
+  const toggleChosen = (id: string) => setChosen((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+
+  const picked = kids.filter((k) => chosen.includes(k.id));
+  const shown = picked.length ? picked : kids;
+  // editing needs exactly one timetable
+  const active = shown.length === 1 ? shown[0] : null;
+  const all = picked.length === 0;
 
   const monday = startOfWeek(addDays(startOfDay(now), now.getDay() === 6 ? 2 : now.getDay() === 0 ? 1 : 0), 1).getTime();
   const range = useMemo(() => ({ start: new Date(monday), end: addDays(new Date(monday), 7) }), [monday]);
@@ -81,26 +86,21 @@ export function TimetableModule({ onSettings }: { onSettings: () => void }) {
       <div className="board-toolbar">
         {kids.length > 1 && (
           <nav className="filterbar" aria-label="Kinder">
-            <button className={`chip all ${!active ? 'on' : ''}`} aria-pressed={!active} onClick={() => setChoice(null)} disabled={editing}>
+            <button className={`chip all ${all ? 'on' : ''}`} aria-pressed={all} onClick={() => setChosen([])} disabled={editing}>
               Alle
             </button>
             {kids.map((k) => {
-              const on = active?.id === k.id;
+              const on = chosen.includes(k.id);
               return (
-                <button
+                <MemberChip
                   key={k.id}
-                  className={`chip ${on ? 'on' : ''} ${active && !on ? 'off' : ''}`}
-                  style={{
-                    borderColor: active && !on ? undefined : k.color,
-                    background: on ? `color-mix(in srgb, ${k.color} 22%, var(--surface))` : undefined,
-                  }}
-                  aria-pressed={on}
+                  member={k}
+                  active={on}
+                  dimmed={!all && !on}
                   disabled={editing}
-                  onClick={() => setChoice(on ? null : k.id)}
-                >
-                  <Avatar member={k} size={30} ring={false} />
-                  {k.name}
-                </button>
+                  onTap={() => chooseOnly(k.id)}
+                  onLongPress={() => toggleChosen(k.id)}
+                />
               );
             })}
           </nav>

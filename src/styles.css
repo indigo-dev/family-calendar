@@ -1493,7 +1493,8 @@ dialog.dialog-layer::backdrop {
   border-radius: 12px;
   text-align: left;
 }
-.member-row span {
+/* only the name block – a plain `span` selector also hit the avatar and pushed its initials up */
+.member-row-text {
   display: flex;
   flex-direction: column;
   font-weight: 600;
@@ -2673,4 +2674,14 @@ html[data-vt='push']::view-transition-new(module) {
   .tr-b {
     opacity: 0;
   }
+}
+
+/* Einstellungen → Design: sub-sections as tabs */
+.design-sections {
+  align-self: flex-start;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.design-sections > button {
+  white-space: nowrap;
 }

@@ -30,7 +30,7 @@ export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
         {members.map((m) => (
           <button key={m.id} className={`member-row ${m.id === selected ? 'active' : ''}`} onClick={() => setSelected(m.id)}>
             <Avatar member={m} size={36} ring={false} />
-            <span>
+            <span className="member-row-text">
               {m.name}
               <small className="muted">{subtitle(m)}</small>
             </span>

@@ -145,16 +145,19 @@ export function ModuleHeader({
 }
 
 /** Tap = only this person, long press = add/remove this person to/from the selection. */
-function MemberChip({
+/** Person chip of the filter bars: tap = only this person, long press = add / remove. */
+export function MemberChip({
   member,
   active,
   dimmed,
+  disabled,
   onTap,
   onLongPress,
 }: {
   member: Member;
   active: boolean;
   dimmed: boolean;
+  disabled?: boolean;
   onTap: () => void;
   onLongPress: () => void;
 }) {
@@ -167,6 +170,7 @@ function MemberChip({
         background: active ? `color-mix(in srgb, ${member.color} 22%, var(--surface))` : undefined,
       }}
       aria-pressed={active}
+      disabled={disabled}
       {...press}
     >
       <Avatar member={member} size={30} ring={false} />

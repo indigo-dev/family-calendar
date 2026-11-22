@@ -1,4 +1,5 @@
 import type { Settings } from '../types';
+import { oneOf, persisted, usePersisted } from '../lib/persisted';
 import { useStore } from '../store';
 import { UI_STYLES } from '../lib/config';
 import { Sym } from '../components/Sym';
@@ -20,151 +21,200 @@ const STYLE_NOTES: Record<Settings['style'], string> = {
   braun: 'Weniger, aber besser',
 };
 
+type DesignSection = 'style' | 'colors' | 'symbols' | 'motion';
+
+const SECTIONS: { id: DesignSection; label: string }[] = [
+  { id: 'style', label: 'Stil' },
+  { id: 'colors', label: 'Farben' },
+  { id: 'symbols', label: 'Symbole' },
+  { id: 'motion', label: 'Übergänge' },
+];
+
+/** the last opened section (per device), so the settings open where you left them */
+const sectionStore = persisted<DesignSection>(
+  'fc.designSection',
+  (raw) =>
+    oneOf(
+      raw,
+      SECTIONS.map((s) => s.id),
+      'style',
+    ),
+  { syncTabs: false },
+);
+const setSection = (s: DesignSection) => sectionStore.set(s);
+
 export function DesignTab() {
   const { settings, updateSettings } = useStore();
+  const section = usePersisted(sectionStore);
   return (
     <div className="form">
-      <Group title="Stil">
-        <div className="pick-grid" role="radiogroup" aria-label="Stil">
-          {UI_STYLES.map((s) => (
-            <button
-              key={s.id}
-              role="radio"
-              aria-checked={settings.style === s.id}
-              className={`pick-card ${settings.style === s.id ? 'on' : ''}`}
-              onClick={() => updateSettings({ style: s.id })}
-            >
-              <span className={`style-thumb st-${s.id}`} aria-hidden>
-                <i className="st-bar" />
-                <i className="st-a" />
-                <i className="st-b" />
-                <i className="st-c" />
-              </span>
-              <span className="pick-label">{s.label}</span>
-              <span className="pick-note">{STYLE_NOTES[s.id]}</span>
-            </button>
-          ))}
-        </div>
-      </Group>
+      <div className="segmented design-sections" role="tablist" aria-label="Design-Bereiche">
+        {SECTIONS.map((s) => (
+          <button
+            key={s.id}
+            role="tab"
+            aria-selected={section === s.id}
+            className={section === s.id ? 'active' : ''}
+            onClick={() => setSection(s.id)}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
 
-      <Group title="Hell / Dunkel">
-        <div className="pick-grid three" role="radiogroup" aria-label="Hell / Dunkel">
-          {(
-            [
-              ['auto', 'Automatisch', 'folgt dem Gerät'],
-              ['light', 'Hell', 'immer hell'],
-              ['dark', 'Dunkel', 'immer dunkel'],
-            ] as [Settings['theme'], string, string][]
-          ).map(([id, label, note]) => (
-            <button
-              key={id}
-              role="radio"
-              aria-checked={settings.theme === id}
-              className={`pick-card ${settings.theme === id ? 'on' : ''}`}
-              onClick={() => updateSettings({ theme: id })}
-            >
-              <span className={`mode-thumb mode-${id}`} aria-hidden>
-                <i />
-                <i />
-              </span>
-              <span className="pick-label">{label}</span>
-              <span className="pick-note">{note}</span>
-            </button>
-          ))}
-        </div>
-      </Group>
-
-      <Group
-        title="Farben"
-        note="Gilt für Personen, Schulfächer und Abteilungen der Einkaufsliste. Die gewählten Farben bleiben gespeichert – es ändert sich nur die Darstellung."
-      >
-        <div className="pick-grid three" role="radiogroup" aria-label="Farbpalette">
-          {PALETTES.map((p) => (
-            <button
-              key={p.id}
-              role="radio"
-              aria-checked={settings.palette === p.id}
-              className={`pick-card ${settings.palette === p.id ? 'on' : ''}`}
-              onClick={() => updateSettings({ palette: p.id })}
-            >
-              <span className="palette-thumb" aria-hidden>
-                {paletteColors(p.id, settings.coreColor)
-                  .slice(0, 6)
-                  .map((c, i) => (
-                    <i key={i} style={{ background: c }} />
-                  ))}
-              </span>
-              <span className="pick-label">{p.label}</span>
-              <span className="pick-note">{p.note}</span>
-            </button>
-          ))}
-        </div>
-        {settings.palette === 'core' && (
-          <div className="set-card">
-            <Row label="Kernfarbe" hint="Daraus entstehen alle anderen Farben">
-              <div className="swatches">
-                {CORE_SUGGESTIONS.map((c) => (
-                  <button
-                    key={c}
-                    className={`swatch ${settings.coreColor.toLowerCase() === c ? 'on' : ''}`}
-                    style={{ background: c }}
-                    onClick={() => updateSettings({ coreColor: c })}
-                    aria-label={c}
-                  />
-                ))}
-                <label
-                  className={`swatch custom ${CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? '' : 'on'}`}
-                  style={{ background: CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? undefined : settings.coreColor }}
-                  title="Eigene Farbe"
+      {section === 'style' && (
+        <>
+          <Group title="Stil">
+            <div className="pick-grid" role="radiogroup" aria-label="Stil">
+              {UI_STYLES.map((s) => (
+                <button
+                  key={s.id}
+                  role="radio"
+                  aria-checked={settings.style === s.id}
+                  className={`pick-card ${settings.style === s.id ? 'on' : ''}`}
+                  onClick={() => updateSettings({ style: s.id })}
                 >
-                  <input type="color" value={settings.coreColor} onChange={(e) => updateSettings({ coreColor: e.target.value })} />+
-                </label>
-              </div>
-            </Row>
-            <div className="core-strip" aria-label="Erzeugte Farben">
-              {paletteColors('core', settings.coreColor).map((c, i) => (
-                <i key={i} style={{ background: c }} />
+                  <span className={`style-thumb st-${s.id}`} aria-hidden>
+                    <i className="st-bar" />
+                    <i className="st-a" />
+                    <i className="st-b" />
+                    <i className="st-c" />
+                  </span>
+                  <span className="pick-label">{s.label}</span>
+                  <span className="pick-note">{STYLE_NOTES[s.id]}</span>
+                </button>
               ))}
             </div>
-          </div>
-        )}
-      </Group>
+          </Group>
 
-      <Group title="Übergänge" note="Wie die Bereiche beim Wechseln ineinander übergehen.">
-        <div className="pick-grid" role="radiogroup" aria-label="Übergänge">
-          {MODULE_TRANSITIONS.map((t) => (
-            <button
-              key={t.id}
-              role="radio"
-              aria-checked={settings.moduleTransition === t.id}
-              className={`pick-card ${settings.moduleTransition === t.id ? 'on' : ''}`}
-              onClick={() => updateSettings({ moduleTransition: t.id })}
-            >
-              {/* two mini pages that swap back and forth with this animation */}
-              <span className={`tr-thumb tr-${t.id}`} aria-hidden>
-                <i className="tr-rail" />
-                <span className="tr-stage">
-                  <i className="tr-a" />
-                  <i className="tr-b" />
+          <Group title="Hell / Dunkel">
+            <div className="pick-grid three" role="radiogroup" aria-label="Hell / Dunkel">
+              {(
+                [
+                  ['auto', 'Automatisch', 'folgt dem Gerät'],
+                  ['light', 'Hell', 'immer hell'],
+                  ['dark', 'Dunkel', 'immer dunkel'],
+                ] as [Settings['theme'], string, string][]
+              ).map(([id, label, note]) => (
+                <button
+                  key={id}
+                  role="radio"
+                  aria-checked={settings.theme === id}
+                  className={`pick-card ${settings.theme === id ? 'on' : ''}`}
+                  onClick={() => updateSettings({ theme: id })}
+                >
+                  <span className={`mode-thumb mode-${id}`} aria-hidden>
+                    <i />
+                    <i />
+                  </span>
+                  <span className="pick-label">{label}</span>
+                  <span className="pick-note">{note}</span>
+                </button>
+              ))}
+            </div>
+          </Group>
+        </>
+      )}
+
+      {section === 'colors' && (
+        <Group
+          title="Farben"
+          note="Gilt für Personen, Schulfächer und Abteilungen der Einkaufsliste. Die gewählten Farben bleiben gespeichert – es ändert sich nur die Darstellung."
+        >
+          <div className="pick-grid three" role="radiogroup" aria-label="Farbpalette">
+            {PALETTES.map((p) => (
+              <button
+                key={p.id}
+                role="radio"
+                aria-checked={settings.palette === p.id}
+                className={`pick-card ${settings.palette === p.id ? 'on' : ''}`}
+                onClick={() => updateSettings({ palette: p.id })}
+              >
+                <span className="palette-thumb" aria-hidden>
+                  {paletteColors(p.id, settings.coreColor)
+                    .slice(0, 6)
+                    .map((c, i) => (
+                      <i key={i} style={{ background: c }} />
+                    ))}
                 </span>
-              </span>
-              <span className="pick-label">{t.label}</span>
-              <span className="pick-note">{t.note}</span>
-            </button>
-          ))}
-        </div>
-      </Group>
+                <span className="pick-label">{p.label}</span>
+                <span className="pick-note">{p.note}</span>
+              </button>
+            ))}
+          </div>
+          {settings.palette === 'core' && (
+            <div className="set-card">
+              <Row label="Kernfarbe" hint="Daraus entstehen alle anderen Farben">
+                <div className="swatches">
+                  {CORE_SUGGESTIONS.map((c) => (
+                    <button
+                      key={c}
+                      className={`swatch ${settings.coreColor.toLowerCase() === c ? 'on' : ''}`}
+                      style={{ background: c }}
+                      onClick={() => updateSettings({ coreColor: c })}
+                      aria-label={c}
+                    />
+                  ))}
+                  <label
+                    className={`swatch custom ${CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? '' : 'on'}`}
+                    style={{ background: CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? undefined : settings.coreColor }}
+                    title="Eigene Farbe"
+                  >
+                    <input type="color" value={settings.coreColor} onChange={(e) => updateSettings({ coreColor: e.target.value })} />+
+                  </label>
+                </div>
+              </Row>
+              <div className="core-strip" aria-label="Erzeugte Farben">
+                {paletteColors('core', settings.coreColor).map((c, i) => (
+                  <i key={i} style={{ background: c }} />
+                ))}
+              </div>
+            </div>
+          )}
+        </Group>
+      )}
 
-      <Group
-        title="Wetter-Symbole"
-        note="Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht."
-      >
-        <WeatherIconPicker value={settings.weatherIcons} onChange={(weatherIcons) => updateSettings({ weatherIcons })} />
-      </Group>
+      {section === 'motion' && (
+        <Group title="Übergänge" note="Wie die Bereiche beim Wechseln ineinander übergehen.">
+          <div className="pick-grid" role="radiogroup" aria-label="Übergänge">
+            {MODULE_TRANSITIONS.map((t) => (
+              <button
+                key={t.id}
+                role="radio"
+                aria-checked={settings.moduleTransition === t.id}
+                className={`pick-card ${settings.moduleTransition === t.id ? 'on' : ''}`}
+                onClick={() => updateSettings({ moduleTransition: t.id })}
+              >
+                {/* two mini pages that swap back and forth with this animation */}
+                <span className={`tr-thumb tr-${t.id}`} aria-hidden>
+                  <i className="tr-rail" />
+                  <span className="tr-stage">
+                    <i className="tr-a" />
+                    <i className="tr-b" />
+                  </span>
+                </span>
+                <span className="pick-label">{t.label}</span>
+                <span className="pick-note">{t.note}</span>
+              </button>
+            ))}
+          </div>
+        </Group>
+      )}
 
-      <Group title="Symbole (Einkaufsliste)">
-        <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
-      </Group>
+      {section === 'symbols' && (
+        <>
+          <Group
+            title="Wetter-Symbole"
+            note="Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht."
+          >
+            <WeatherIconPicker value={settings.weatherIcons} onChange={(weatherIcons) => updateSettings({ weatherIcons })} />
+          </Group>
+
+          <Group title="Symbole (Einkaufsliste)">
+            <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
+          </Group>
+        </>
+      )}
     </div>
   );
 }

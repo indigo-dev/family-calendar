@@ -19,7 +19,7 @@ const TABS: { id: Tab; icon: string; label: string; note: string }[] = [
   { id: 'calendars', icon: '📅', label: 'Kalender', note: 'Abo-Links und Zuordnung zu Personen' },
   { id: 'holidays', icon: '🏖️', label: 'Ferien & Feiertage', note: 'Bundesland, Feiertage, Schulferien' },
   { id: 'school', icon: '🎒', label: 'Schule', note: 'Klingelzeiten und Fächer' },
-  { id: 'design', icon: '🎨', label: 'Design', note: 'Stil, Hell/Dunkel, Farben, Symbole' },
+  { id: 'design', icon: '🎨', label: 'Design', note: 'Stil, Farben, Symbole, Übergänge' },
   { id: 'view', icon: '🗓️', label: 'Kalenderansicht', note: 'Startansicht, Wochenbeginn, Tageszeiten' },
   { id: 'device', icon: '📱', label: 'Gerät', note: 'Aktualisierung, Ruhezustand' },
   { id: 'backup', icon: '💾', label: 'Sicherung', note: 'Export, Import, Zurücksetzen' },
