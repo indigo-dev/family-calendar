@@ -46,6 +46,14 @@ const PATHS = {
       <path d="M8 20h9.5a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.2A2.9 2.9 0 0 0 8 20z" />
     </>
   ),
+  apps: (
+    <>
+      <rect x="4" y="4" width="6" height="6" rx="1.5" />
+      <rect x="14" y="4" width="6" height="6" rx="1.5" />
+      <rect x="4" y="14" width="6" height="6" rx="1.5" />
+      <rect x="14" y="14" width="6" height="6" rx="1.5" />
+    </>
+  ),
   frame: (
     <>
       <rect x="3" y="4" width="18" height="16" rx="2" />

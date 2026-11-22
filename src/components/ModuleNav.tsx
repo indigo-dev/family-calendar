@@ -1,10 +1,14 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { Icon } from './Icon';
 import { arrayOf, persisted, usePersisted } from '../lib/persisted';
+import { isNative } from '../native/launcher';
 
-export type ModuleId = 'dashboard' | 'calendar' | 'timetable' | 'todos' | 'shopping' | 'weather' | 'frame';
+export type ModuleId = 'dashboard' | 'calendar' | 'timetable' | 'todos' | 'shopping' | 'weather' | 'frame' | 'apps';
 
-/** The dashboard always comes first; the others can be reordered by drag & drop. */
+/**
+ * The dashboard always comes first; the others can be reordered by drag & drop.
+ * "Apps" (start other Android apps) only exists in the Android app.
+ */
 export const MODULES: { id: ModuleId; label: string; icon: string }[] = [
   { id: 'dashboard', label: 'Übersicht', icon: '🏠' },
   { id: 'calendar', label: 'Kalender', icon: '📅' },
@@ -13,6 +17,7 @@ export const MODULES: { id: ModuleId; label: string; icon: string }[] = [
   { id: 'shopping', label: 'Einkauf', icon: '🛒' },
   { id: 'weather', label: 'Wetter', icon: '⛅' },
   { id: 'frame', label: 'Fotos', icon: '🖼️' },
+  ...(isNative ? [{ id: 'apps' as const, label: 'Apps', icon: '📱' }] : []),
 ];
 
 const ORDER_KEY = 'fc.moduleOrder';

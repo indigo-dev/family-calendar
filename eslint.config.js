@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'public/symbols', 'public/weather-icons'] },
+  { ignores: ['dist', 'node_modules', 'android', 'public/symbols', 'public/weather-icons'] },
   {
     // Cloudflare worker and service worker run in a worker scope
     files: ['worker/**/*.js', 'public/sw.js'],

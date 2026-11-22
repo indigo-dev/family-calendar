@@ -1,0 +1,89 @@
+name: Android (HomeWally)
+
+# Builds the Android app from the same web code as the website.
+# - every push to main: build check, the signed AAB is kept as a download (Actions > run > Artifacts)
+# - "Run workflow" with "Play" ticked, or a tag v*: additionally uploaded to Google Play (internal testing)
+#
+# Repository secrets (Settings > Secrets and variables > Actions):
+#   HOMEWALLY_KEYSTORE_BASE64    upload key (upload.p12) as base64 text
+#   HOMEWALLY_KEYSTORE_PASSWORD  its password
+#   PLAY_SERVICE_ACCOUNT_JSON    service account of the Play Console (only for the upload)
+# Optional repository variable PLAY_RELEASE_STATUS: "draft" as long as the app was never published, then "completed".
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      play:
+        description: 'Zu Google Play hochladen (interner Test)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HOMEWALLY_VERSION_CODE: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync android
+
+      - name: Versionsname
+        run: echo "HOMEWALLY_VERSION_NAME=$(node -p "require('./package.json').version").${{ github.run_number }}" >> "$GITHUB_ENV"
+
+      - name: Upload-Schlüssel bereitstellen
+        env:
+          KEYSTORE_BASE64: ${{ secrets.HOMEWALLY_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.HOMEWALLY_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::Kein Upload-Schlüssel hinterlegt – das AAB bleibt unsigniert."
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.p12"
+          echo "HOMEWALLY_KEYSTORE_FILE=$RUNNER_TEMP/upload.p12" >> "$GITHUB_ENV"
+          echo "HOMEWALLY_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: AAB bauen
+        working-directory: android
+        run: ./gradlew --no-daemon bundleRelease
+
+      - name: Schlüssel entfernen
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.p12"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: homewally-${{ env.HOMEWALLY_VERSION_NAME }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Zu Google Play hochladen (interner Test)
+        if: (github.event_name == 'workflow_dispatch' && inputs.play) || startsWith(github.ref, 'refs/tags/v')
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: io.github.indigodev.homewally
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: ${{ vars.PLAY_RELEASE_STATUS || 'draft' }}

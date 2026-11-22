@@ -4,6 +4,7 @@ import { App } from './App';
 import { StoreProvider } from './store';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { configStore } from './lib/config';
+import { isNative } from './native/launcher';
 import './styles.css';
 // self-hosted fonts for the Flow and Aurora styles (only downloaded when a style uses them)
 import '@fontsource-variable/geist/wght.css';
@@ -31,6 +32,7 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );
 
-if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+// the Android app has all files on the device already: no service worker (it would only cache twice)
+if (import.meta.env.PROD && !isNative && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }

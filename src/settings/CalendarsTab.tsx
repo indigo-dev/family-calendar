@@ -4,6 +4,7 @@ import { useStore } from '../store';
 import { LINK_HELP, newCalendar } from '../lib/config';
 import { checkProxy, normalizeIcsUrl, proxyOf, testCalendarLink } from '../lib/events';
 import { Avatar } from '../components/Avatar';
+import { isNative } from '../native/launcher';
 
 type TestState = { busy: true } | { busy: false; ok: true; text: string } | { busy: false; ok: false; text: string };
 
@@ -26,43 +27,49 @@ export function CalendarsTab() {
 
   return (
     <div className="form">
-      <div className="field">
-        <span>Weiterleitung (Cloudflare Worker)</span>
-        <div className="copy-row">
+      {isNative ? (
+        <p className="help">
+          In der App lädt das Tablet die Kalender-Links selbst – eine Weiterleitung (Cloudflare Worker) ist nicht nötig.
+        </p>
+      ) : (
+        <div className="field">
+          <span>Weiterleitung (Cloudflare Worker)</span>
+          <div className="copy-row">
+            <input
+              style={{ flex: 1, minHeight: 44, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '0 12px' }}
+              value={proxy}
+              placeholder="https://familienkalender-ics.NAME.workers.dev"
+              onChange={(e) => setProxy(e.target.value)}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+            />
+            <button className="btn primary" onClick={saveProxy} disabled={proxyTest?.busy}>
+              Speichern & testen
+            </button>
+          </div>
           <input
-            style={{ flex: 1, minHeight: 44, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '0 12px' }}
-            value={proxy}
-            placeholder="https://familienkalender-ics.NAME.workers.dev"
-            onChange={(e) => setProxy(e.target.value)}
+            className="proxy-key"
+            style={{ minHeight: 44, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '0 12px', marginTop: 8 }}
+            type="password"
+            value={proxyKey}
+            placeholder="Schlüssel (nur falls im Worker ACCESS_KEY gesetzt ist)"
+            aria-label="Schlüssel der Weiterleitung"
+            onChange={(e) => setProxyKey(e.target.value)}
+            autoComplete="off"
             autoCapitalize="off"
             autoCorrect="off"
             spellCheck={false}
           />
-          <button className="btn primary" onClick={saveProxy} disabled={proxyTest?.busy}>
-            Speichern & testen
-          </button>
+          {proxyTest && !proxyTest.busy && <p className={proxyTest.ok ? 'success' : 'error'}>{proxyTest.text}</p>}
+          {!settings.proxyUrl && (
+            <p className="help">
+              Ohne Weiterleitung kann die App die Kalender-Links nicht laden (Google und Microsoft blockieren direkte Zugriffe aus dem
+              Browser).
+            </p>
+          )}
         </div>
-        <input
-          className="proxy-key"
-          style={{ minHeight: 44, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '0 12px', marginTop: 8 }}
-          type="password"
-          value={proxyKey}
-          placeholder="Schlüssel (nur falls im Worker ACCESS_KEY gesetzt ist)"
-          aria-label="Schlüssel der Weiterleitung"
-          onChange={(e) => setProxyKey(e.target.value)}
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-        />
-        {proxyTest && !proxyTest.busy && <p className={proxyTest.ok ? 'success' : 'error'}>{proxyTest.text}</p>}
-        {!settings.proxyUrl && (
-          <p className="help">
-            Ohne Weiterleitung kann die App die Kalender-Links nicht laden (Google und Microsoft blockieren direkte Zugriffe aus dem
-            Browser).
-          </p>
-        )}
-      </div>
+      )}
 
       <p className="help">
         Tippe bei einem Kalender auf die Personen, denen er gehört – ein gemeinsamer Familienkalender kann mehreren Personen gehören.

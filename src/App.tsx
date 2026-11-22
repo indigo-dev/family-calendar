@@ -14,6 +14,7 @@ import { Dashboard } from './dashboard/Dashboard';
 import { GlyphIcon } from './components/Icon';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { VoiceButton } from './voice/VoiceButton';
+import { isNative, onAndroidBack } from './native/launcher';
 
 /** the open module, per device */
 const moduleStore = persisted<ModuleId>(
@@ -38,7 +39,18 @@ const ShoppingModule = lazyNamed(() => import('./shopping/ShoppingModule'), 'Sho
 const FrameModule = lazyNamed(() => import('./frame/FrameModule'), 'FrameModule');
 const PhotoFrame = lazyNamed(() => import('./frame/PhotoFrame'), 'PhotoFrame');
 const SettingsPanel = lazyNamed(() => import('./settings/SettingsPanel'), 'SettingsPanel');
-const LAZY = [CalendarModule, WeatherModule, TimetableModule, TodoBoard, ShoppingModule, FrameModule, PhotoFrame, SettingsPanel];
+const AppsModule = lazyNamed(() => import('./apps/AppsModule'), 'AppsModule');
+const LAZY = [
+  CalendarModule,
+  WeatherModule,
+  TimetableModule,
+  TodoBoard,
+  ShoppingModule,
+  FrameModule,
+  PhotoFrame,
+  SettingsPanel,
+  ...(isNative ? [AppsModule] : []),
+];
 
 export function App() {
   const { settings, members } = useStore();
@@ -114,6 +126,21 @@ export function App() {
         setFrame({ mode: 'screensaver' });
       }),
     [frameCfg.screensaverMin, settingsOpen, frame, canFrame],
+  );
+
+  // Android back button (the launcher itself never closes): photo frame, then settings, then the overview
+  useEffect(
+    () =>
+      onAndroidBack(() => {
+        lastInteraction.current = Date.now();
+        if (frame) setFrame(null);
+        else if (settingsOpen) {
+          setSettingsOpen(false);
+          setReloadKey((n) => n + 1);
+        } else if (dashEditing) setDashEditing(false);
+        else setModule('dashboard');
+      }),
+    [frame, settingsOpen, dashEditing],
   );
 
   const openSettings = (tab?: SettingsTab) => {
@@ -206,6 +233,12 @@ export function App() {
               <>
                 <ModuleHeader title="Einkaufsliste" onSettings={() => openSettings()} />
                 <ShoppingModule />
+              </>
+            )}
+            {module === 'apps' && isNative && (
+              <>
+                <ModuleHeader title="Apps" onSettings={() => openSettings()} />
+                <AppsModule />
               </>
             )}
           </Suspense>

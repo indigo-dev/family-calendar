@@ -3,6 +3,7 @@ import type { CalEvent, CalendarSource, DateRange, Member } from '../types';
 import { parseIcs, icsCalendarName } from './ics';
 import { demoEvents } from './demo';
 import { arrayOf, isString, storage } from './persisted';
+import { isNative, nativeGetText } from '../native/launcher';
 
 export type CalStatus = { state: 'ok' } | { state: 'error'; message: string };
 
@@ -66,6 +67,19 @@ export async function fetchIcs(proxy: Proxy, url: string, force = false): Promis
   const target = normalizeIcsUrl(url);
   const hit = textCache.get(target);
   if (!force && hit && Date.now() - hit.at < TEXT_TTL_MS) return hit.text;
+  // the Android app may load the link itself: no worker needed, the secret link stays on the device
+  if (isNative) {
+    let res: { status: number; text: string };
+    try {
+      res = await nativeGetText(target);
+    } catch {
+      throw new Error('Kalender nicht erreichbar (offline oder falscher Link?)');
+    }
+    if (res.status < 200 || res.status >= 300) throw new Error(`Fehler ${res.status} vom Kalender-Server`);
+    if (!res.text.trimStart().startsWith('BEGIN:VCALENDAR')) throw new Error('Der Link liefert keinen Kalender.');
+    textCache.set(target, { text: res.text, at: Date.now() });
+    return res.text;
+  }
   const base = proxyBase(proxy);
   if (!base) throw new Error('Weiterleitung (Worker-Adresse) fehlt in den Einstellungen.');
   const key = proxy.key.trim();

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type TouchEvent } from 'react';
+import { isNative, setKeepAwake } from '../native/launcher';
 
 /** Observes an element's size. */
 export function useSize<T extends HTMLElement>() {
@@ -20,6 +21,11 @@ export function useSize<T extends HTMLElement>() {
 /** Keeps the screen on (Screen Wake Lock API, Safari ≥ 16.4). */
 export function useWakeLock(enabled: boolean) {
   useEffect(() => {
+    // in the Android app the window flag keeps the screen on (reliable, also after app switches)
+    if (isNative) {
+      setKeepAwake(enabled);
+      return () => setKeepAwake(false);
+    }
     if (!enabled || !('wakeLock' in navigator)) return;
     let lock: WakeLockSentinel | null = null;
     let cancelled = false;
