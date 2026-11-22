@@ -1,0 +1,230 @@
+import type { Settings } from '../types';
+import { useStore } from '../store';
+import { UI_STYLES } from '../lib/config';
+import { Sym } from '../components/Sym';
+import { SYMBOL_SETS, type SymbolSet } from '../lib/symbols';
+import { WEATHER_ICON_SETS, type WeatherIconSet, type WeatherKey } from '../lib/weatherIcons';
+import { WxIcon } from '../weather/WxIcon';
+import { CORE_SUGGESTIONS, PALETTES, paletteColors } from '../lib/colors';
+import { Group, Row } from './controls';
+
+const STYLE_NOTES: Record<Settings['style'], string> = {
+  classic: 'Schlicht und klar',
+  sonoma: 'Wie der Mac-Kalender',
+  liquid: 'Glas wie iOS 26',
+  flow: 'Technisch, Punktraster',
+  aurora: 'Farbverläufe, Leuchten',
+  n8n: 'Knoten auf Punktraster',
+  stately: 'Zustände und Übergänge',
+  braun: 'Weniger, aber besser',
+};
+
+export function DesignTab() {
+  const { settings, updateSettings } = useStore();
+  return (
+    <div className="form">
+      <Group title="Stil">
+        <div className="pick-grid" role="radiogroup" aria-label="Stil">
+          {UI_STYLES.map((s) => (
+            <button
+              key={s.id}
+              role="radio"
+              aria-checked={settings.style === s.id}
+              className={`pick-card ${settings.style === s.id ? 'on' : ''}`}
+              onClick={() => updateSettings({ style: s.id })}
+            >
+              <span className={`style-thumb st-${s.id}`} aria-hidden>
+                <i className="st-bar" />
+                <i className="st-a" />
+                <i className="st-b" />
+                <i className="st-c" />
+              </span>
+              <span className="pick-label">{s.label}</span>
+              <span className="pick-note">{STYLE_NOTES[s.id]}</span>
+            </button>
+          ))}
+        </div>
+      </Group>
+
+      <Group title="Hell / Dunkel">
+        <div className="pick-grid three" role="radiogroup" aria-label="Hell / Dunkel">
+          {(
+            [
+              ['auto', 'Automatisch', 'folgt dem Gerät'],
+              ['light', 'Hell', 'immer hell'],
+              ['dark', 'Dunkel', 'immer dunkel'],
+            ] as [Settings['theme'], string, string][]
+          ).map(([id, label, note]) => (
+            <button
+              key={id}
+              role="radio"
+              aria-checked={settings.theme === id}
+              className={`pick-card ${settings.theme === id ? 'on' : ''}`}
+              onClick={() => updateSettings({ theme: id })}
+            >
+              <span className={`mode-thumb mode-${id}`} aria-hidden>
+                <i />
+                <i />
+              </span>
+              <span className="pick-label">{label}</span>
+              <span className="pick-note">{note}</span>
+            </button>
+          ))}
+        </div>
+      </Group>
+
+      <Group
+        title="Farben"
+        note="Gilt für Personen, Schulfächer und Abteilungen der Einkaufsliste. Die gewählten Farben bleiben gespeichert – es ändert sich nur die Darstellung."
+      >
+        <div className="pick-grid three" role="radiogroup" aria-label="Farbpalette">
+          {PALETTES.map((p) => (
+            <button
+              key={p.id}
+              role="radio"
+              aria-checked={settings.palette === p.id}
+              className={`pick-card ${settings.palette === p.id ? 'on' : ''}`}
+              onClick={() => updateSettings({ palette: p.id })}
+            >
+              <span className="palette-thumb" aria-hidden>
+                {paletteColors(p.id, settings.coreColor)
+                  .slice(0, 6)
+                  .map((c, i) => (
+                    <i key={i} style={{ background: c }} />
+                  ))}
+              </span>
+              <span className="pick-label">{p.label}</span>
+              <span className="pick-note">{p.note}</span>
+            </button>
+          ))}
+        </div>
+        {settings.palette === 'core' && (
+          <div className="set-card">
+            <Row label="Kernfarbe" hint="Daraus entstehen alle anderen Farben">
+              <div className="swatches">
+                {CORE_SUGGESTIONS.map((c) => (
+                  <button
+                    key={c}
+                    className={`swatch ${settings.coreColor.toLowerCase() === c ? 'on' : ''}`}
+                    style={{ background: c }}
+                    onClick={() => updateSettings({ coreColor: c })}
+                    aria-label={c}
+                  />
+                ))}
+                <label
+                  className={`swatch custom ${CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? '' : 'on'}`}
+                  style={{ background: CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? undefined : settings.coreColor }}
+                  title="Eigene Farbe"
+                >
+                  <input type="color" value={settings.coreColor} onChange={(e) => updateSettings({ coreColor: e.target.value })} />+
+                </label>
+              </div>
+            </Row>
+            <div className="core-strip" aria-label="Erzeugte Farben">
+              {paletteColors('core', settings.coreColor).map((c, i) => (
+                <i key={i} style={{ background: c }} />
+              ))}
+            </div>
+          </div>
+        )}
+      </Group>
+
+      <Group
+        title="Wetter-Symbole"
+        note="Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht."
+      >
+        <WeatherIconPicker value={settings.weatherIcons} onChange={(weatherIcons) => updateSettings({ weatherIcons })} />
+      </Group>
+
+      <Group title="Symbole (Einkaufsliste)">
+        <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
+      </Group>
+    </div>
+  );
+}
+
+const WEATHER_PREVIEW: WeatherKey[] = [
+  'clear-day',
+  'partly-cloudy-day',
+  'partly-cloudy-day-rain',
+  'thunderstorms-day-rain',
+  'snow',
+  'clear-night',
+];
+
+function WeatherIconPicker({ value, onChange }: { value: WeatherIconSet; onChange: (v: WeatherIconSet) => void }) {
+  return (
+    <div className="field">
+      <div className="wx-picker" role="radiogroup" aria-label="Wetter-Symbole">
+        {WEATHER_ICON_SETS.map((s) => (
+          <button
+            key={s.id}
+            role="radio"
+            aria-checked={value === s.id}
+            className={`sym-card wx-pick ${value === s.id ? 'on' : ''}`}
+            onClick={() => onChange(s.id)}
+          >
+            <span className="wx-pick-row">
+              {WEATHER_PREVIEW.map((k) => (
+                <WxIcon key={k} icon={k} set={s.id} title="" />
+              ))}
+            </span>
+            <span className="sym-card-label">{s.label}</span>
+            <span className="sym-card-note">{s.note}</span>
+          </button>
+        ))}
+      </div>
+      <span className="sym-credits">
+        Meteocons © Bas Milius (MIT) · Material Symbols © Google (Apache 2.0) · Fluent Emoji © Microsoft (MIT)
+      </span>
+    </div>
+  );
+}
+
+/** sample symbols with their department colour (one-colour styles are tinted with it) */
+const SYMBOL_PREVIEW: [string, string][] = [
+  ['🍎', '#4caf50'],
+  ['🥕', '#4caf50'],
+  ['🧀', '#e3b72c'],
+  ['☕', '#a0673c'],
+  ['🧴', '#b06ad1'],
+];
+
+function SymbolPicker({ value, onChange }: { value: SymbolSet; onChange: (v: SymbolSet) => void }) {
+  const groups = [...new Set(SYMBOL_SETS.map((s) => s.group))];
+  return (
+    <div className="field">
+      {groups.map((g) => (
+        <div key={g} className="sym-picker-group">
+          <div className="muted small">{g}</div>
+          <div className="sym-picker" role="radiogroup" aria-label={`Symbole: ${g}`}>
+            {SYMBOL_SETS.filter((s) => s.group === g).map((s) => (
+              <button
+                key={s.id}
+                role="radio"
+                aria-checked={value === s.id}
+                className={`sym-card ${value === s.id ? 'on' : ''}`}
+                onClick={() => onChange(s.id)}
+                title={s.note}
+              >
+                <span className="sym-card-row">
+                  {SYMBOL_PREVIEW.map(([e, color]) => (
+                    <span key={e} style={{ ['--sym-tint' as string]: color }}>
+                      <Sym emoji={e} set={s.id} />
+                    </span>
+                  ))}
+                </span>
+                <span className="sym-card-label">{s.label}</span>
+                {s.note && <span className="sym-card-note">{s.note}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      <span className="sym-credits">
+        Fluent Emoji © Microsoft (MIT) · Noto Emoji © Google (Apache 2.0) · Twemoji © Twitter, Inc. u. a. (CC BY 4.0) · OpenMoji (CC BY-SA
+        4.0) · Tabler, Phosphor (MIT) · Lucide (ISC)
+      </span>
+    </div>
+  );
+}
