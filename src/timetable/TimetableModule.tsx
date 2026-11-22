@@ -36,7 +36,15 @@ export function TimetableModule({ onSettings }: { onSettings: () => void }) {
   const { members, school, updateMember, updateSchool, selectedIds, settings, paint: paintColor } = useStore();
   const kids = members.filter((m) => m.timetable);
   // chosen children, empty = all; starts with the children picked in the person filter
-  const [chosen, setChosen] = useState<string[]>(() => kids.filter((k) => selectedIds.has(k.id)).map((k) => k.id));
+  const fromFilter = () => kids.filter((k) => selectedIds.has(k.id)).map((k) => k.id);
+  const [chosen, setChosen] = useState<string[]>(fromFilter);
+  // the person filter changed while the timetable is open (e.g. "zeig mir den Stundenplan von Jan"): follow it
+  const filterKey = [...selectedIds].sort().join();
+  const [seenFilter, setSeenFilter] = useState(filterKey);
+  if (seenFilter !== filterKey) {
+    setSeenFilter(filterKey);
+    setChosen(fromFilter());
+  }
   const [editing, setEditing] = useState(false);
   const [brush, setBrush] = useState<string | null>(null);
 

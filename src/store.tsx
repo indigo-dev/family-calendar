@@ -94,6 +94,10 @@ const actions = {
   showAll() {
     selectedStore.set([]);
   },
+  /** show exactly these members (voice control: "Stundenplan von Jan") */
+  selectMembers(ids: string[]) {
+    selectedStore.set(ids);
+  },
 };
 
 /* ---------------------------------------------------------------- store */

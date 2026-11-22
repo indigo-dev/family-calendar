@@ -221,3 +221,10 @@ describe('understand', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('openFor', () => {
+  it('keeps the names only together with a module', () => {
+    expect(parseCommand({ openModule: 'timetable', openFor: ['Jan', ''] }).openFor).toEqual(['Jan']);
+    expect(parseCommand({ openModule: 'none', openFor: ['Jan'] }).openFor).toEqual([]);
+  });
+});

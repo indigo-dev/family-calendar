@@ -7,7 +7,7 @@ import { MODULES, type ModuleId } from '../components/ModuleNav';
 import { isEmpty, type Command } from './command';
 import { understand, VoiceError, type VoiceInput } from './gemini';
 import { MicError, micSupported, startRecording, toModelAudio, type Recording } from './recorder';
-import { applyCommand, type Applied } from './apply';
+import { applyCommand, findMembers, joinAnd, type Applied } from './apply';
 import { EventsAnswer, WeatherAnswer } from './answers';
 import { DEFAULT_MODEL, updateVoiceSettings, useVoiceSettings } from './settings';
 import './voice.css';
@@ -17,7 +17,7 @@ type Phase =
   | { s: 'listening' }
   | { s: 'typing' }
   | { s: 'thinking' }
-  | { s: 'result'; cmd: Command; applied: Applied; undone?: boolean }
+  | { s: 'result'; cmd: Command; applied: Applied; undone?: boolean; openFor?: string[] }
   | { s: 'error'; message: string; canType?: boolean; settings?: boolean };
 
 /** how long a result stays open without being touched */
@@ -42,7 +42,7 @@ const MicIcon = () => (
 /** Always reachable microphone button plus the card that shows what was understood and done. */
 export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: ModuleId) => void; onSettings: () => void }) {
   const voice = useVoiceSettings();
-  const { members } = useStore();
+  const { members, selectMembers } = useStore();
   const shop = useShopping();
   const todos = useTodos();
   const { places } = useWeatherSettings();
@@ -114,8 +114,11 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
         upsertTodo: todos.upsert,
         removeTodo: todos.remove,
       });
+      // "Stundenplan von Jan": the person filter decides what the module shows
+      const openFor = cmd.openModule ? findMembers(members, cmd.openFor) : [];
+      if (openFor.length) selectMembers(openFor.map((m) => m.id));
       if (cmd.openModule) onOpenModule(cmd.openModule);
-      setPhase({ s: 'result', cmd, applied });
+      setPhase({ s: 'result', cmd, applied, openFor: openFor.map((m) => m.name) });
       const said = [...applied.speech];
       if (cmd.reply) said.push(cmd.reply);
       else if (isEmpty(cmd)) said.push('Das habe ich leider nicht verstanden.');
@@ -281,7 +284,10 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
                   <span className="voice-line-icon" aria-hidden>
                     {MODULES.find((m) => m.id === phase.cmd.openModule)?.icon}
                   </span>
-                  <span>{moduleLabel(phase.cmd.openModule)} geöffnet</span>
+                  <span>
+                    {moduleLabel(phase.cmd.openModule)}
+                    {phase.openFor?.length ? ` von ${joinAnd(phase.openFor)}` : ''} geöffnet
+                  </span>
                 </div>
               )}
               {phase.cmd.reply && <p className="voice-reply">{phase.cmd.reply}</p>}

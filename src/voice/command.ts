@@ -44,6 +44,8 @@ export interface Command {
   weather: WeatherRequest[];
   events: EventsRequest[];
   openModule?: ModuleId;
+  /** names as spoken: open the module filtered to these people ("Stundenplan von Jan") */
+  openFor: string[];
   /** short message when nothing else fits */
   reply?: string;
 }
@@ -112,6 +114,7 @@ export const COMMAND_SCHEMA = {
       },
     },
     openModule: { type: 'STRING', enum: [...MODULE_IDS, 'none'] },
+    openFor: { type: 'ARRAY', items: { type: 'STRING' } },
     reply: { type: 'STRING' },
   },
   required: ['transcript'],
@@ -142,6 +145,8 @@ export function buildPrompt(ctx: VoiceContext): string {
     '- weather: Fragen zum Wetter, ein Eintrag pro Tag. place nur, wenn ein Ort genannt wird.',
     '- events: Fragen zu Terminen ("was steht morgen an?"). Zeiträume als from/to, z. B. "diese Woche" = heute bis Sonntag.',
     '- openModule: nur wenn ausdrücklich ein Bereich geöffnet werden soll ("zeig mir die Einkaufsliste"), sonst "none".',
+    '  openFor: Namen aus der Familie, wenn der Bereich für bestimmte Personen gezeigt werden soll',
+    '  ("zeig mir den Stundenplan von Jan" → openModule "timetable", openFor ["Jan"]; "Lenas To-dos" → "todos", ["Lena"]).',
     '- Relative Angaben wie "morgen", "übermorgen", "nächsten Dienstag" in Daten (YYYY-MM-DD) umrechnen.',
     '- reply: nur wenn die Bitte nicht zu den Bereichen passt oder unklar ist – ein kurzer, freundlicher Satz.',
     '- Termine anlegen geht nicht (die Kalender sind nur abonniert): dann reply mit einem Hinweis.',
@@ -186,6 +191,7 @@ export function parseCommand(raw: unknown): Command {
     weather,
     events,
     openModule: MODULE_IDS.includes(mod) ? mod : undefined,
+    openFor: MODULE_IDS.includes(mod) ? strs(r.openFor) : [],
     reply: str(r.reply) || undefined,
   };
 }
