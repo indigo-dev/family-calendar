@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { DateRange, DayMarks, HolidaySettings } from '../types';
 import { addDays, dayKey } from './dates';
+import { isRecord, storage } from './persisted';
 
 /**
  * Public and school holidays of the German federal states from the OpenHolidays API
@@ -47,12 +48,8 @@ function toHoliday(h: ApiHoliday, type: Holiday['type'], region: string): Holida
 
 async function loadYear(region: string, year: number): Promise<Holiday[]> {
   const key = `${CACHE_PREFIX}${region}.${year}`;
-  let cached: { at: number; list: Holiday[] } | null = null;
-  try {
-    cached = JSON.parse(localStorage.getItem(key) ?? 'null');
-  } catch {
-    /* corrupt cache entry – load again */
-  }
+  const raw = storage.read(key);
+  const cached = isRecord(raw) && typeof raw.at === 'number' && Array.isArray(raw.list) ? (raw as { at: number; list: Holiday[] }) : null;
   if (cached && Date.now() - cached.at < MAX_AGE_MS) return cached.list;
 
   try {
@@ -66,11 +63,7 @@ async function loadYear(region: string, year: number): Promise<Holiday[]> {
     const list = [...pub.map((h) => toHoliday(h, 'public', region)), ...school.map((h) => toHoliday(h, 'school', region))].filter(
       (h): h is Holiday => !!h,
     );
-    try {
-      localStorage.setItem(key, JSON.stringify({ at: Date.now(), list }));
-    } catch {
-      /* best effort */
-    }
+    storage.write(key, { at: Date.now(), list }); // best effort
     return list;
   } catch (e) {
     // offline: an outdated copy is better than nothing

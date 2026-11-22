@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import { StoreProvider } from './store';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { loadConfig } from './lib/config';
+import { configStore } from './lib/config';
 import './styles.css';
 // self-hosted fonts for the Flow and Aurora styles (only downloaded when a style uses them)
 import '@fontsource-variable/geist/wght.css';
@@ -18,14 +18,13 @@ import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/inter-tight/wght.css';
 import './themes.css';
 
-const config = loadConfig();
 // set the style before the first paint (App.tsx keeps it in sync afterwards)
-document.documentElement.setAttribute('data-style', config.settings.style);
+document.documentElement.setAttribute('data-style', configStore.get().settings.style);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary label="Die App">
-      <StoreProvider initial={config}>
+      <StoreProvider>
         <App />
       </StoreProvider>
     </ErrorBoundary>

@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { uid } from './id';
+import { arrayOf, isRecord, persisted, storage, usePersisted } from './persisted';
 
 /**
  * Weather: forecast + pollen + UV from Open-Meteo, official warnings of the DWD via Bright Sky.
@@ -109,45 +110,23 @@ const STALE_MS = 20 * 60_000;
 /** don't hammer the services after an error */
 const RETRY_MS = 3 * 60_000;
 
-function loadSettings(): WeatherSettings {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-    return { places: Array.isArray(v?.places) ? v.places : [], activeId: v?.activeId };
-  } catch {
-    return { places: [] };
-  }
-}
+const isPlace = (p: unknown): p is Place =>
+  isRecord(p) && typeof p.id === 'string' && typeof p.name === 'string' && typeof p.lat === 'number' && typeof p.lon === 'number';
 
-let settings = loadSettings();
+const weatherSettings = persisted<WeatherSettings>(KEY, (raw) => {
+  const v = isRecord(raw) ? raw : {};
+  const places = arrayOf(v.places, isPlace);
+  return { places, activeId: places.some((p) => p.id === v.activeId) ? (v.activeId as string) : places[0]?.id };
+});
 
 // caches of the first version lack the hourly details – drop them
-try {
-  Object.keys(localStorage)
-    .filter((k) => k.startsWith('fc.weather.data.'))
-    .forEach((k) => localStorage.removeItem(k));
-} catch {
-  /* ignore */
-}
-const listeners = new Set<() => void>();
-const emit = () => listeners.forEach((l) => l());
-
-function setSettings(next: WeatherSettings) {
-  settings = next;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {
-    /* blocked – keep in memory */
-  }
-  emit();
-}
-
-const subscribe = (l: () => void) => {
-  listeners.add(l);
-  return () => listeners.delete(l);
-};
+storage
+  .keys()
+  .filter((k) => k.startsWith('fc.weather.data.'))
+  .forEach(storage.remove);
 
 export function useWeatherSettings(): WeatherSettings {
-  return useSyncExternalStore(subscribe, () => settings);
+  return usePersisted(weatherSettings);
 }
 
 /** Rounds to ~1 km: precise enough for weather, doesn't hand out the exact address. */
@@ -156,40 +135,39 @@ const round = (n: number) => Math.round(n * 100) / 100;
 export function addPlace(p: Omit<Place, 'id'>): Place {
   const lat = round(p.lat);
   const lon = round(p.lon);
-  const existing = settings.places.find((x) => x.lat === lat && x.lon === lon);
+  const existing = weatherSettings.get().places.find((x) => x.lat === lat && x.lon === lon);
   if (existing) {
-    setSettings({ ...settings, activeId: existing.id });
+    setActivePlace(existing.id);
     return existing;
   }
   const place: Place = { ...p, lat, lon, id: uid() };
-  setSettings({ places: [...settings.places, place], activeId: place.id });
+  weatherSettings.set((s) => ({ places: [...s.places, place], activeId: place.id }));
   return place;
 }
 
 export function removePlace(id: string) {
-  const places = settings.places.filter((p) => p.id !== id);
-  try {
-    localStorage.removeItem(DATA_KEY + id);
-  } catch {
-    /* ignore */
-  }
+  storage.remove(DATA_KEY + id);
   cache.delete(id);
-  setSettings({ places, activeId: settings.activeId === id ? places[0]?.id : settings.activeId });
+  weatherSettings.set((s) => {
+    const places = s.places.filter((p) => p.id !== id);
+    return { places, activeId: s.activeId === id ? places[0]?.id : s.activeId };
+  });
 }
 
 export function renamePlace(id: string, name: string) {
-  setSettings({ ...settings, places: settings.places.map((p) => (p.id === id ? { ...p, name } : p)) });
+  weatherSettings.set((s) => ({ ...s, places: s.places.map((p) => (p.id === id ? { ...p, name } : p)) }));
 }
 
 /** Moves a place to the top – it becomes "home". */
 export function makeHome(id: string) {
-  const p = settings.places.find((x) => x.id === id);
-  if (!p) return;
-  setSettings({ ...settings, places: [p, ...settings.places.filter((x) => x.id !== id)] });
+  weatherSettings.set((s) => {
+    const p = s.places.find((x) => x.id === id);
+    return p ? { ...s, places: [p, ...s.places.filter((x) => x.id !== id)] } : s;
+  });
 }
 
 export function setActivePlace(id: string) {
-  setSettings({ ...settings, activeId: id });
+  weatherSettings.set((s) => ({ ...s, activeId: id }));
 }
 
 /* ------------------------------------------------------------------ location */
@@ -437,17 +415,19 @@ interface Entry {
 }
 
 const cache = new Map<string, Entry>();
+const listeners = new Set<() => void>();
+const emit = () => listeners.forEach((l) => l());
+const subscribe = (l: () => void) => {
+  listeners.add(l);
+  return () => listeners.delete(l);
+};
 
 function entry(id: string): Entry {
   let e = cache.get(id);
   if (!e) {
-    let data: WeatherData | null = null;
-    try {
-      data = JSON.parse(localStorage.getItem(DATA_KEY + id) ?? 'null');
-    } catch {
-      /* ignore */
-    }
-    e = { data, loading: false, lastTry: 0 };
+    const data = storage.read(DATA_KEY + id);
+    // only data of this version (v2) is ever stored under DATA_KEY
+    e = { data: isRecord(data) ? (data as unknown as WeatherData) : null, loading: false, lastTry: 0 };
     cache.set(id, e);
   }
   return e;
@@ -483,11 +463,7 @@ export async function refresh(place: Place, force = false) {
     alerts: alerts.status === 'fulfilled' ? alerts.value.alerts : null,
     warnCell: alerts.status === 'fulfilled' ? alerts.value.warnCell : e.data?.warnCell,
   };
-  try {
-    localStorage.setItem(DATA_KEY + place.id, JSON.stringify(data));
-  } catch {
-    /* full – memory only */
-  }
+  storage.write(DATA_KEY + place.id, data); // full storage: memory only
   put(place.id, { data, loading: false, error: undefined });
 }
 

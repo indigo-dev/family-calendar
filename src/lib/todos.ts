@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
 import { uid } from './id';
+import { arrayOf, isRecord, persisted, usePersisted } from './persisted';
 
 const KEY = 'fc.todos';
 
@@ -23,51 +23,36 @@ export interface Todo {
   z?: number;
 }
 
-function load(): Todo[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? '[]');
-    if (!Array.isArray(v)) return [];
-    return v.filter((t): t is Todo => t && typeof t.id === 'string' && typeof t.text === 'string' && Array.isArray(t.memberIds));
-  } catch {
-    return [];
-  }
-}
+const isTodo = (t: unknown): t is Todo =>
+  isRecord(t) && typeof t.id === 'string' && typeof t.text === 'string' && Array.isArray(t.memberIds);
+
+const todos = persisted<Todo[]>(KEY, (raw) => arrayOf(raw, isTodo));
 
 export function newTodo(memberIds: string[]): Todo {
   return { id: uid(), text: '', memberIds, done: false, createdAt: Date.now() };
 }
 
+/* actions – module functions, so they are stable for React */
+
+function upsert(t: Todo) {
+  todos.set((cur) => (cur.some((x) => x.id === t.id) ? cur.map((x) => (x.id === t.id ? t : x)) : [...cur, t]));
+}
+function remove(id: string) {
+  todos.set((cur) => cur.filter((x) => x.id !== id));
+}
+function toggleDone(id: string) {
+  todos.set((cur) => cur.map((x) => (x.id === id ? { ...x, done: !x.done, doneAt: x.done ? undefined : Date.now() } : x)));
+}
+function patchMany(patches: Record<string, Partial<Todo>>) {
+  todos.set((cur) => cur.map((x) => (patches[x.id] ? { ...x, ...patches[x.id] } : x)));
+}
+function clearDone() {
+  todos.set((cur) => cur.filter((x) => !x.done));
+}
+
+/** The family's to-dos (per device; other tabs stay in sync). */
 export function useTodos() {
-  const [todos, setTodos] = useState<Todo[]>(load);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(todos));
-    } catch {
-      /* storage full or blocked – keep working in memory */
-    }
-  }, [todos]);
-
-  // another tab / window changed the list
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => e.key === KEY && setTodos(load());
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
-
-  const upsert = useCallback((t: Todo) => {
-    setTodos((cur) => (cur.some((x) => x.id === t.id) ? cur.map((x) => (x.id === t.id ? t : x)) : [...cur, t]));
-  }, []);
-  const remove = useCallback((id: string) => setTodos((cur) => cur.filter((x) => x.id !== id)), []);
-  const toggleDone = useCallback((id: string) => {
-    setTodos((cur) => cur.map((x) => (x.id === id ? { ...x, done: !x.done, doneAt: x.done ? undefined : Date.now() } : x)));
-  }, []);
-  const patchMany = useCallback((patches: Record<string, Partial<Todo>>) => {
-    setTodos((cur) => cur.map((x) => (patches[x.id] ? { ...x, ...patches[x.id] } : x)));
-  }, []);
-  const clearDone = useCallback(() => setTodos((cur) => cur.filter((x) => !x.done)), []);
-
-  return { todos, upsert, remove, toggleDone, clearDone, patchMany };
+  return { todos: usePersisted(todos), upsert, remove, toggleDone, clearDone, patchMany };
 }
 
 /** YYYY-MM-DD of a local date */

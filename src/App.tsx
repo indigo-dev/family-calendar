@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from './store';
+import { oneOf, persisted, usePersisted } from './lib/persisted';
 import { useNow, useWakeLock } from './lib/hooks';
 import { MemberFilter, ModuleHeader } from './components/Header';
 import { MODULES, ModuleNav, type ModuleId } from './components/ModuleNav';
@@ -16,20 +17,22 @@ import { Dashboard } from './dashboard/Dashboard';
 import { GlyphIcon } from './components/Icon';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-const MODULE_KEY = 'fc.module';
-
-function loadModule(): ModuleId {
-  try {
-    const saved = localStorage.getItem(MODULE_KEY);
-    return MODULES.find((m) => m.id === saved)?.id ?? 'dashboard';
-  } catch {
-    return 'dashboard';
-  }
-}
+/** the open module, per device */
+const moduleStore = persisted<ModuleId>(
+  'fc.module',
+  (raw) =>
+    oneOf(
+      raw,
+      MODULES.map((m) => m.id),
+      'dashboard',
+    ),
+  { syncTabs: false },
+);
+const setModule = (id: ModuleId) => moduleStore.set(id);
 
 export function App() {
   const { settings, members } = useStore();
-  const [module, setModule] = useState<ModuleId>(loadModule);
+  const module = usePersisted(moduleStore);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(members.length === 0);
   const [settingsTab, setSettingsTab] = useState<SettingsTab | undefined>();
   const [reloadKey, setReloadKey] = useState(0);
@@ -67,14 +70,6 @@ export function App() {
     mq.addEventListener('change', apply);
     return () => mq.removeEventListener('change', apply);
   }, [settings.style, settings.theme]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(MODULE_KEY, module);
-    } catch {
-      /* ignore */
-    }
-  }, [module]);
 
   // after inactivity go back to the dashboard (wall display mode)
   useEffect(() => {

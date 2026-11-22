@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { Icon } from './Icon';
+import { arrayOf, persisted, usePersisted } from '../lib/persisted';
 
 export type ModuleId = 'dashboard' | 'calendar' | 'timetable' | 'todos' | 'shopping' | 'weather' | 'frame';
 
@@ -18,16 +19,12 @@ const ORDER_KEY = 'fc.moduleOrder';
 const SORTABLE = MODULES.filter((m) => m.id !== 'dashboard').map((m) => m.id);
 const HOLD_MS = 380;
 
-function loadOrder(): ModuleId[] {
-  try {
-    const saved: unknown = JSON.parse(localStorage.getItem(ORDER_KEY) ?? '[]');
-    const known = Array.isArray(saved) ? saved.filter((id): id is ModuleId => SORTABLE.includes(id)) : [];
-    // modules added later go to the end
-    return [...new Set([...known, ...SORTABLE])];
-  } catch {
-    return SORTABLE;
-  }
-}
+const orderStore = persisted<ModuleId[]>(ORDER_KEY, (raw) => {
+  const known = arrayOf(raw, (id): id is ModuleId => SORTABLE.includes(id as ModuleId));
+  // modules added later go to the end
+  return [...new Set([...known, ...SORTABLE])];
+});
+const setOrder = (order: ModuleId[]) => orderStore.set(order);
 
 interface Drag {
   id: ModuleId;
@@ -45,20 +42,12 @@ interface Drag {
 
 /** App switcher: side rail on tablets, bottom bar on phones. Long press (touch) or drag (mouse) reorders. */
 export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (id: ModuleId) => void }) {
-  const [order, setOrder] = useState<ModuleId[]>(loadOrder);
+  const order = usePersisted(orderStore);
   const [dragging, setDragging] = useState<ModuleId | null>(null);
   const drag = useRef<Drag | null>(null);
   const navRef = useRef<HTMLElement>(null);
   const btns = useRef(new Map<ModuleId, HTMLButtonElement>());
   const swallowClick = useRef(false);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(ORDER_KEY, JSON.stringify(order));
-    } catch {
-      /* ignore */
-    }
-  }, [order]);
 
   /** moves the dragged button under the pointer (relative to its slot in the current order) */
   const place = () => {

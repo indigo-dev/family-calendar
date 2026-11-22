@@ -4,6 +4,7 @@ import { useTapOrLongPress } from '../lib/hooks';
 import { Sym } from '../components/Sym';
 import type { Paint } from '../lib/colors';
 import { useStore } from '../store';
+import { arrayOf, persisted, usePersisted } from '../lib/persisted';
 import './shopping.css';
 
 type Pane = 'list' | 'pantry';
@@ -15,14 +16,9 @@ const FREQUENT_MAX = 12;
 
 const CATS_KEY = 'fc.shopping.cats';
 
-function loadCats(): CategoryId[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(CATS_KEY) ?? '[]');
-    return Array.isArray(v) ? v.filter((id): id is CategoryId => CATEGORIES.some((c) => c.id === id)) : [];
-  } catch {
-    return [];
-  }
-}
+/** department filter of the pantry, per device */
+const catsStore = persisted<CategoryId[]>(CATS_KEY, (raw) => arrayOf(raw, (id): id is CategoryId => CATEGORIES.some((c) => c.id === id)));
+const setCats = catsStore.set;
 
 /** Tap = only this department, long press = add/remove it (same as the person chips). */
 function CategoryChip({
@@ -79,7 +75,7 @@ export function ShoppingModule() {
   const [query, setQuery] = useState('');
   const [editMode, setEditMode] = useState(false);
   /** pantry filter; empty = all departments */
-  const [cats, setCats] = useState<CategoryId[]>(loadCats);
+  const cats = usePersisted(catsStore);
   const [leaving, setLeaving] = useState<Set<string>>(new Set());
   const [undo, setUndo] = useState<{ entry: ListEntry; name: string } | null>(null);
   const [creating, setCreating] = useState<{ name: string; cat: CategoryId } | null>(null);
@@ -124,13 +120,6 @@ export function ShoppingModule() {
   const exact = q && items.some((i) => norm(i.name) === q);
 
   useEffect(() => () => window.clearTimeout(undoTimer.current), []);
-  useEffect(() => {
-    try {
-      localStorage.setItem(CATS_KEY, JSON.stringify(cats));
-    } catch {
-      /* ignore */
-    }
-  }, [cats]);
 
   const checkOff = (entry: ListEntry, item: ShopItem) => {
     if (leaving.has(entry.itemId)) return;

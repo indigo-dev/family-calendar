@@ -4,6 +4,7 @@ import { DEFAULT_SYMBOL_SET, isSymbolSet } from './symbols';
 import { DEFAULT_WEATHER_ICONS, isWeatherIconSet } from './weatherIcons';
 import { DEFAULT_CORE_COLOR, PALETTE, PALETTES } from './colors';
 import { uid } from './id';
+import { persisted } from './persisted';
 
 const CONFIG_KEY = 'fc.config.v1';
 
@@ -245,23 +246,8 @@ export function parseConfig(raw: unknown): AppConfig {
   return { schemaVersion: 3, settings, members, calendars, school: parseSchool(o.school) };
 }
 
-export function loadConfig(): AppConfig {
-  try {
-    const s = localStorage.getItem(CONFIG_KEY);
-    if (s) return parseConfig(JSON.parse(s));
-  } catch (e) {
-    console.warn('Konfiguration konnte nicht geladen werden', e);
-  }
-  return defaultConfig();
-}
-
-export function saveConfig(cfg: AppConfig): void {
-  try {
-    localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
-  } catch (e) {
-    console.warn('Konfiguration konnte nicht gespeichert werden', e);
-  }
-}
+/** The family configuration (people, calendars, settings) of this device. Invalid data falls back to the defaults. */
+export const configStore = persisted<AppConfig>(CONFIG_KEY, (raw) => (raw === undefined ? defaultConfig() : parseConfig(raw)));
 
 export function exportConfig(cfg: AppConfig): void {
   const payload = { ...cfg, exportedAt: new Date().toISOString(), app: 'family-calendar' };

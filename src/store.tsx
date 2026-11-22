@@ -1,96 +1,42 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import type { AppConfig, CalendarSource, Member, SchoolConfig, Settings } from './types';
-import { loadConfig, saveConfig } from './lib/config';
+import { configStore } from './lib/config';
 import { colorScheme, painter, type Paint } from './lib/colors';
+import { arrayOf, isString, persisted, usePersisted } from './lib/persisted';
 
-const SELECTED_KEY = 'fc.selectedMembers';
+/** person filter: empty = all members, otherwise only these members (per device) */
+const selectedStore = persisted('fc.selectedMembers', (raw) => arrayOf(raw, isString));
 
-interface Store {
-  config: AppConfig;
-  members: Member[];
-  calendars: CalendarSource[];
-  settings: Settings;
-  memberById: Map<string, Member>;
-  /** maps stored colours (people, subjects, departments) to the chosen palette */
-  paint: Paint;
-  updateSettings: (patch: Partial<Settings>) => void;
-  upsertMember: (m: Member) => void;
-  patchMember: (id: string, patch: Partial<Member>) => void;
-  /** removes the person; calendars stay, only the assignment is dropped */
-  removeMember: (id: string) => void;
-  moveMember: (id: string, dir: -1 | 1) => void;
-  upsertCalendar: (c: CalendarSource) => void;
-  patchCalendar: (id: string, patch: Partial<CalendarSource>) => void;
-  removeCalendar: (id: string) => void;
-  toggleCalendarMember: (calendarId: string, memberId: string) => void;
-  replaceConfig: (cfg: AppConfig) => void;
-  /** change a member based on its current state (safe for many quick updates in a row) */
-  updateMember: (id: string, fn: (m: Member) => Partial<Member>) => void;
-  /** family-wide subject colours and own subjects */
-  school: SchoolConfig;
-  updateSchool: (patch: Partial<SchoolConfig>) => void;
-  /** person filter: empty = all members, otherwise only these members */
-  selectedIds: Set<string>;
-  /** tap: show only this member (tapping the only selected member again goes back to all) */
-  selectOnly: (id: string) => void;
-  /** long press: add/remove this member to/from the selection */
-  toggleSelected: (id: string) => void;
-  showAll: () => void;
-}
+/* ---------------------------------------------------------------- actions (stable module functions) */
 
-const Ctx = createContext<Store | null>(null);
+const update = (fn: (c: AppConfig) => AppConfig) => configStore.set(fn);
 
-function loadSelected(): string[] {
-  try {
-    const v = JSON.parse(localStorage.getItem(SELECTED_KEY) ?? '[]');
-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-
-export function StoreProvider({ initial, children }: { initial?: AppConfig; children: ReactNode }) {
-  const [config, setConfig] = useState<AppConfig>(() => initial ?? loadConfig());
-  const [selected, setSelected] = useState<string[]>(loadSelected);
-
-  useEffect(() => saveConfig(config), [config]);
-  // only existing members count; everyone selected is the same as "Alle"
-  const selectedIds = useMemo(() => {
-    const ids = new Set(selected.filter((id) => config.members.some((m) => m.id === id)));
-    return ids.size === config.members.length ? new Set<string>() : ids;
-  }, [selected, config.members]);
-  useEffect(() => {
-    localStorage.setItem(SELECTED_KEY, JSON.stringify([...selectedIds]));
-  }, [selectedIds]);
-
-  const updateSettings = useCallback((patch: Partial<Settings>) => {
-    setConfig((c) => ({ ...c, settings: { ...c.settings, ...patch } }));
-  }, []);
-
-  const upsertMember = useCallback((m: Member) => {
-    setConfig((c) => {
+const actions = {
+  updateSettings(patch: Partial<Settings>) {
+    update((c) => ({ ...c, settings: { ...c.settings, ...patch } }));
+  },
+  upsertMember(m: Member) {
+    update((c) => {
       const idx = c.members.findIndex((x) => x.id === m.id);
       const members = [...c.members];
       if (idx >= 0) members[idx] = m;
       else members.push(m);
       return { ...c, members };
     });
-  }, []);
-
-  const patchMember = useCallback((id: string, patch: Partial<Member>) => {
-    setConfig((c) => ({ ...c, members: c.members.map((m) => (m.id === id ? { ...m, ...patch } : m)) }));
-  }, []);
-
-  const removeMember = useCallback((id: string) => {
-    setConfig((c) => ({
+  },
+  patchMember(id: string, patch: Partial<Member>) {
+    update((c) => ({ ...c, members: c.members.map((m) => (m.id === id ? { ...m, ...patch } : m)) }));
+  },
+  /** removes the person; calendars stay, only the assignment is dropped */
+  removeMember(id: string) {
+    update((c) => ({
       ...c,
       members: c.members.filter((m) => m.id !== id),
       calendars: c.calendars.map((cal) => ({ ...cal, memberIds: cal.memberIds.filter((x) => x !== id) })),
     }));
-  }, []);
-
-  const moveMember = useCallback((id: string, dir: -1 | 1) => {
-    setConfig((c) => {
+  },
+  moveMember(id: string, dir: -1 | 1) {
+    update((c) => {
       const i = c.members.findIndex((m) => m.id === id);
       const j = i + dir;
       if (i < 0 || j < 0 || j >= c.members.length) return c;
@@ -98,25 +44,25 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
       [members[i], members[j]] = [members[j], members[i]];
       return { ...c, members };
     });
-  }, []);
-
-  const upsertCalendar = useCallback((cal: CalendarSource) => {
-    setConfig((c) => {
+  },
+  /** change a member based on its current state (safe for many quick updates in a row) */
+  updateMember(id: string, fn: (m: Member) => Partial<Member>) {
+    update((c) => ({ ...c, members: c.members.map((m) => (m.id === id ? { ...m, ...fn(m) } : m)) }));
+  },
+  upsertCalendar(cal: CalendarSource) {
+    update((c) => {
       const exists = c.calendars.some((x) => x.id === cal.id);
       return { ...c, calendars: exists ? c.calendars.map((x) => (x.id === cal.id ? cal : x)) : [...c.calendars, cal] };
     });
-  }, []);
-
-  const patchCalendar = useCallback((id: string, patch: Partial<CalendarSource>) => {
-    setConfig((c) => ({ ...c, calendars: c.calendars.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
-  }, []);
-
-  const removeCalendar = useCallback((id: string) => {
-    setConfig((c) => ({ ...c, calendars: c.calendars.filter((x) => x.id !== id) }));
-  }, []);
-
-  const toggleCalendarMember = useCallback((calendarId: string, memberId: string) => {
-    setConfig((c) => ({
+  },
+  patchCalendar(id: string, patch: Partial<CalendarSource>) {
+    update((c) => ({ ...c, calendars: c.calendars.map((x) => (x.id === id ? { ...x, ...patch } : x)) }));
+  },
+  removeCalendar(id: string) {
+    update((c) => ({ ...c, calendars: c.calendars.filter((x) => x.id !== id) }));
+  },
+  toggleCalendarMember(calendarId: string, memberId: string) {
+    update((c) => ({
       ...c,
       calendars: c.calendars.map((x) =>
         x.id !== calendarId
@@ -127,82 +73,79 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
             },
       ),
     }));
-  }, []);
+  },
+  /** family-wide subject colours and own subjects */
+  updateSchool(patch: Partial<SchoolConfig>) {
+    update((c) => ({ ...c, school: { ...c.school, ...patch } }));
+  },
+  /** import of a backup */
+  replaceConfig(cfg: AppConfig) {
+    configStore.set(cfg);
+    selectedStore.set([]);
+  },
+  /** tap: show only this member (tapping the only selected member again goes back to all) */
+  selectOnly(id: string) {
+    selectedStore.set((cur) => (cur.length === 1 && cur[0] === id ? [] : [id]));
+  },
+  /** long press: add/remove this member to/from the selection */
+  toggleSelected(id: string) {
+    selectedStore.set((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  },
+  showAll() {
+    selectedStore.set([]);
+  },
+};
 
-  const updateMember = useCallback((id: string, fn: (m: Member) => Partial<Member>) => {
-    setConfig((c) => ({ ...c, members: c.members.map((m) => (m.id === id ? { ...m, ...fn(m) } : m)) }));
-  }, []);
+/* ---------------------------------------------------------------- store */
 
-  const updateSchool = useCallback((patch: Partial<SchoolConfig>) => {
-    setConfig((c) => ({ ...c, school: { ...c.school, ...patch } }));
-  }, []);
+interface Store extends Readonly<typeof actions> {
+  config: AppConfig;
+  /** people with their colour in the chosen palette (`config.members` keeps the stored colours) */
+  members: Member[];
+  calendars: CalendarSource[];
+  settings: Settings;
+  memberById: Map<string, Member>;
+  /** maps stored colours (people, subjects, departments) to the chosen palette */
+  paint: Paint;
+  school: SchoolConfig;
+  /** person filter: empty = all members, otherwise only these members */
+  selectedIds: Set<string>;
+}
 
-  const replaceConfig = useCallback((cfg: AppConfig) => {
-    setConfig(cfg);
-    setSelected([]);
-  }, []);
+const Ctx = createContext<Store | null>(null);
 
-  const selectOnly = useCallback((id: string) => setSelected((cur) => (cur.length === 1 && cur[0] === id ? [] : [id])), []);
-  const toggleSelected = useCallback(
-    (id: string) => setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id])),
-    [],
-  );
-  const showAll = useCallback(() => setSelected([]), []);
+/**
+ * Makes the configuration available to the app. The data itself lives in persisted stores
+ * (saved on every change, synced with other tabs); the provider adds the derived values once.
+ */
+export function StoreProvider({ children }: { children: ReactNode }) {
+  const config = usePersisted(configStore);
+  const selected = usePersisted(selectedStore);
 
   const paint = useMemo(
     () => painter(colorScheme(config.settings.palette, config.settings.coreColor)),
     [config.settings.palette, config.settings.coreColor],
   );
-  // people are handed out in the chosen palette; the settings edit the stored colours via `config`
   const members = useMemo(() => config.members.map((m) => ({ ...m, color: paint(m.color) })), [config.members, paint]);
+  // only existing members count; everyone selected is the same as "Alle"
+  const selectedIds = useMemo(() => {
+    const ids = new Set(selected.filter((id) => config.members.some((m) => m.id === id)));
+    return ids.size === config.members.length ? new Set<string>() : ids;
+  }, [selected, config.members]);
 
   const value = useMemo<Store>(
     () => ({
+      ...actions,
       config,
       members,
       calendars: config.calendars,
       settings: config.settings,
       memberById: new Map(members.map((m) => [m.id, m])),
       paint,
-      updateSettings,
-      upsertMember,
-      patchMember,
-      removeMember,
-      moveMember,
-      upsertCalendar,
-      patchCalendar,
-      removeCalendar,
-      toggleCalendarMember,
-      replaceConfig,
       school: config.school,
-      updateMember,
-      updateSchool,
       selectedIds,
-      selectOnly,
-      toggleSelected,
-      showAll,
     }),
-    [
-      config,
-      members,
-      paint,
-      selectedIds,
-      updateSettings,
-      upsertMember,
-      patchMember,
-      removeMember,
-      moveMember,
-      upsertCalendar,
-      patchCalendar,
-      removeCalendar,
-      toggleCalendarMember,
-      replaceConfig,
-      updateMember,
-      updateSchool,
-      selectOnly,
-      toggleSelected,
-      showAll,
-    ],
+    [config, members, paint, selectedIds],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

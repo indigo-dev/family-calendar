@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CalEvent, CalendarSource, DateRange, Member } from '../types';
 import { parseIcs, icsCalendarName } from './ics';
 import { demoEvents } from './demo';
+import { arrayOf, isString, storage } from './persisted';
 
 export type CalStatus = { state: 'ok' } | { state: 'error'; message: string };
 
@@ -25,25 +26,17 @@ function hash(s: string): string {
 }
 
 function readCache(key: string): CalEvent[] | null {
-  try {
-    const s = localStorage.getItem(CACHE_PREFIX + key);
-    if (!s) return null;
-    return (JSON.parse(s) as Serialized[]).map((e) => ({ ...e, start: new Date(e.start), end: new Date(e.end) }));
-  } catch {
-    return null;
-  }
+  const raw = storage.read(CACHE_PREFIX + key);
+  if (!Array.isArray(raw)) return null;
+  return (raw as Serialized[]).map((e) => ({ ...e, start: new Date(e.start), end: new Date(e.end) }));
 }
 
+/** keeps the last CACHE_MAX ranges; caching is best effort (a full storage just skips it) */
 function writeCache(key: string, events: CalEvent[]): void {
-  try {
-    const idx: string[] = JSON.parse(localStorage.getItem(CACHE_INDEX) ?? '[]');
-    const next = [key, ...idx.filter((k) => k !== key)];
-    for (const old of next.slice(CACHE_MAX)) localStorage.removeItem(CACHE_PREFIX + old);
-    localStorage.setItem(CACHE_INDEX, JSON.stringify(next.slice(0, CACHE_MAX)));
-    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(events));
-  } catch {
-    // quota exceeded – caching is best effort
-  }
+  const next = [key, ...arrayOf(storage.read(CACHE_INDEX), isString).filter((k) => k !== key)];
+  for (const old of next.slice(CACHE_MAX)) storage.remove(CACHE_PREFIX + old);
+  storage.write(CACHE_INDEX, next.slice(0, CACHE_MAX));
+  storage.write(CACHE_PREFIX + key, events);
 }
 
 /* ------------------------------------------------------------------ fetching */

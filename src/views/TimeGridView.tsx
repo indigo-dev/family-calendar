@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { persisted } from '../lib/persisted';
 import type { CalEvent } from '../types';
 import { useStore } from '../store';
 import { addDays, dayKey, fmt, fmtTime, isSameDay, overlaps, startOfDay, startOfWeek } from '../lib/dates';
@@ -34,21 +35,9 @@ const ZOOM_KEY = 'fc.hourHeight';
 const MAX_HOUR = 280;
 const MIN_EVENT_PX = 16;
 
-function loadZoom(): number | null {
-  try {
-    const v = Number(localStorage.getItem(ZOOM_KEY));
-    return v > 0 ? v : null;
-  } catch {
-    return null;
-  }
-}
-function saveZoom(v: number) {
-  try {
-    localStorage.setItem(ZOOM_KEY, String(Math.round(v)));
-  } catch {
-    /* ignore */
-  }
-}
+const zoomStore = persisted<number | null>(ZOOM_KEY, (raw) => (typeof raw === 'number' && raw > 0 ? raw : null));
+const loadZoom = () => zoomStore.get();
+const saveZoom = (v: number) => zoomStore.set(Math.round(v));
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 /** Grid line step in minutes at a given hour height. */

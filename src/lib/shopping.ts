@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
 import { uid } from './id';
+import { arrayOf, isRecord, isString, persisted, usePersisted } from './persisted';
 
 const KEY = 'fc.shopping';
 
@@ -243,99 +243,90 @@ interface State {
 
 const EMPTY: State = { list: [], custom: [], hidden: [], bought: {} };
 
-function load(): State {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? 'null');
-    if (!v || typeof v !== 'object') return EMPTY;
-    return {
-      list: Array.isArray(v.list) ? v.list.filter((e: ListEntry) => e && typeof e.itemId === 'string') : [],
-      custom: Array.isArray(v.custom) ? v.custom.filter((i: ShopItem) => i && typeof i.id === 'string' && typeof i.name === 'string') : [],
-      hidden: Array.isArray(v.hidden) ? v.hidden.filter((x: unknown) => typeof x === 'string') : [],
-      bought: v.bought && typeof v.bought === 'object' ? v.bought : {},
-    };
-  } catch {
-    return EMPTY;
-  }
+const isEntry = (e: unknown): e is ListEntry => isRecord(e) && typeof e.itemId === 'string' && typeof e.qty === 'number';
+const isItem = (i: unknown): i is ShopItem => isRecord(i) && typeof i.id === 'string' && typeof i.name === 'string';
+
+function parseState(raw: unknown): State {
+  if (!isRecord(raw)) return EMPTY;
+  const bought: Record<string, number> = {};
+  if (isRecord(raw.bought)) for (const [k, v] of Object.entries(raw.bought)) if (typeof v === 'number') bought[k] = v;
+  return {
+    list: arrayOf(raw.list, isEntry),
+    custom: arrayOf(raw.custom, isItem),
+    hidden: arrayOf(raw.hidden, isString),
+    bought,
+  };
 }
 
+const shopping = persisted<State>(KEY, parseState);
+
+/* actions – module functions, so they are stable for React */
+
+/** tap in the pantry: put on the list, or one more if it is already there */
+function add(itemId: string) {
+  shopping.set((s) => {
+    const has = s.list.some((e) => e.itemId === itemId);
+    const list = has
+      ? s.list.map((e) => (e.itemId === itemId ? { ...e, qty: Math.min(e.qty + 1, 99) } : e))
+      : [...s.list, { itemId, qty: 1, addedAt: Date.now() }];
+    return { ...s, list };
+  });
+}
+
+function setQty(itemId: string, qty: number) {
+  shopping.set((s) => ({
+    ...s,
+    list: qty <= 0 ? s.list.filter((e) => e.itemId !== itemId) : s.list.map((e) => (e.itemId === itemId ? { ...e, qty } : e)),
+  }));
+}
+
+/** bought: off the list, remembered for the "Häufig" row */
+function check(itemId: string) {
+  shopping.set((s) => {
+    if (!s.list.some((e) => e.itemId === itemId)) return s;
+    return {
+      ...s,
+      list: s.list.filter((e) => e.itemId !== itemId),
+      bought: { ...s.bought, [itemId]: (s.bought[itemId] ?? 0) + 1 },
+    };
+  });
+}
+
+/** undo a check */
+function restore(entry: ListEntry) {
+  shopping.set((s) => {
+    if (s.list.some((e) => e.itemId === entry.itemId)) return s;
+    const n = (s.bought[entry.itemId] ?? 1) - 1;
+    const bought = { ...s.bought };
+    if (n > 0) bought[entry.itemId] = n;
+    else delete bought[entry.itemId];
+    return { ...s, list: [...s.list, entry], bought };
+  });
+}
+
+function createItem(name: string, emoji: string, cat: CategoryId): ShopItem {
+  const item: ShopItem = { id: `c-${uid()}`, name, emoji, cat, custom: true };
+  shopping.set((s) => ({ ...s, custom: [...s.custom, item] }));
+  return item;
+}
+
+/** custom items are deleted, built-in ones only hidden */
+function removeItem(item: ShopItem) {
+  shopping.set((s) => ({
+    ...s,
+    list: s.list.filter((e) => e.itemId !== item.id),
+    custom: item.custom ? s.custom.filter((c) => c.id !== item.id) : s.custom,
+    hidden: item.custom || s.hidden.includes(item.id) ? s.hidden : [...s.hidden, item.id],
+  }));
+}
+
+function unhideAll() {
+  shopping.set((s) => ({ ...s, hidden: [] }));
+}
+
+/** The shopping list and pantry (per device; other tabs stay in sync). */
 export function useShopping() {
-  const [state, setState] = useState<State>(load);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-    } catch {
-      /* storage full or blocked – keep working in memory */
-    }
-  }, [state]);
-
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => e.key === KEY && setState(load());
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
-
-  /** tap in the pantry: put on the list, or one more if it is already there */
-  const add = useCallback((itemId: string) => {
-    setState((s) => {
-      const has = s.list.some((e) => e.itemId === itemId);
-      const list = has
-        ? s.list.map((e) => (e.itemId === itemId ? { ...e, qty: Math.min(e.qty + 1, 99) } : e))
-        : [...s.list, { itemId, qty: 1, addedAt: Date.now() }];
-      return { ...s, list };
-    });
-  }, []);
-
-  const setQty = useCallback((itemId: string, qty: number) => {
-    setState((s) => ({
-      ...s,
-      list: qty <= 0 ? s.list.filter((e) => e.itemId !== itemId) : s.list.map((e) => (e.itemId === itemId ? { ...e, qty } : e)),
-    }));
-  }, []);
-
-  /** bought: off the list, remembered for the "Häufig" row */
-  const check = useCallback((itemId: string) => {
-    setState((s) => {
-      if (!s.list.some((e) => e.itemId === itemId)) return s;
-      return {
-        ...s,
-        list: s.list.filter((e) => e.itemId !== itemId),
-        bought: { ...s.bought, [itemId]: (s.bought[itemId] ?? 0) + 1 },
-      };
-    });
-  }, []);
-
-  /** undo a check */
-  const restore = useCallback((entry: ListEntry) => {
-    setState((s) => {
-      if (s.list.some((e) => e.itemId === entry.itemId)) return s;
-      const n = (s.bought[entry.itemId] ?? 1) - 1;
-      const bought = { ...s.bought };
-      if (n > 0) bought[entry.itemId] = n;
-      else delete bought[entry.itemId];
-      return { ...s, list: [...s.list, entry], bought };
-    });
-  }, []);
-
-  const createItem = useCallback((name: string, emoji: string, cat: CategoryId): ShopItem => {
-    const item: ShopItem = { id: `c-${uid()}`, name, emoji, cat, custom: true };
-    setState((s) => ({ ...s, custom: [...s.custom, item] }));
-    return item;
-  }, []);
-
-  /** custom items are deleted, built-in ones only hidden */
-  const removeItem = useCallback((item: ShopItem) => {
-    setState((s) => ({
-      ...s,
-      list: s.list.filter((e) => e.itemId !== item.id),
-      custom: item.custom ? s.custom.filter((c) => c.id !== item.id) : s.custom,
-      hidden: item.custom || s.hidden.includes(item.id) ? s.hidden : [...s.hidden, item.id],
-    }));
-  }, []);
-
-  const unhideAll = useCallback(() => setState((s) => ({ ...s, hidden: [] })), []);
-
-  return { ...state, add, setQty, check, restore, createItem, removeItem, unhideAll };
+  return { ...usePersisted(shopping), add, setQty, check, restore, createItem, removeItem, unhideAll };
 }
 
 /** Case- and umlaut-insensitive compare for the search box. */

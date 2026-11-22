@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import { uid } from './id';
+import { arrayOf, isRecord, isString, oneOf, persisted, usePersisted } from './persisted';
 
 /**
  * Photo frame: photos live in IndexedDB on this device (localStorage is far too small for images),
@@ -66,44 +67,36 @@ const THUMB_EDGE = 420;
 
 /* ------------------------------------------------------------------ settings */
 
-function loadSettings(): FrameSettings {
-  try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? '{}');
-    return { ...DEFAULTS, ...(v && typeof v === 'object' ? v : {}) };
-  } catch {
-    return { ...DEFAULTS };
-  }
+function parseSettings(raw: unknown): FrameSettings {
+  const v = isRecord(raw) ? raw : {};
+  return {
+    selected: arrayOf(v.selected, isString),
+    intervalSec: oneOf(
+      v.intervalSec,
+      INTERVALS.map((i) => i.sec),
+      DEFAULTS.intervalSec,
+    ),
+    order: oneOf(v.order, ['seq', 'shuffle'] as const, DEFAULTS.order),
+    fit: oneOf(v.fit, ['cover', 'contain', 'mat'] as const, DEFAULTS.fit),
+    clock: typeof v.clock === 'boolean' ? v.clock : DEFAULTS.clock,
+    weather: typeof v.weather === 'boolean' ? v.weather : DEFAULTS.weather,
+    motion: typeof v.motion === 'boolean' ? v.motion : DEFAULTS.motion,
+    screensaverMin: oneOf(v.screensaverMin, SCREENSAVER, DEFAULTS.screensaverMin),
+  };
 }
 
-let settings = loadSettings();
-const settingsListeners = new Set<() => void>();
-
-function setSettings(next: FrameSettings) {
-  settings = next;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {
-    /* blocked – keep in memory */
-  }
-  settingsListeners.forEach((l) => l());
-}
+const frameSettings = persisted(KEY, parseSettings);
 
 export function patchFrameSettings(patch: Partial<FrameSettings>) {
-  setSettings({ ...settings, ...patch });
+  frameSettings.set((s) => ({ ...s, ...patch }));
 }
 
 export function useFrameSettings(): FrameSettings {
-  return useSyncExternalStore(
-    (l) => {
-      settingsListeners.add(l);
-      return () => settingsListeners.delete(l);
-    },
-    () => settings,
-  );
+  return usePersisted(frameSettings);
 }
 
 export function toggleSelected(id: string) {
-  const sel = settings.selected;
+  const sel = frameSettings.get().selected;
   patchFrameSettings({ selected: sel.includes(id) ? sel.filter((x) => x !== id) : [...sel, id] });
 }
 
@@ -154,7 +147,8 @@ function ensureLoaded() {
       emitPhotos(all.sort((a, b) => a.addedAt - b.addedAt));
       // drop selections of photos that no longer exist
       const ids = new Set(all.map((p) => p.id));
-      if (settings.selected.some((id) => !ids.has(id))) patchFrameSettings({ selected: settings.selected.filter((id) => ids.has(id)) });
+      const { selected } = frameSettings.get();
+      if (selected.some((id) => !ids.has(id))) patchFrameSettings({ selected: selected.filter((id) => ids.has(id)) });
     })
     .catch(() => {
       loaded = true;
@@ -204,7 +198,7 @@ export async function removePhotos(ids: string[]) {
   });
   const gone = new Set(ids);
   emitPhotos(photos.filter((p) => !gone.has(p.id)));
-  patchFrameSettings({ selected: settings.selected.filter((id) => !gone.has(id)) });
+  frameSettings.set((s) => ({ ...s, selected: s.selected.filter((id) => !gone.has(id)) }));
 }
 
 async function scale(blob: Blob, edge: number, quality: number): Promise<{ blob: Blob; width: number; height: number }> {
@@ -238,7 +232,7 @@ async function store(source: Blob, meta: Pick<Photo, 'source' | 'credit' | 'moti
   };
   await tx('readwrite', (s) => s.put(photo));
   emitPhotos([...photos, photo]);
-  if (select) patchFrameSettings({ selected: [...settings.selected, photo.id] });
+  if (select) frameSettings.set((s) => ({ ...s, selected: [...s.selected, photo.id] }));
   // ask the browser not to evict the photos when space gets low
   navigator.storage?.persist?.().catch(() => {});
   return photo;

@@ -21,6 +21,7 @@ import { newTimetable, SCHOOL_TYPES } from '../lib/school';
 import { SchoolTab } from './SchoolTab';
 import { Sym } from '../components/Sym';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { storage } from '../lib/persisted';
 import { SYMBOL_SETS, type SymbolSet } from '../lib/symbols';
 import { WEATHER_ICON_SETS, type WeatherIconSet, type WeatherKey } from '../lib/weatherIcons';
 import { WxIcon } from '../weather/WxIcon';
@@ -1094,12 +1095,13 @@ function BackupTab() {
         onClick={() => {
           if (confirm('Alle Einstellungen, Personen, Kalender und zwischengespeicherten Termine auf diesem Gerät löschen?')) {
             // msal.* / login.*: leftovers of the former Microsoft sign-in on older installs
-            Object.keys(localStorage)
+            storage
+              .keys()
               .filter(
                 (k) =>
                   k.startsWith('fc.') || k.startsWith('msal.') || k.includes('login.windows.net') || k.includes('login.microsoftonline'),
               )
-              .forEach((k) => localStorage.removeItem(k));
+              .forEach(storage.remove);
             window.location.reload();
           }
         }}
