@@ -13,6 +13,7 @@ import { lazyNamed, preloadWhenIdle } from './lib/lazy';
 import { Dashboard } from './dashboard/Dashboard';
 import { GlyphIcon } from './components/Icon';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { VoiceButton } from './voice/VoiceButton';
 
 /** the open module, per device */
 const moduleStore = persisted<ModuleId>(
@@ -210,6 +211,15 @@ export function App() {
           </Suspense>
         </ErrorBoundary>
       </div>
+      <ErrorBoundary label="Sprachsteuerung" fallback={null} retrySec={0}>
+        <VoiceButton
+          onOpenModule={(id) => {
+            setModule(id);
+            setDashEditing(false);
+          }}
+          onSettings={() => openSettings('voice')}
+        />
+      </ErrorBoundary>
       {frame && canFrame && (
         <ErrorBoundary label="Fotorahmen" fallback={null} retrySec={0} onError={() => setFrame(null)}>
           <Suspense fallback={null}>

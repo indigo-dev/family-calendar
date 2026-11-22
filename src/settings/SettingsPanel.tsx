@@ -8,9 +8,10 @@ import { HolidaysTab } from './HolidaysTab';
 import { DesignTab } from './DesignTab';
 import { ViewTab } from './ViewTab';
 import { DeviceTab } from './DeviceTab';
+import { VoiceTab } from './VoiceTab';
 import { BackupTab } from './BackupTab';
 
-export type SettingsTab = 'family' | 'calendars' | 'holidays' | 'school' | 'design' | 'view' | 'device' | 'backup';
+export type SettingsTab = 'family' | 'calendars' | 'holidays' | 'school' | 'design' | 'view' | 'device' | 'voice' | 'backup';
 type Tab = SettingsTab;
 
 /** order: set up the family and its data first, then the look, the device and the backup */
@@ -22,6 +23,7 @@ const TABS: { id: Tab; icon: string; label: string; note: string }[] = [
   { id: 'design', icon: '🎨', label: 'Design', note: 'Stil, Farben, Wetter- und Einkaufs-Symbole, Übergänge' },
   { id: 'view', icon: '🗓️', label: 'Kalenderansicht', note: 'Startansicht, Wochenbeginn, Tageszeiten' },
   { id: 'device', icon: '📱', label: 'Gerät', note: 'Aktualisierung, Ruhezustand' },
+  { id: 'voice', icon: '🎙️', label: 'Sprachsteuerung', note: 'Gemini-Key, Modell, Vorlesen' },
   { id: 'backup', icon: '💾', label: 'Sicherung', note: 'Export, Import, Zurücksetzen' },
 ];
 
@@ -70,6 +72,7 @@ export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; in
               {tab === 'design' && <DesignTab />}
               {tab === 'view' && <ViewTab />}
               {tab === 'device' && <DeviceTab />}
+              {tab === 'voice' && <VoiceTab />}
               {tab === 'backup' && <BackupTab />}
             </ErrorBoundary>
           </div>
