@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       play:
-        description: 'Zu Google Play hochladen (interner Test)'
+        description: 'Upload to Google Play (internal testing)'
         type: boolean
         default: true
 
@@ -52,27 +52,27 @@ jobs:
       - run: npm run build
       - run: npx cap sync android
 
-      - name: Versionsname
+      - name: Version name
         run: echo "HOMEWALLY_VERSION_NAME=$(node -p "require('./package.json').version").${{ github.run_number }}" >> "$GITHUB_ENV"
 
-      - name: Upload-Schlüssel bereitstellen
+      - name: Provide upload key
         env:
           KEYSTORE_BASE64: ${{ secrets.HOMEWALLY_KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.HOMEWALLY_KEYSTORE_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::warning::Kein Upload-Schlüssel hinterlegt – das AAB bleibt unsigniert."
+            echo "::warning::No upload key stored – the AAB stays unsigned."
             exit 0
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.p12"
           echo "HOMEWALLY_KEYSTORE_FILE=$RUNNER_TEMP/upload.p12" >> "$GITHUB_ENV"
           echo "HOMEWALLY_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
 
-      - name: AAB bauen
+      - name: Build AAB
         working-directory: android
         run: ./gradlew --no-daemon bundleRelease
 
-      - name: Schlüssel entfernen
+      - name: Remove key
         if: always()
         run: rm -f "$RUNNER_TEMP/upload.p12"
 
@@ -82,7 +82,7 @@ jobs:
           path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
 
-      - name: Zu Google Play hochladen (interner Test)
+      - name: Upload to Google Play (internal testing)
         if: >-
           env.HAS_PLAY_ACCOUNT == 'true' && env.HAS_UPLOAD_KEY == 'true' &&
           (github.event_name == 'push' || inputs.play)

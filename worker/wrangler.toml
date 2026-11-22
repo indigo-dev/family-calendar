@@ -1,19 +1,19 @@
-# Cloudflare Worker "Weiterleitung" – Deploy: npm run worker:deploy
-# Der Name muss zum Worker im Cloudflare-Dashboard passen (Adresse https://<name>.<konto>.workers.dev).
+# Cloudflare Worker "proxy" – deploy: npm run worker:deploy
+# The name must match the worker in the Cloudflare dashboard (address https://<name>.<account>.workers.dev).
 name = "familienkalender-ics"
 main = "worker.js"
 compatibility_date = "2026-11-01"
 
-# Keine Logs: die Anfragen enthalten geheime Kalender-Links.
+# No logs: the requests contain secret calendar links.
 [observability]
 enabled = false
 
 [vars]
-# Erlaubte Kalender-Server, durch Komma getrennt; "*" = jeder https-Server.
-# Strenger, z. B.: "calendar.google.com, outlook.live.com, outlook.office365.com, *.icloud.com"
+# Allowed calendar servers, comma-separated; "*" = any https server.
+# Stricter, e.g.: "calendar.google.com, outlook.live.com, outlook.office365.com, *.icloud.com"
 ALLOWED_HOSTS = "*"
-# Seiten, die den Worker im Browser nutzen dürfen (localhost und Heimnetz sind immer erlaubt).
+# Sites allowed to use the worker from the browser (localhost and the local network are always allowed).
 ALLOWED_ORIGINS = "https://indigo-dev.github.io"
 
-# Den Zugangsschlüssel NICHT hier eintragen, sondern als Secret:
+# Do NOT put the access key here, set it as a secret:
 #   npx wrangler@4 secret put ACCESS_KEY --config worker/wrangler.toml
