@@ -177,10 +177,20 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
 
         <div className="fr-field">
           <span>Darstellung</span>
-          <div className="segmented small">
+          <div className="fr-fits" role="radiogroup" aria-label="Darstellung">
             {FITS.map((f) => (
-              <button key={f.id} className={cfg.fit === f.id ? 'active' : ''} onClick={() => patchFrameSettings({ fit: f.id })}>
-                {f.label}
+              <button
+                key={f.id}
+                role="radio"
+                aria-checked={cfg.fit === f.id}
+                className={`fr-fit ${cfg.fit === f.id ? 'on' : ''}`}
+                onClick={() => patchFrameSettings({ fit: f.id })}
+              >
+                {/* miniature screen with a portrait photo, drawn the way this option shows it */}
+                <span className={`fr-fit-thumb fit-${f.id}`} aria-hidden>
+                  <i />
+                </span>
+                <span>{f.label}</span>
               </button>
             ))}
           </div>

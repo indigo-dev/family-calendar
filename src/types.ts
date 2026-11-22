@@ -1,4 +1,5 @@
 import type { SymbolSet } from './lib/symbols';
+import type { WeatherIconSet } from './lib/weatherIcons';
 
 export type ViewMode = 'day' | 'days' | 'week' | 'month' | 'year' | 'agenda';
 
@@ -83,6 +84,8 @@ export interface Settings {
   style: UiStyle;
   /** how emoji symbols are drawn (shopping list, ...) */
   symbols: SymbolSet;
+  /** how weather conditions are drawn */
+  weatherIcons: WeatherIconSet;
   /** how people, subjects and departments are coloured */
   palette: ColorPalette;
   /** base colour of the 'core' palette */

@@ -21,6 +21,8 @@ import { newTimetable, SCHOOL_TYPES } from '../lib/school';
 import { SchoolTab } from './SchoolTab';
 import { Sym } from '../components/Sym';
 import { SYMBOL_SETS, type SymbolSet } from '../lib/symbols';
+import { WEATHER_ICON_SETS, type WeatherIconSet, type WeatherKey } from '../lib/weatherIcons';
+import { WxIcon } from '../weather/WxIcon';
 import { CORE_SUGGESTIONS, PALETTE, PALETTES, paletteColors } from '../lib/colors';
 
 export type SettingsTab = 'family' | 'calendars' | 'holidays' | 'school' | 'design' | 'view' | 'device' | 'backup';
@@ -811,6 +813,10 @@ function DesignTab() {
         )}
       </Group>
 
+      <Group title="Wetter-Symbole" note="Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht.">
+        <WeatherIconPicker value={settings.weatherIcons} onChange={(weatherIcons) => updateSettings({ weatherIcons })} />
+      </Group>
+
       <Group title="Symbole (Einkaufsliste)">
         <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
       </Group>
@@ -905,6 +911,35 @@ function DeviceTab() {
           </Row>
         </div>
       </Group>
+    </div>
+  );
+}
+
+const WEATHER_PREVIEW: WeatherKey[] = ['clear-day', 'partly-cloudy-day', 'partly-cloudy-day-rain', 'thunderstorms-day-rain', 'snow', 'clear-night'];
+
+function WeatherIconPicker({ value, onChange }: { value: WeatherIconSet; onChange: (v: WeatherIconSet) => void }) {
+  return (
+    <div className="field">
+      <div className="wx-picker" role="radiogroup" aria-label="Wetter-Symbole">
+        {WEATHER_ICON_SETS.map((s) => (
+          <button
+            key={s.id}
+            role="radio"
+            aria-checked={value === s.id}
+            className={`sym-card wx-pick ${value === s.id ? 'on' : ''}`}
+            onClick={() => onChange(s.id)}
+          >
+            <span className="wx-pick-row">
+              {WEATHER_PREVIEW.map((k) => (
+                <WxIcon key={k} icon={k} set={s.id} title="" />
+              ))}
+            </span>
+            <span className="sym-card-label">{s.label}</span>
+            <span className="sym-card-note">{s.note}</span>
+          </button>
+        ))}
+      </div>
+      <span className="sym-credits">Meteocons © Bas Milius (MIT) · Material Symbols © Google (Apache 2.0) · Fluent Emoji © Microsoft (MIT)</span>
     </div>
   );
 }

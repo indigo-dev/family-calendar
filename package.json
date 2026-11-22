@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host",
     "typecheck": "tsc -b",
-    "symbols": "node scripts/fetch-symbols.mjs"
+    "symbols": "node scripts/fetch-symbols.mjs",
+    "weather-icons": "node scripts/fetch-weather-icons.mjs"
   },
   "dependencies": {
     "@azure/msal-browser": "^4.0.0",

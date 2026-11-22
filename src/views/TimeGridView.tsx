@@ -7,6 +7,7 @@ import { AvatarStack } from '../components/Avatar';
 import { markClass, membersOf, stripe, tint, type ViewProps } from './common';
 import { AllDayChip } from './AllDayChip';
 import { deg, describe, useHomeDays, type Day } from '../lib/weather';
+import { WxIcon } from '../weather/WxIcon';
 
 /** Forecast of the home place in a day column header: icon + max / min. */
 function DayWeather({ day }: { day?: Day }) {
@@ -14,7 +15,7 @@ function DayWeather({ day }: { day?: Day }) {
   const w = describe(day.code);
   return (
     <span className="tg-wx" title={`${w.text}, ${deg(day.max)} / ${deg(day.min)}, Regen ${day.rainProb} %`}>
-      {w.icon} <b>{deg(day.max)}</b> {deg(day.min)}
+      <WxIcon code={day.code} title="" /> <b>{deg(day.max)}</b> {deg(day.min)}
     </span>
   );
 }

@@ -1,6 +1,7 @@
 import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings, UiStyle } from '../types';
 import { parseSchool, parseTimetable } from './school';
 import { DEFAULT_SYMBOL_SET, isSymbolSet } from './symbols';
+import { DEFAULT_WEATHER_ICONS, isWeatherIconSet } from './weatherIcons';
 import { DEFAULT_CORE_COLOR, PALETTE, PALETTES } from './colors';
 
 const CONFIG_KEY = 'fc.config.v1';
@@ -84,6 +85,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'auto',
   style: 'classic',
   symbols: DEFAULT_SYMBOL_SET,
+  weatherIcons: DEFAULT_WEATHER_ICONS,
   palette: 'vivid',
   coreColor: DEFAULT_CORE_COLOR,
 };
@@ -178,6 +180,7 @@ export function parseConfig(raw: unknown): AppConfig {
   settings.multiDays = clampDays(settings.multiDays);
   if (!UI_STYLES.some((x) => x.id === settings.style)) settings.style = DEFAULT_SETTINGS.style;
   if (!isSymbolSet(settings.symbols)) settings.symbols = DEFAULT_SETTINGS.symbols;
+  if (!isWeatherIconSet(settings.weatherIcons)) settings.weatherIcons = DEFAULT_SETTINGS.weatherIcons;
   if (!PALETTES.some((x) => x.id === settings.palette)) settings.palette = DEFAULT_SETTINGS.palette;
   if (!/^#[0-9a-f]{6}$/i.test(settings.coreColor)) settings.coreColor = DEFAULT_CORE_COLOR;
 

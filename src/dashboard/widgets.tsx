@@ -21,6 +21,7 @@ import {
   useHomeWeather,
   uvLevel,
 } from '../lib/weather';
+import { WxIcon } from '../weather/WxIcon';
 import { thumbUrl, useFrameSettings, usePhotos, type Photo } from '../lib/frame';
 import { Avatar, AvatarStack } from '../components/Avatar';
 import { paint } from '../lib/colors';
@@ -163,7 +164,7 @@ function WeatherWidget({ size }: WidgetProps) {
         </div>
       )}
       <div className="dw-weather-now">
-        <span className="dw-weather-icon">{cur.icon}</span>
+        <WxIcon code={data.current.code} isDay={data.current.isDay} className="dw-weather-icon" />
         <div>
           <div className="dw-weather-temp">
             {deg(data.current.temp)}
@@ -184,7 +185,7 @@ function WeatherWidget({ size }: WidgetProps) {
           {hours.map((h) => (
             <div key={h.time} className="dw-hour">
               <span className="dw-hour-t">{h.time.slice(11, 13)}</span>
-              <span className="dw-hour-i">{describe(h.code, h.isDay).icon}</span>
+              <WxIcon code={h.code} isDay={h.isDay} className="dw-hour-i" />
               <span className="dw-hour-v">{deg(h.temp)}</span>
             </div>
           ))}
@@ -197,7 +198,7 @@ function WeatherWidget({ size }: WidgetProps) {
             return (
               <div key={d.date} className="dw-day">
                 <span className="dw-day-name">{fmt(date, { weekday: 'short' })}</span>
-                <span className="dw-day-i">{describe(d.code).icon}</span>
+                <WxIcon code={d.code} className="dw-day-i" />
                 <span className="dw-day-max">{deg(d.max)}</span>
                 <span className="dw-day-min">{deg(d.min)}</span>
               </div>

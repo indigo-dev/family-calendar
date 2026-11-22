@@ -541,3 +541,59 @@
     gap: 8px;
   }
 }
+
+/* Darstellung: small previews of the three fits */
+.fr-fits {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.fr-fit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 6px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+.fr-fit.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.fr-fit-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #1c1f24;
+}
+/* the "photo": portrait, sky over a hill */
+.fr-fit-thumb i {
+  display: block;
+  height: 100%;
+  aspect-ratio: 3 / 4;
+  background: radial-gradient(circle at 70% 28%, #ffd36b 0 9%, transparent 10%),
+    linear-gradient(to bottom, transparent 62%, #4f9a5a 62%), linear-gradient(#78b6f0, #bfe0fb);
+}
+.fit-cover i {
+  width: 100%;
+  height: auto;
+}
+.fit-contain {
+  background: linear-gradient(135deg, #3d5266, #5c7086);
+}
+.fit-mat {
+  background: radial-gradient(ellipse at 50% 30%, #efebe4, #c9c1b5);
+}
+.fit-mat i {
+  height: 72%;
+  outline: 3px solid #fbfaf7;
+  box-shadow: 0 0 0 5px #23201d, 0 4px 8px rgba(0, 0, 0, 0.3);
+}

@@ -29,6 +29,9 @@ export interface Current {
   code: number;
   isDay: boolean;
   wind: number;
+  gusts: number;
+  /** degrees, where the wind comes from */
+  windDir: number;
   humidity: number;
   precipitation: number;
 }
@@ -39,7 +42,15 @@ export interface Hour {
   code: number;
   isDay: boolean;
   rainProb: number;
+  /** mm in this hour */
+  rain: number;
   uv: number;
+  feels: number;
+  wind: number;
+  gusts: number;
+  windDir: number;
+  humidity: number;
+  cloud: number;
 }
 
 export interface Day {
@@ -90,7 +101,8 @@ export interface WeatherData {
 /* ------------------------------------------------------------------ settings */
 
 const KEY = 'fc.weather';
-const DATA_KEY = 'fc.weather.data.';
+/** v2: hourly details (wind, feels like, …) – older caches are ignored */
+const DATA_KEY = 'fc.weather.v2.';
 /** data older than this is fetched again */
 const STALE_MS = 20 * 60_000;
 /** don't hammer the services after an error */
@@ -106,6 +118,15 @@ function loadSettings(): WeatherSettings {
 }
 
 let settings = loadSettings();
+
+// caches of the first version lack the hourly details – drop them
+try {
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith('fc.weather.data.'))
+    .forEach((k) => localStorage.removeItem(k));
+} catch {
+  /* ignore */
+}
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
@@ -195,23 +216,63 @@ export async function searchPlaces(query: string, signal?: AbortSignal): Promise
   }));
 }
 
-/** Asks the browser for the device position once. */
-export function locate(): Promise<{ lat: number; lon: number }> {
-  return new Promise((resolve, reject) => {
-    if (!('geolocation' in navigator)) return reject(new Error('Dieses Gerät kann seinen Standort nicht ermitteln.'));
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lon: pos.coords.longitude }),
-      (err) =>
-        reject(
-          new Error(
-            err.code === err.PERMISSION_DENIED
-              ? 'Der Zugriff auf den Standort wurde nicht erlaubt. Du kannst den Ort stattdessen suchen.'
-              : 'Der Standort konnte nicht ermittelt werden. Bitte den Ort suchen.',
-          ),
-        ),
-      { enableHighAccuracy: false, timeout: 15_000, maximumAge: 60 * 60_000 },
-    );
-  });
+export const isApple = () => /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
+
+/** Why locating failed, with a hint the family can act on. */
+export class LocateError extends Error {
+  constructor(
+    message: string,
+    public help?: string[],
+  ) {
+    super(message);
+  }
+}
+
+function position(options: PositionOptions): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, options));
+}
+
+/**
+ * Asks the browser for the device position once. Tablets without GPS often fail the first, quick
+ * attempt (Wi-Fi positioning still warming up) – then it tries again more patiently.
+ */
+export async function locate(): Promise<{ lat: number; lon: number }> {
+  if (!window.isSecureContext) {
+    throw new LocateError('Der Standort ist nur über eine sichere Verbindung (https) verfügbar. Bitte den Ort suchen.');
+  }
+  if (!('geolocation' in navigator)) throw new LocateError('Dieses Gerät kann seinen Standort nicht ermitteln. Bitte den Ort suchen.');
+  let pos: GeolocationPosition;
+  try {
+    pos = await position({ enableHighAccuracy: false, timeout: 12_000, maximumAge: 60 * 60_000 });
+  } catch (e) {
+    const err = e as GeolocationPositionError;
+    if (err.code === err.PERMISSION_DENIED) throw denied();
+    try {
+      pos = await position({ enableHighAccuracy: true, timeout: 25_000, maximumAge: 0 });
+    } catch (e2) {
+      const err2 = e2 as GeolocationPositionError;
+      if (err2.code === err2.PERMISSION_DENIED) throw denied();
+      throw new LocateError(
+        'Das Gerät konnte seinen Standort gerade nicht bestimmen. Ist WLAN eingeschaltet? Sonst den Ort einfach suchen.',
+        isApple() ? ['Einstellungen → Datenschutz & Sicherheit → Ortungsdienste muss eingeschaltet sein.'] : undefined,
+      );
+    }
+  }
+  return { lat: pos.coords.latitude, lon: pos.coords.longitude };
+}
+
+function denied() {
+  return new LocateError(
+    'Der Zugriff auf den Standort ist nicht erlaubt.',
+    isApple()
+      ? [
+          'Einstellungen → Datenschutz & Sicherheit → Ortungsdienste: einschalten.',
+          'Darunter „Safari-Websites“ (bzw. den Browser) auf „Beim Verwenden der App“ stellen.',
+          'In Safari: „aA“ bzw. Seiteneinstellungen → Standort → „Erlauben“ oder „Fragen“.',
+          'Danach die Seite neu laden und es noch einmal versuchen – oder den Ort einfach suchen.',
+        ]
+      : ['Im Browser beim Schloss-Symbol neben der Adresse den Standort erlauben, dann erneut versuchen – oder den Ort suchen.'],
+  );
 }
 
 /* ------------------------------------------------------------------ fetching */
@@ -232,6 +293,8 @@ interface ForecastJson {
     weather_code: number;
     is_day: number;
     wind_speed_10m: number;
+    wind_gusts_10m: number;
+    wind_direction_10m: number;
     relative_humidity_2m: number;
     precipitation: number;
   };
@@ -241,7 +304,14 @@ interface ForecastJson {
     weather_code: number[];
     is_day: number[];
     precipitation_probability: (number | null)[];
+    precipitation: (number | null)[];
     uv_index: (number | null)[];
+    apparent_temperature: number[];
+    wind_speed_10m: number[];
+    wind_gusts_10m: number[];
+    wind_direction_10m: number[];
+    relative_humidity_2m: number[];
+    cloud_cover: number[];
   };
   daily: {
     time: string[];
@@ -259,8 +329,9 @@ interface ForecastJson {
 async function fetchForecast(p: Place) {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}` +
-    '&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,relative_humidity_2m,precipitation' +
-    '&hourly=temperature_2m,weather_code,is_day,precipitation_probability,uv_index' +
+    '&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,precipitation' +
+    '&hourly=temperature_2m,weather_code,is_day,precipitation_probability,precipitation,uv_index,apparent_temperature,' +
+    'wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,cloud_cover' +
     '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max,sunrise,sunset' +
     '&timezone=Europe%2FBerlin&past_days=1&forecast_days=8';
   const j = await getJson<ForecastJson>(url);
@@ -275,6 +346,8 @@ async function fetchForecast(p: Place) {
       code: c.weather_code,
       isDay: c.is_day === 1,
       wind: c.wind_speed_10m,
+      gusts: c.wind_gusts_10m,
+      windDir: c.wind_direction_10m,
       humidity: c.relative_humidity_2m,
       precipitation: c.precipitation,
     },
@@ -284,7 +357,14 @@ async function fetchForecast(p: Place) {
       code: h.weather_code[i],
       isDay: h.is_day[i] === 1,
       rainProb: h.precipitation_probability[i] ?? 0,
+      rain: h.precipitation[i] ?? 0,
       uv: h.uv_index[i] ?? 0,
+      feels: h.apparent_temperature[i],
+      wind: h.wind_speed_10m[i],
+      gusts: h.wind_gusts_10m[i],
+      windDir: h.wind_direction_10m[i],
+      humidity: h.relative_humidity_2m[i],
+      cloud: h.cloud_cover[i],
     })),
     days: d.time.map((date, i) => ({
       date,

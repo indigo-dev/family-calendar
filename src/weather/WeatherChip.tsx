@@ -1,4 +1,5 @@
 import { activeAlerts, deg, describe, useHomeWeather } from '../lib/weather';
+import { WxIcon } from './WxIcon';
 import './weather.css';
 
 /** Current weather of the home place for the calendar header; tap opens the weather module. */
@@ -9,9 +10,7 @@ export function WeatherChip({ now, onClick }: { now: Date; onClick: () => void }
   const warn = activeAlerts(data, now).length > 0;
   return (
     <button className="wx-chip" onClick={onClick} title={`${place.name}: ${w.text}${warn ? ' – Wetterwarnung' : ''}`}>
-      <span className="wx-chip-i" aria-hidden>
-        {w.icon}
-      </span>
+      <WxIcon code={data.current.code} isDay={data.current.isDay} className="wx-chip-i" title="" />
       <span className="wx-chip-t">{deg(data.current.temp)}</span>
       {warn && (
         <span className="wx-chip-warn" aria-label="Wetterwarnung">
@@ -30,7 +29,7 @@ export function FrameWeather() {
   const today = data.days.find((d) => d.date === data.current.time.slice(0, 10));
   return (
     <div className="pf-weather">
-      <span className="pf-weather-i">{w.icon}</span>
+      <WxIcon code={data.current.code} isDay={data.current.isDay} className="pf-weather-i" title="" />
       <span>{deg(data.current.temp)}</span>
       <small>
         {w.text}
