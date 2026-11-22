@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildPrompt, isEmpty, parseCommand } from './command';
 import { applyCommand, findItem, findMembers, joinAnd, type ApplyDeps } from './apply';
 import { encodeWav } from './recorder';
+import { thinkingConfig, understand } from './gemini';
 import { BUILTIN, type ListEntry, type ShopItem } from '../lib/shopping';
 import type { Todo } from '../lib/todos';
 import type { Member } from '../types';
@@ -177,5 +178,46 @@ describe('encodeWav', () => {
     expect(v.getUint32(24, true)).toBe(16000);
     expect(v.getInt16(46, true)).toBe(0x7fff);
     expect(v.getInt16(48, true)).toBe(-0x7fff);
+  });
+});
+
+describe('thinkingConfig', () => {
+  it('turns thinking as far down as each model allows', () => {
+    expect(thinkingConfig('gemini-2.5-flash')).toEqual({ thinkingBudget: 0 });
+    expect(thinkingConfig('gemini-3.5-flash-lite')).toEqual({ thinkingLevel: 'minimal' });
+    expect(thinkingConfig('gemini-3.6-flash')).toEqual({ thinkingLevel: 'minimal' });
+    expect(thinkingConfig('gemini-3.8-flash')).toEqual({ thinkingLevel: 'low' });
+    expect(thinkingConfig('gemini-4-hydrogen')).toEqual({ thinkingLevel: 'low' });
+  });
+});
+
+describe('understand', () => {
+  const ctx = { now: new Date(2026, 10, 22), members: [], places: [], pantry: [] };
+  const ok = (body: unknown) =>
+    new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify(body) }] } }] }), { status: 200 });
+
+  it('falls back to the default model when the chosen one is gone', async () => {
+    const urls: string[] = [];
+    vi.stubGlobal('fetch', async (url: string) => {
+      urls.push(url);
+      return url.includes('gemini-2.5-flash:')
+        ? new Response('{}', { status: 404 })
+        : ok({ transcript: 'Milch', shopping: [{ name: 'Milch', qty: 1 }] });
+    });
+    const res = await understand({ kind: 'text', text: 'Milch' }, ctx, {
+      apiKey: 'k',
+      model: 'gemini-2.5-flash',
+      fallbackModel: 'gemini-3.5-flash-lite',
+    });
+    expect(res.model).toBe('gemini-3.5-flash-lite');
+    expect(res.cmd.shopping).toHaveLength(1);
+    expect(urls).toHaveLength(2);
+    vi.unstubAllGlobals();
+  });
+
+  it('reports a missing model without fallback', async () => {
+    vi.stubGlobal('fetch', async () => new Response('{}', { status: 404 }));
+    await expect(understand({ kind: 'text', text: 'x' }, ctx, { apiKey: 'k', model: 'gemini-9' })).rejects.toThrow(/Modell/);
+    vi.unstubAllGlobals();
   });
 });

@@ -9,7 +9,7 @@ import { understand, VoiceError, type VoiceInput } from './gemini';
 import { MicError, micSupported, startRecording, toModelAudio, type Recording } from './recorder';
 import { applyCommand, type Applied } from './apply';
 import { EventsAnswer, WeatherAnswer } from './answers';
-import { useVoiceSettings } from './settings';
+import { DEFAULT_MODEL, updateVoiceSettings, useVoiceSettings } from './settings';
 import './voice.css';
 
 type Phase =
@@ -85,7 +85,7 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
     abort.current = ctrl;
     const hidden = new Set(shop.hidden);
     try {
-      const cmd = await understand(
+      const { cmd, model } = await understand(
         input,
         {
           now: new Date(),
@@ -93,9 +93,11 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
           places: places.map((p) => p.name),
           pantry: [...BUILTIN.filter((i) => !hidden.has(i.id)), ...shop.custom].map((i) => i.name),
         },
-        { apiKey: voice.apiKey, model: voice.model },
+        { apiKey: voice.apiKey, model: voice.model, fallbackModel: DEFAULT_MODEL },
         ctrl.signal,
       );
+      // the chosen model was gone and the default answered: keep using that
+      if (model !== voice.model) updateVoiceSettings({ model });
       if (ctrl.signal.aborted) return;
       if (!cmd.transcript && isEmpty(cmd)) {
         setPhase({ s: 'error', message: 'Ich habe nichts verstanden. Bitte noch einmal versuchen.', canType: true });

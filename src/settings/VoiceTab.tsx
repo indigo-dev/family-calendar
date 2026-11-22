@@ -23,12 +23,16 @@ export function VoiceTab() {
       const list = await listModels(apiKey);
       setModels(list);
       const known = list.some((m) => m.id === voice.model);
+      // the chosen model is gone, but the recommended one is there: switch silently
+      const switched = !known && list.some((m) => m.id === DEFAULT_MODEL);
+      if (switched) updateVoiceSettings({ model: DEFAULT_MODEL });
       setTest({
         busy: false,
         ok: true,
-        text: known
-          ? 'Verbindung klappt. Der Mikrofon-Knopf ist jetzt unten rechts.'
-          : `Verbindung klappt, aber das Modell „${voice.model}“ gibt es für diesen Key nicht – bitte unten eins wählen.`,
+        text:
+          known || switched
+            ? `Verbindung klappt${switched ? ` – Modell auf „${DEFAULT_MODEL}“ umgestellt` : ''}. Der Mikrofon-Knopf ist jetzt unten rechts.`
+            : `Verbindung klappt, aber das Modell „${voice.model}“ gibt es für diesen Key nicht – bitte unten eins wählen.`,
       });
     } catch (e) {
       setTest({ busy: false, ok: false, text: e instanceof VoiceError ? e.message : 'Test fehlgeschlagen.' });
