@@ -181,7 +181,14 @@ export function PhotoFrame({ ids, mode, startId, onClose }: { ids: string[]; mod
   );
 }
 
-function SlideView({ slide, fit, motion, clock, durationSec, size }: {
+function SlideView({
+  slide,
+  fit,
+  motion,
+  clock,
+  durationSec,
+  size,
+}: {
   slide: Slide;
   fit: 'cover' | 'contain' | 'mat';
   motion: boolean;

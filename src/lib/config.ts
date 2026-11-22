@@ -10,10 +10,38 @@ const CONFIG_KEY = 'fc.config.v1';
 export { PALETTE };
 
 export const EMOJIS = [
-  '👨', '👩', '👧', '👦', '👶', '👴', '👵', '🧑',
-  '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐸', '🐵',
-  '🐶', '🐱', '🦄', '🐝', '🐢', '🐬', '🦖', '🐙',
-  '⚽', '🎸', '🎨', '📚', '🚀', '🌻', '⭐', '❤️',
+  '👨',
+  '👩',
+  '👧',
+  '👦',
+  '👶',
+  '👴',
+  '👵',
+  '🧑',
+  '🦊',
+  '🐻',
+  '🐼',
+  '🐨',
+  '🐯',
+  '🦁',
+  '🐸',
+  '🐵',
+  '🐶',
+  '🐱',
+  '🦄',
+  '🐝',
+  '🐢',
+  '🐬',
+  '🦖',
+  '🐙',
+  '⚽',
+  '🎸',
+  '🎨',
+  '📚',
+  '🚀',
+  '🌻',
+  '⭐',
+  '❤️',
 ];
 
 /** Where to find the ICS subscription link at the common providers (help text in the settings). */
@@ -108,9 +136,14 @@ export function clampDays(n: number): number {
 }
 
 export function defaultConfig(): AppConfig {
-  return { schemaVersion: 3, settings: { ...DEFAULT_SETTINGS, holidays: { ...DEFAULT_HOLIDAYS } }, members: [], calendars: [], school: { colors: {}, custom: [] } };
+  return {
+    schemaVersion: 3,
+    settings: { ...DEFAULT_SETTINGS, holidays: { ...DEFAULT_HOLIDAYS } },
+    members: [],
+    calendars: [],
+    school: { colors: {}, custom: [] },
+  };
 }
-
 
 export function newMember(existing: Member[]): Member {
   const used = new Set(existing.map((m) => m.color));

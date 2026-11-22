@@ -27,7 +27,11 @@ type Comp = { type: string; props: Prop[]; children: Comp[] };
 /* ------------------------------------------------------------------ lexing */
 
 function unfold(text: string): string[] {
-  return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n[ \t]/g, '').split('\n');
+  return text
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .replace(/\n[ \t]/g, '')
+    .split('\n');
 }
 
 function parseLine(line: string): Prop | null {
@@ -111,7 +115,7 @@ const WINDOWS_ZONES: Record<string, string> = {
   'Mountain Standard Time': 'America/Denver',
   'Pacific Standard Time': 'America/Los_Angeles',
   'Atlantic Standard Time': 'America/Halifax',
-  'UTC': 'UTC',
+  UTC: 'UTC',
   'Coordinated Universal Time': 'UTC',
 };
 
@@ -252,15 +256,26 @@ function parseRule(v: string): Rule | null {
   }
   const freq = parts.FREQ as Rule['freq'];
   if (!['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'].includes(freq)) return null;
-  const ints = (s?: string) => (s ? s.split(',').map(Number).filter((n) => Number.isFinite(n) && n !== 0) : []);
+  const ints = (s?: string) =>
+    s
+      ? s
+          .split(',')
+          .map(Number)
+          .filter((n) => Number.isFinite(n) && n !== 0)
+      : [];
   return {
     freq,
     interval: Math.max(1, Number(parts.INTERVAL) || 1),
     count: parts.COUNT ? Number(parts.COUNT) : undefined,
-    until: parts.UNTIL ? parseDT(parts.UNTIL, {}) ?? undefined : undefined,
+    until: parts.UNTIL ? (parseDT(parts.UNTIL, {}) ?? undefined) : undefined,
     byDay: (parts.BYDAY ?? '')
       .split(',')
-      .map((s) => s.trim().toUpperCase().match(/^([+-]?\d+)?(SU|MO|TU|WE|TH|FR|SA)$/))
+      .map((s) =>
+        s
+          .trim()
+          .toUpperCase()
+          .match(/^([+-]?\d+)?(SU|MO|TU|WE|TH|FR|SA)$/),
+      )
       .filter((m): m is RegExpMatchArray => !!m)
       .map((m) => ({ n: m[1] ? Number(m[1]) : 0, wd: WD[m[2]] })),
     byMonthDay: ints(parts.BYMONTHDAY),
@@ -349,11 +364,13 @@ function periodDays(rule: Rule, start: Naive, k: number): Naive[] {
     case 'YEARLY': {
       const y = s.y + k * rule.interval;
       const months = rule.byMonth.length ? rule.byMonth.map((m) => m - 1) : [s.m];
-      const days = months.sort((a, b) => a - b).flatMap((m) => {
-        // plain yearly on a date: same day, skip invalid (29 Feb)
-        if (!rule.byDay.length && !rule.byMonthDay.length) return s.d <= daysInMonth(y, m) ? [Date.UTC(y, m, s.d)] : [];
-        return monthDays(y, m, rule, s.d);
-      });
+      const days = months
+        .sort((a, b) => a - b)
+        .flatMap((m) => {
+          // plain yearly on a date: same day, skip invalid (29 Feb)
+          if (!rule.byDay.length && !rule.byMonthDay.length) return s.d <= daysInMonth(y, m) ? [Date.UTC(y, m, s.d)] : [];
+          return monthDays(y, m, rule, s.d);
+        });
       return applySetPos(days, rule.bySetPos);
     }
   }
@@ -435,10 +452,10 @@ function readEvent(c: Comp): RawEvent | null {
     location: text('LOCATION'),
     notes: text('DESCRIPTION'),
     cancelled: (get('STATUS')?.value ?? '').trim().toUpperCase() === 'CANCELLED',
-    rrule: rr ? parseRule(rr.value) ?? undefined : undefined,
+    rrule: rr ? (parseRule(rr.value) ?? undefined) : undefined,
     exdates,
     rdates,
-    recurrenceId: ridP ? parseDT(ridP.value, ridP.params) ?? undefined : undefined,
+    recurrenceId: ridP ? (parseDT(ridP.value, ridP.params) ?? undefined) : undefined,
   };
 }
 
@@ -557,7 +574,10 @@ function periodStart(rule: Rule, start: Naive, k: number): number {
 export function parseIcs(text: string, from: Date, to: Date): IcsEvent[] {
   const root = parseTree(text);
   const cal = root.children.find((c) => c.type === 'VCALENDAR') ?? root;
-  const raw = cal.children.filter((c) => c.type === 'VEVENT').map(readEvent).filter((e): e is RawEvent => !!e);
+  const raw = cal.children
+    .filter((c) => c.type === 'VEVENT')
+    .map(readEvent)
+    .filter((e): e is RawEvent => !!e);
 
   // moved / cancelled single occurrences of a series
   const overrides = new Map<string, Set<string>>();

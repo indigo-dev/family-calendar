@@ -288,7 +288,11 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days, 
               <span className="tg-dn">{d.getDate()}</span>
               <DayWeather day={wx.get(dayKey(d))} />
 
-              {label && <span className="tg-hol" title={label}>{label}</span>}
+              {label && (
+                <span className="tg-hol" title={label}>
+                  {label}
+                </span>
+              )}
             </button>
           );
         })}
@@ -303,9 +307,7 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days, 
               <div key={d.toISOString()} className="tg-allday-cell">
                 {list.slice(0, 3).map((e) => {
                   const ms = membersOf(e, memberById);
-                  return (
-                    <AllDayChip key={e.key} e={e} members={ms} onClick={() => onEvent(e)} />
-                  );
+                  return <AllDayChip key={e.key} e={e} members={ms} onClick={() => onEvent(e)} />;
                 })}
                 {list.length > 3 && (
                   <button className="more" onClick={() => onOpen('day', d)}>
@@ -373,9 +375,7 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days, 
                     </button>
                   );
                 })}
-                {isToday && nowMin >= 0 && nowMin <= hours * 60 && (
-                  <div className="tg-now" style={{ top: nowMin * pxPerMin }} />
-                )}
+                {isToday && nowMin >= 0 && nowMin <= hours * 60 && <div className="tg-now" style={{ top: nowMin * pxPerMin }} />}
               </div>
             );
           })}

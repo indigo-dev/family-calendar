@@ -55,7 +55,9 @@ export const AgendaView = memo(function AgendaView({ date, now, events, onEvent,
                 return (
                   <button key={e.key} className={`agenda-item ${past ? 'past' : ''}`} onClick={() => onEvent(e)}>
                     <span className="agenda-time">
-                      {e.allDay ? 'ganztägig' : (
+                      {e.allDay ? (
+                        'ganztägig'
+                      ) : (
                         <>
                           {fmtTime(e.start)}
                           <small>{fmtTime(e.end)}</small>

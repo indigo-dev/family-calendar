@@ -78,7 +78,12 @@ export function WeatherModule({ now }: { now: Date }) {
             {error && data ? ' · offline' : ''}
             {data?.alerts && alerts.length === 0 && <span className="wx-stamp-ok"> · keine Warnungen</span>}
           </span>
-          <button className={`icon-btn wx-refresh ${loading ? 'spin' : ''}`} onClick={() => refresh(place, true)} disabled={loading} aria-label="Aktualisieren">
+          <button
+            className={`icon-btn wx-refresh ${loading ? 'spin' : ''}`}
+            onClick={() => refresh(place, true)}
+            disabled={loading}
+            aria-label="Aktualisieren"
+          >
             ⟳
           </button>
         </div>
@@ -91,8 +96,15 @@ export function WeatherModule({ now }: { now: Date }) {
           <div className="wx-empty">{error ?? (loading ? 'Wetter wird geladen …' : '')}</div>
         )}
         <p className="wx-credit">
-          Wetter: <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">Open-Meteo</a> (CC BY 4.0) · Warnungen: Deutscher Wetterdienst
-          über <a href="https://brightsky.dev/" target="_blank" rel="noreferrer">Bright Sky</a> · Pollen: CAMS
+          Wetter:{' '}
+          <a href="https://open-meteo.com/" target="_blank" rel="noreferrer">
+            Open-Meteo
+          </a>{' '}
+          (CC BY 4.0) · Warnungen: Deutscher Wetterdienst über{' '}
+          <a href="https://brightsky.dev/" target="_blank" rel="noreferrer">
+            Bright Sky
+          </a>{' '}
+          · Pollen: CAMS
         </p>
       </div>
 
@@ -148,7 +160,10 @@ function Forecast({ data, now }: { data: WeatherData; now: Date }) {
   const hours =
     dayIdx === 0
       ? (() => {
-          const start = Math.max(0, data.hours.findIndex((h) => h.time.startsWith(hourKey)));
+          const start = Math.max(
+            0,
+            data.hours.findIndex((h) => h.time.startsWith(hourKey)),
+          );
           return data.hours.slice(start, start + 24);
         })()
       : data.hours.filter((h) => h.time.startsWith(day.date));
@@ -158,7 +173,13 @@ function Forecast({ data, now }: { data: WeatherData; now: Date }) {
   useEffect(() => {
     const el = hoursRef.current;
     if (!el) return;
-    const i = dayIdx === 0 ? 0 : Math.max(0, hours.findIndex((h) => h.time.endsWith('T07:00')));
+    const i =
+      dayIdx === 0
+        ? 0
+        : Math.max(
+            0,
+            hours.findIndex((h) => h.time.endsWith('T07:00')),
+          );
     const tile = el.children[i] as HTMLElement | undefined;
     el.scrollTo({ left: tile ? tile.offsetLeft - el.offsetLeft : 0, behavior: 'smooth' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -200,7 +221,9 @@ function Forecast({ data, now }: { data: WeatherData; now: Date }) {
           ))}
           {alerts.length > ALERTS_SHOWN && (
             <button className="wx-more-alerts" onClick={() => setShowAll((s) => !s)}>
-              {showAll ? 'Weniger anzeigen' : `+ ${alerts.length - ALERTS_SHOWN} weitere Warnung${alerts.length - ALERTS_SHOWN > 1 ? 'en' : ''}`}
+              {showAll
+                ? 'Weniger anzeigen'
+                : `+ ${alerts.length - ALERTS_SHOWN} weitere Warnung${alerts.length - ALERTS_SHOWN > 1 ? 'en' : ''}`}
             </button>
           )}
         </div>
@@ -213,7 +236,7 @@ function Forecast({ data, now }: { data: WeatherData; now: Date }) {
           <div className="wx-hero-text">{curText}</div>
           {todayData && (
             <div className="wx-hero-sub">
-              ↑ {deg(todayData.max)}  ↓ {deg(todayData.min)} · gefühlt {deg(cur.feels)}
+              ↑ {deg(todayData.max)} ↓ {deg(todayData.min)} · gefühlt {deg(cur.feels)}
             </div>
           )}
         </div>
@@ -252,7 +275,12 @@ function Forecast({ data, now }: { data: WeatherData; now: Date }) {
             </button>
           ))}
         </div>
-        {selected && <HourDetail hour={selected} label={`${dayLabel(selected.time.slice(0, 10), today)}, ${Number(selected.time.slice(11, 13))}:00 Uhr`} />}
+        {selected && (
+          <HourDetail
+            hour={selected}
+            label={`${dayLabel(selected.time.slice(0, 10), today)}, ${Number(selected.time.slice(11, 13))}:00 Uhr`}
+          />
+        )}
       </section>
 
       <section className="wx-cards">
@@ -355,7 +383,11 @@ function UvCard({ data, day, today, label }: { data: WeatherData; day: Day; toda
         <span style={{ left: `${pos}%` }} />
       </div>
       <p className="wx-card-text">
-        {protect ? (lvl.level >= 3 ? `Sonnenschutz wichtig von ${protect}.` : `Sonnenschutz sinnvoll von ${protect}.`) : 'Kein Sonnenschutz nötig.'}
+        {protect
+          ? lvl.level >= 3
+            ? `Sonnenschutz wichtig von ${protect}.`
+            : `Sonnenschutz sinnvoll von ${protect}.`
+          : 'Kein Sonnenschutz nötig.'}
       </p>
     </div>
   );
@@ -375,10 +407,22 @@ function SunCard({ day, now, today }: { day: Day; now: Date; today: string }) {
   return (
     <div className="wx-card">
       <span className="wx-h">Sonne</span>
-      <svg className="wx-sun" viewBox="0 0 220 96" role="img" aria-label={`Sonnenaufgang ${fmtTime(day.sunrise)}, Sonnenuntergang ${fmtTime(day.sunset)}`}>
+      <svg
+        className="wx-sun"
+        viewBox="0 0 220 96"
+        role="img"
+        aria-label={`Sonnenaufgang ${fmtTime(day.sunrise)}, Sonnenuntergang ${fmtTime(day.sunset)}`}
+      >
         <path d="M14 80 Q110 -20 206 80" fill="none" className="wx-sun-track" strokeWidth="3" strokeDasharray="4 6" />
         {isToday && t > 0 && (
-          <path d="M14 80 Q110 -20 206 80" fill="none" className="wx-sun-done" strokeWidth="3" pathLength={100} strokeDasharray={`${t * 100} 200`} />
+          <path
+            d="M14 80 Q110 -20 206 80"
+            fill="none"
+            className="wx-sun-done"
+            strokeWidth="3"
+            pathLength={100}
+            strokeDasharray={`${t * 100} 200`}
+          />
         )}
         <line x1="4" y1="80" x2="216" y2="80" className="wx-sun-track" strokeWidth="2" />
         {up && <circle cx={x} cy={y} r="9" className="wx-sun-dot" />}
@@ -446,7 +490,9 @@ function PlacesSheet({ onClose }: { onClose: () => void }) {
             <PlaceRow key={p.id} place={p} home={i === 0} active={p.id === (activeId ?? places[0]?.id)} />
           ))}
         </ul>
-        <p className="wx-hint">Der erste Ort ist „Zuhause“: Sein Wetter erscheint in der Übersicht, im Kalender und im Bildschirmschoner.</p>
+        <p className="wx-hint">
+          Der erste Ort ist „Zuhause“: Sein Wetter erscheint in der Übersicht, im Kalender und im Bildschirmschoner.
+        </p>
         <h3 className="wx-h">Ort hinzufügen</h3>
         <AddPlace onAdded={onClose} />
       </div>
@@ -578,7 +624,9 @@ function AddPlace({ first = false, onAdded }: { first?: boolean; onAdded?: () =>
       {hits && query.trim().length >= 2 && (
         <ul className="wx-hits">
           {hits.length === 0 && (
-            <li className="muted wx-nohit">{/^\d+$/.test(query.trim()) ? 'Bitte den Ortsnamen statt der Postleitzahl eingeben.' : 'Kein Ort gefunden.'}</li>
+            <li className="muted wx-nohit">
+              {/^\d+$/.test(query.trim()) ? 'Bitte den Ortsnamen statt der Postleitzahl eingeben.' : 'Kein Ort gefunden.'}
+            </li>
           )}
           {hits.map((h) => (
             <li key={`${h.lat},${h.lon}`}>

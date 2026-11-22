@@ -71,7 +71,12 @@ function PeriodEditor({ kid, others }: { kid: Member; others: Member[] }) {
             <div key={i} className="period-row">
               {gap >= 10 && <span className="period-gap muted">{gap} min Pause</span>}
               <strong>{i + 1}.</strong>
-              <input type="time" value={p.start} onChange={(e) => change(i, 'start', e.target.value)} aria-label={`${i + 1}. Stunde Beginn`} />
+              <input
+                type="time"
+                value={p.start}
+                onChange={(e) => change(i, 'start', e.target.value)}
+                aria-label={`${i + 1}. Stunde Beginn`}
+              />
               <span className="muted">–</span>
               <input type="time" value={p.end} onChange={(e) => change(i, 'end', e.target.value)} aria-label={`${i + 1}. Stunde Ende`} />
             </div>
@@ -85,7 +90,12 @@ function PeriodEditor({ kid, others }: { kid: Member; others: Member[] }) {
         <button className="btn" onClick={removeLast} disabled={t.periods.length <= 1}>
           − Letzte Stunde
         </button>
-        <button className="btn ghost" onClick={() => confirm('Standardzeiten (8:00 Uhr, 45 Minuten) wiederherstellen?') && setPeriods(DEFAULT_PERIODS.map((p) => ({ ...p })))}>
+        <button
+          className="btn ghost"
+          onClick={() =>
+            confirm('Standardzeiten (8:00 Uhr, 45 Minuten) wiederherstellen?') && setPeriods(DEFAULT_PERIODS.map((p) => ({ ...p })))
+          }
+        >
           Standardzeiten
         </button>
         {others.map((o) => (
@@ -147,7 +157,9 @@ function SubjectEditor() {
                 key={s.id}
                 subject={s}
                 onColor={(c) => setColorOf(s, c)}
-                onRename={(n) => updateSchool({ custom: school.custom.map((x) => (x.id === s.id ? { ...x, name: n, short: n.slice(0, 3) } : x)) })}
+                onRename={(n) =>
+                  updateSchool({ custom: school.custom.map((x) => (x.id === s.id ? { ...x, name: n, short: n.slice(0, 3) } : x)) })
+                }
                 onRemove={() => removeCustom(s)}
               />
             ))}

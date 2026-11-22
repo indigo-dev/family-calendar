@@ -44,9 +44,26 @@ const CATALOG: (Subject & { schools: SchoolType[] })[] = [
 ];
 
 export const SUBJECT_COLORS = [
-  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#16a34a', '#14b8a6',
-  '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1', '#a855f7', '#d946ef', '#ec4899', '#fb7185',
-  '#a16207', '#92400e', '#78716c', '#64748b',
+  '#ef4444',
+  '#f97316',
+  '#f59e0b',
+  '#eab308',
+  '#84cc16',
+  '#22c55e',
+  '#16a34a',
+  '#14b8a6',
+  '#06b6d4',
+  '#0ea5e9',
+  '#3b82f6',
+  '#6366f1',
+  '#a855f7',
+  '#d946ef',
+  '#ec4899',
+  '#fb7185',
+  '#a16207',
+  '#92400e',
+  '#78716c',
+  '#64748b',
 ];
 
 export const DEFAULT_SCHOOL: SchoolConfig = { colors: {}, custom: [] };
@@ -162,6 +179,11 @@ export function parseSchool(raw: unknown): SchoolConfig {
   }
   const custom = (Array.isArray(o.custom) ? o.custom : [])
     .filter((s): s is Subject => !!s && typeof s.id === 'string' && typeof s.name === 'string')
-    .map((s) => ({ id: s.id, name: s.name, short: typeof s.short === 'string' ? s.short : s.name.slice(0, 3), color: s.color || '#64748b' }));
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      short: typeof s.short === 'string' ? s.short : s.name.slice(0, 3),
+      color: s.color || '#64748b',
+    }));
   return { colors, custom };
 }

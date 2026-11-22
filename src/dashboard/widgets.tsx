@@ -105,7 +105,7 @@ function useUndo() {
 }
 
 const gradient = (members: Member[]) =>
-  members.length <= 1 ? members[0]?.color ?? 'var(--muted)' : `linear-gradient(135deg, ${members.map((m) => m.color).join(', ')})`;
+  members.length <= 1 ? (members[0]?.color ?? 'var(--muted)') : `linear-gradient(135deg, ${members.map((m) => m.color).join(', ')})`;
 
 const hhmm = (d: Date) => fmt(d, { hour: '2-digit', minute: '2-digit' });
 
@@ -144,7 +144,12 @@ function ClockWidget({ size }: WidgetProps) {
 function WeatherWidget({ size }: WidgetProps) {
   const { now, openModule } = useDash();
   const { place, data, error } = useHomeWeather();
-  if (!place) return <Empty action="Ort festlegen" onAction={() => openModule('weather')}>Kein Ort für das Wetter</Empty>;
+  if (!place)
+    return (
+      <Empty action="Ort festlegen" onAction={() => openModule('weather')}>
+        Kein Ort für das Wetter
+      </Empty>
+    );
   if (!data) return <Empty>{error ?? 'Wetter wird geladen …'}</Empty>;
 
   const cur = describe(data.current.code, data.current.isDay);
@@ -167,7 +172,11 @@ function WeatherWidget({ size }: WidgetProps) {
         <div>
           <div className="dw-weather-temp">
             {deg(data.current.temp)}
-            {alerts.length > 0 && size === 's' && <span className="dw-alert-dot" title={alerts[0].event}>⚠️</span>}
+            {alerts.length > 0 && size === 's' && (
+              <span className="dw-alert-dot" title={alerts[0].event}>
+                ⚠️
+              </span>
+            )}
           </div>
           <div className="dw-weather-text">{cur.text}</div>
           {today && (
@@ -214,7 +223,12 @@ function WeatherWidget({ size }: WidgetProps) {
 function PollenWidget({ size }: WidgetProps) {
   const { now, openModule } = useDash();
   const { place, data } = useHomeWeather();
-  if (!place) return <Empty action="Ort festlegen" onAction={() => openModule('weather')}>Kein Ort</Empty>;
+  if (!place)
+    return (
+      <Empty action="Ort festlegen" onAction={() => openModule('weather')}>
+        Kein Ort
+      </Empty>
+    );
   if (!data) return <Empty>Lädt …</Empty>;
   const key = dayKey(now);
   const day = data.days.find((d) => d.date === key);
@@ -286,7 +300,11 @@ function EventsWidget({ size }: WidgetProps) {
   const group = (label: string, list: CalEvent[], none: string) => (
     <div className="dw-group">
       <div className="dw-group-label">{label}</div>
-      {list.length === 0 ? <div className="dw-none">{none}</div> : list.map((e) => <EventRow key={e.key} e={e} now={now} byId={memberById} />)}
+      {list.length === 0 ? (
+        <div className="dw-none">{none}</div>
+      ) : (
+        list.map((e) => <EventRow key={e.key} e={e} now={now} byId={memberById} />)
+      )}
     </div>
   );
 
@@ -341,7 +359,12 @@ function TimetableWidget({ size }: WidgetProps) {
   const { members, school, paint } = useStore();
   const kids = members.filter((m) => m.timetable);
   const subjects = subjectMap(school, paint);
-  if (kids.length === 0) return <Empty action="Einrichten" onAction={() => openSettings('family')}>Noch kein Stundenplan</Empty>;
+  if (kids.length === 0)
+    return (
+      <Empty action="Einrichten" onAction={() => openSettings('family')}>
+        Noch kein Stundenplan
+      </Empty>
+    );
   const { day, offToday } = nextSchoolDay(now, marks, kids);
   const nowMin = now.getHours() * 60 + now.getMinutes();
 
@@ -517,7 +540,12 @@ function ShoppingWidget({ size }: WidgetProps) {
         <Head icon="🛒" title="Einkauf" />
         <div className="dw-count-num">{list.length}</div>
         <div className="dw-count-label">{list.length === 1 ? 'Artikel' : 'Artikel'} auf der Liste</div>
-        <div className="dw-count-emoji">{list.slice(0, 6).map(({ item }) => item.emoji).join('')}</div>
+        <div className="dw-count-emoji">
+          {list
+            .slice(0, 6)
+            .map(({ item }) => item.emoji)
+            .join('')}
+        </div>
         {undoNode}
       </div>
     );
@@ -583,7 +611,12 @@ function PhotosWidget({ size }: WidgetProps) {
   const full = useFullUrl(photo, size === 'l' || size === 'xl');
 
   if (photos === null) return <Empty>Lädt …</Empty>;
-  if (!photo) return <Empty action="Fotos hinzufügen" onAction={() => openModule('frame')}>Noch keine Fotos</Empty>;
+  if (!photo)
+    return (
+      <Empty action="Fotos hinzufügen" onAction={() => openModule('frame')}>
+        Noch keine Fotos
+      </Empty>
+    );
   return (
     <div
       className="dw-photo"
@@ -624,7 +657,12 @@ function HolidaysWidget({ size }: WidgetProps) {
     };
   }, [region, year]);
 
-  if (!region) return <Empty action="Bundesland wählen" onAction={() => openSettings('holidays')}>Ferien-Countdown</Empty>;
+  if (!region)
+    return (
+      <Empty action="Bundesland wählen" onAction={() => openSettings('holidays')}>
+        Ferien-Countdown
+      </Empty>
+    );
   if (!list) return <Empty>Lädt …</Empty>;
 
   const today = dayKey(now);

@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { CalEvent, CalendarSource } from '../types';
 import { cachedEventsOf, merge } from './events';
 
-const cal = (id: string, name: string, memberIds: string[]): CalendarSource => ({ id, name, url: 'https://x/' + id, memberIds, enabled: true });
+const cal = (id: string, name: string, memberIds: string[]): CalendarSource => ({
+  id,
+  name,
+  url: 'https://x/' + id,
+  memberIds,
+  enabled: true,
+});
 const ev = (key: string, calendarId: string, name: string, memberIds: string[]): CalEvent => ({
   key,
   title: key,

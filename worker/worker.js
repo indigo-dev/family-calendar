@@ -75,7 +75,11 @@ export default {
         o += part.length;
         if (o >= head.length) break;
       }
-      return new TextDecoder().decode(head).replace(/^\uFEFF/, '').trimStart().startsWith('BEGIN:VCALENDAR');
+      return new TextDecoder()
+        .decode(head)
+        .replace(/^\uFEFF/, '')
+        .trimStart()
+        .startsWith('BEGIN:VCALENDAR');
     };
     for (;;) {
       const { done, value } = await reader.read();

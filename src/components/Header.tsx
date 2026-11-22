@@ -32,7 +32,20 @@ interface Props {
   onWeather: () => void;
 }
 
-export function Header({ title, view, now, loading, multiDays, onMultiDays, onView, onStep, onToday, onRefresh, onSettings, onWeather }: Props) {
+export function Header({
+  title,
+  view,
+  now,
+  loading,
+  multiDays,
+  onMultiDays,
+  onView,
+  onStep,
+  onToday,
+  onRefresh,
+  onSettings,
+  onWeather,
+}: Props) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -63,7 +76,13 @@ export function Header({ title, view, now, loading, multiDays, onMultiDays, onVi
               </button>
             </span>
           ) : (
-            <button key={v.id} role="tab" aria-selected={view === v.id} className={view === v.id ? 'active' : ''} onClick={() => onView(v.id)}>
+            <button
+              key={v.id}
+              role="tab"
+              aria-selected={view === v.id}
+              className={view === v.id ? 'active' : ''}
+              onClick={() => onView(v.id)}
+            >
               {v.id === 'days' ? `${multiDays} Tage` : v.label}
             </button>
           ),
@@ -139,7 +158,13 @@ export function ModuleHeader({
 }
 
 /** Tap = only this person, long press = add/remove this person to/from the selection. */
-function MemberChip({ member, active, dimmed, onTap, onLongPress }: {
+function MemberChip({
+  member,
+  active,
+  dimmed,
+  onTap,
+  onLongPress,
+}: {
   member: Member;
   active: boolean;
   dimmed: boolean;

@@ -181,7 +181,14 @@ function TimetableGrid({
   onPaint: (day: number, period: number, value: string | null) => void;
 }) {
   const { periods, cells } = timetable;
-  const lastUsed = cells.reduce((max, row) => Math.max(max, row.reduce((m, c, p) => (c ? p : m), -1)), -1);
+  const lastUsed = cells.reduce(
+    (max, row) =>
+      Math.max(
+        max,
+        row.reduce((m, c, p) => (c ? p : m), -1),
+      ),
+    -1,
+  );
   const count = editing ? periods.length : Math.min(periods.length, Math.max(lastUsed + 1, 6));
   const empty = lastUsed < 0;
 
@@ -281,7 +288,11 @@ function TimetableGrid({
           <div key={d} className={`tt-day ${day.today ? 'today' : ''} ${day.off ? 'off' : ''}`} style={{ gridRow: 1, gridColumn: d + 2 }}>
             <span className="tt-wd">{SCHOOL_DAYS[d]}</span>
             <span className="tt-date">{fmt(day.date, { day: 'numeric', month: 'numeric' })}</span>
-            {day.off && <span className="tt-off" title={day.off}>{day.off}</span>}
+            {day.off && (
+              <span className="tt-off" title={day.off}>
+                {day.off}
+              </span>
+            )}
           </div>
         ))}
         {rows.map((r, i) =>
@@ -350,7 +361,13 @@ function Palette({
           <input value={name} placeholder="Name des Fachs" onChange={(e) => setName(e.target.value)} autoFocus />
           <div className="swatches">
             {SUBJECT_COLORS.map((c) => (
-              <button key={c} className={`swatch ${color === c ? 'on' : ''}`} style={{ background: c }} onClick={() => setColor(c)} aria-label={c} />
+              <button
+                key={c}
+                className={`swatch ${color === c ? 'on' : ''}`}
+                style={{ background: c }}
+                onClick={() => setColor(c)}
+                aria-label={c}
+              />
             ))}
           </div>
           <button

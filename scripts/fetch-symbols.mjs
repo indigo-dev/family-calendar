@@ -43,9 +43,7 @@ async function fluentPath(emoji, style) {
   if (!name) return null;
   const dir = `assets/${name.toLowerCase()}/`;
   const ext = style === '3D' ? '.png' : '.svg';
-  const candidates = fluentIndex.files.filter(
-    (p) => p.toLowerCase().startsWith(dir) && p.includes(`/${style}/`) && p.endsWith(ext),
-  );
+  const candidates = fluentIndex.files.filter((p) => p.toLowerCase().startsWith(dir) && p.includes(`/${style}/`) && p.endsWith(ext));
   // emoji with skin tones have one folder per tone: take "Default"
   return candidates.find((p) => p.includes('/Default/')) ?? candidates[0] ?? null;
 }

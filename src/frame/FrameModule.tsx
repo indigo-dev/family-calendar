@@ -156,7 +156,11 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
           <span>Bildwechsel alle</span>
           <div className="fr-chips">
             {INTERVALS.map((i) => (
-              <button key={i.sec} className={cfg.intervalSec === i.sec ? 'on' : ''} onClick={() => patchFrameSettings({ intervalSec: i.sec })}>
+              <button
+                key={i.sec}
+                className={cfg.intervalSec === i.sec ? 'on' : ''}
+                onClick={() => patchFrameSettings({ intervalSec: i.sec })}
+              >
                 {i.label}
               </button>
             ))}
@@ -313,21 +317,28 @@ function MotifBrowser() {
       {error && (
         <div className="fr-empty">
           <p>Motive konnten nicht geladen werden. Ist das Gerät online?</p>
-          <button className="btn" onClick={() => {
+          <button
+            className="btn"
+            onClick={() => {
               setLoading(true);
               setError(false);
               setRetry((r) => r + 1);
-            }}>
+            }}
+          >
             Erneut versuchen
           </button>
         </div>
       )}
       {!error && page < pages.length - 1 && (
         <div className="fr-more">
-          <button className="btn" disabled={loading} onClick={() => {
+          <button
+            className="btn"
+            disabled={loading}
+            onClick={() => {
               setLoading(true);
               setPage((p) => p + 1);
-            }}>
+            }}
+          >
             {loading ? 'Lädt …' : 'Mehr Motive'}
           </button>
         </div>

@@ -63,10 +63,9 @@ async function loadYear(region: string, year: number): Promise<Holiday[]> {
       return res.json();
     };
     const [pub, school] = await Promise.all([get('PublicHolidays'), get('SchoolHolidays')]);
-    const list = [
-      ...pub.map((h) => toHoliday(h, 'public', region)),
-      ...school.map((h) => toHoliday(h, 'school', region)),
-    ].filter((h): h is Holiday => !!h);
+    const list = [...pub.map((h) => toHoliday(h, 'public', region)), ...school.map((h) => toHoliday(h, 'school', region))].filter(
+      (h): h is Holiday => !!h,
+    );
     try {
       localStorage.setItem(key, JSON.stringify({ at: Date.now(), list }));
     } catch {

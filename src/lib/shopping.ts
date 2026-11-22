@@ -4,17 +4,7 @@ import { uid } from './id';
 const KEY = 'fc.shopping';
 
 export type CategoryId =
-  | 'produce'
-  | 'bakery'
-  | 'dairy'
-  | 'meat'
-  | 'pantry'
-  | 'breakfast'
-  | 'drinks'
-  | 'frozen'
-  | 'care'
-  | 'household'
-  | 'other';
+  'produce' | 'bakery' | 'dairy' | 'meat' | 'pantry' | 'breakfast' | 'drinks' | 'frozen' | 'care' | 'household' | 'other';
 
 /** Order roughly follows a walk through a German supermarket. */
 export const CATEGORIES: { id: CategoryId; label: string; /** chip label */ short: string; icon: string; color: string }[] = [
@@ -202,8 +192,38 @@ export const BUILTIN: ShopItem[] = Object.entries(CATALOG).flatMap(([cat, items]
 
 /** Emoji offered when the family adds their own item. */
 export const EMOJI_CHOICES = [
-  '🛒', '🍎', '🥕', '🥬', '🍞', '🥛', '🧀', '🥩', '🐟', '🍝', '🥫', '🧂', '🍯', '🍫', '🍪', '☕',
-  '🥤', '🧃', '🍺', '🧊', '🧴', '🧼', '🪥', '🧻', '🧽', '🧺', '🔋', '💊', '🐶', '🐱', '🎁', '🌷',
+  '🛒',
+  '🍎',
+  '🥕',
+  '🥬',
+  '🍞',
+  '🥛',
+  '🧀',
+  '🥩',
+  '🐟',
+  '🍝',
+  '🥫',
+  '🧂',
+  '🍯',
+  '🍫',
+  '🍪',
+  '☕',
+  '🥤',
+  '🧃',
+  '🍺',
+  '🧊',
+  '🧴',
+  '🧼',
+  '🪥',
+  '🧻',
+  '🧽',
+  '🧺',
+  '🔋',
+  '💊',
+  '🐶',
+  '🐱',
+  '🎁',
+  '🌷',
 ];
 
 export interface ListEntry {

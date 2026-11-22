@@ -3,10 +3,7 @@ import type { WeatherIconSet } from './lib/weatherIcons';
 
 export type ViewMode = 'day' | 'days' | 'week' | 'month' | 'year' | 'agenda';
 
-export type Avatar =
-  | { type: 'initials' }
-  | { type: 'emoji'; value: string }
-  | { type: 'image'; dataUrl: string };
+export type Avatar = { type: 'initials' } | { type: 'emoji'; value: string } | { type: 'image'; dataUrl: string };
 
 export interface Member {
   id: string;

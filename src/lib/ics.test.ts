@@ -35,7 +35,16 @@ describe('single events', () => {
   });
 
   it('unfolds long lines', () => {
-    const text = ['BEGIN:VCALENDAR', 'BEGIN:VEVENT', 'UID:a', 'DTSTART:20260115T090000Z', 'SUMMARY:Elternab', ' end', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    const text = [
+      'BEGIN:VCALENDAR',
+      'BEGIN:VEVENT',
+      'UID:a',
+      'DTSTART:20260115T090000Z',
+      'SUMMARY:Elternab',
+      ' end',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
     expect(parseIcs(text, ...range('2026-01-01', '2026-02-01'))[0].title).toBe('Elternabend');
   });
 
@@ -149,7 +158,13 @@ describe('recurring events', () => {
   it('only returns occurrences inside the range of a long-running series', () => {
     const text = ics(['UID:a', 'DTSTART;TZID=Europe/Berlin:20100104T070000', 'RRULE:FREQ=WEEKLY;BYDAY=MO', 'SUMMARY:Müll']);
     const evs = parseIcs(text, ...range('2026-06-01', '2026-06-30'));
-    expect(evs.map((e) => local(e.start))).toEqual(['2026-06-01 07:00', '2026-06-08 07:00', '2026-06-15 07:00', '2026-06-22 07:00', '2026-06-29 07:00']);
+    expect(evs.map((e) => local(e.start))).toEqual([
+      '2026-06-01 07:00',
+      '2026-06-08 07:00',
+      '2026-06-15 07:00',
+      '2026-06-22 07:00',
+      '2026-06-29 07:00',
+    ]);
   });
 
   it('handles negative BYMONTHDAY in DAILY rules', () => {

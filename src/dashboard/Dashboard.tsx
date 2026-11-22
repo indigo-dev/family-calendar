@@ -91,9 +91,7 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
   const cols = columnsFor(size.width);
   const cellW = (size.width - GAP * (cols - 1)) / cols;
   const targetRows = cols === 6 ? 3 : cols === 4 ? 5 : 0;
-  const rowH = Math.round(
-    targetRows ? Math.max(118, (size.height - GAP * (targetRows - 1)) / targetRows) : Math.max(130, cellW * 0.95),
-  );
+  const rowH = Math.round(targetRows ? Math.max(118, (size.height - GAP * (targetRows - 1)) / targetRows) : Math.max(130, cellW * 0.95));
 
   /* ---------------- long press, drag & drop */
   const press = useRef<{
@@ -105,9 +103,7 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
     timer?: number;
   } | null>(null);
   const suppressClick = useRef(false);
-  const [drag, setDrag] = useState<{ id: string; x: number; y: number; offX: number; offY: number; w: number; h: number } | null>(
-    null,
-  );
+  const [drag, setDrag] = useState<{ id: string; x: number; y: number; offX: number; offY: number; w: number; h: number } | null>(null);
   const lastTarget = useRef<string | null>(null);
 
   // while armed/dragging, iOS must not scroll the page
@@ -220,7 +216,14 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
       if (reduce || !el.animate) return;
       const old = prev.get(id);
       if (!old) {
-        if (prev.size > 0) el.animate([{ opacity: 0, scale: '0.9' }, { opacity: 1, scale: '1' }], { duration: 280, easing: 'cubic-bezier(.2,.8,.2,1)' });
+        if (prev.size > 0)
+          el.animate(
+            [
+              { opacity: 0, scale: '0.9' },
+              { opacity: 1, scale: '1' },
+            ],
+            { duration: 280, easing: 'cubic-bezier(.2,.8,.2,1)' },
+          );
         return;
       }
       const dx = old.x + old.w / 2 - (box.x + box.w / 2);
@@ -229,10 +232,16 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
       const sy = old.h / box.h;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.005 && Math.abs(sy - 1) < 0.005) return;
       // `translate`/`scale` are separate from `transform`, so the wiggle keeps running
-      el.animate([{ translate: `${dx}px ${dy}px`, scale: `${sx} ${sy}` }, { translate: '0 0', scale: '1 1' }], {
-        duration: 380,
-        easing: 'cubic-bezier(.2,.8,.2,1)',
-      });
+      el.animate(
+        [
+          { translate: `${dx}px ${dy}px`, scale: `${sx} ${sy}` },
+          { translate: '0 0', scale: '1 1' },
+        ],
+        {
+          duration: 380,
+          easing: 'cubic-bezier(.2,.8,.2,1)',
+        },
+      );
       // new size: let the content fade in instead of showing it stretched
       if (old.size !== box.size) {
         el.querySelector('.dw-inner')?.animate([{ opacity: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1 }], { duration: 380 });
@@ -343,10 +352,12 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
           className={`dw dw-${dragged.type} size-${dragged.size} dw-ghost`}
           style={{ left: drag.x - drag.offX, top: drag.y - drag.offY, width: drag.w, height: drag.h }}
         >
-          <div className="dw-inner">{(() => {
-            const Comp = WIDGET_COMPONENTS[dragged.type];
-            return <Comp size={dragged.size} />;
-          })()}</div>
+          <div className="dw-inner">
+            {(() => {
+              const Comp = WIDGET_COMPONENTS[dragged.type];
+              return <Comp size={dragged.size} />;
+            })()}
+          </div>
         </div>
       )}
       {gallery && <Gallery onClose={() => setGallery(false)} />}

@@ -55,8 +55,7 @@ interface Rect {
   w: number;
   h: number;
 }
-const overlaps = (a: Rect, b: Rect) =>
-  a.x < b.x + b.w + GAP && b.x < a.x + a.w + GAP && a.y < b.y + b.h + GAP && b.y < a.y + a.h + GAP;
+const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w + GAP && b.x < a.x + a.w + GAP && a.y < b.y + b.h + GAP && b.y < a.y + a.h + GAP;
 
 /** finds a free spot (row by row, left to right) for every note without a position */
 function autoPlace(open: Todo[], width: number): Record<string, Partial<Todo>> {
@@ -184,7 +183,14 @@ export function TodoBoard({ now }: { now: Date }) {
         ) : (
           <div className="todo-done-grid">
             {done.map((t) => (
-              <Note key={t.id} todo={t} members={membersOf(t)} today={today} onToggle={() => toggleDone(t.id)} onOpen={() => setEditing(t)} />
+              <Note
+                key={t.id}
+                todo={t}
+                members={membersOf(t)}
+                today={today}
+                onToggle={() => toggleDone(t.id)}
+                onOpen={() => setEditing(t)}
+              />
             ))}
           </div>
         )}
@@ -210,7 +216,16 @@ export function TodoBoard({ now }: { now: Date }) {
 }
 
 /** Free board: drag a note to move it, pinch it (or drag its corner / ctrl+scroll) to resize it. */
-function Canvas({ all, visible, membersOf, today, onOpen, onToggle, onNew, patchMany }: {
+function Canvas({
+  all,
+  visible,
+  membersOf,
+  today,
+  onOpen,
+  onToggle,
+  onNew,
+  patchMany,
+}: {
   all: Todo[];
   visible: Todo[];
   membersOf: (t: Todo) => Member[];
@@ -327,7 +342,7 @@ function Canvas({ all, visible, membersOf, today, onOpen, onToggle, onNew, patch
       mode: target.closest('.note-resize') ? 'resize' : 'press',
       pointers: new Map([[e.pointerId, { x: e.clientX, y: e.clientY }]]),
       origin: { x: e.clientX, y: e.clientY },
-      start: { ...posOf(t), z: target.closest('.note-resize') ? topZ() : t.z ?? 0 },
+      start: { ...posOf(t), z: target.closest('.note-resize') ? topZ() : (t.z ?? 0) },
     };
   };
 
@@ -442,7 +457,15 @@ function Canvas({ all, visible, membersOf, today, onOpen, onToggle, onNew, patch
   );
 }
 
-function Note({ todo, members, today, size = 1, onToggle, onOpen, resizable }: {
+function Note({
+  todo,
+  members,
+  today,
+  size = 1,
+  onToggle,
+  onOpen,
+  resizable,
+}: {
   todo: Todo;
   members: Member[];
   today: Date;
@@ -486,7 +509,14 @@ function Note({ todo, members, today, size = 1, onToggle, onOpen, resizable }: {
 
 type DueChoice = 'none' | 'today' | 'tomorrow' | 'date';
 
-function TodoEditor({ todo, isNew, today, onSave, onDelete, onClose }: {
+function TodoEditor({
+  todo,
+  isNew,
+  today,
+  onSave,
+  onDelete,
+  onClose,
+}: {
   todo: Todo;
   isNew: boolean;
   today: Date;
@@ -537,7 +567,10 @@ function TodoEditor({ todo, isNew, today, onSave, onDelete, onClose }: {
                 <button
                   key={m.id}
                   className={`chip ${on ? 'on' : 'off'}`}
-                  style={{ borderColor: on ? m.color : undefined, background: on ? `color-mix(in srgb, ${m.color} 22%, var(--surface))` : undefined }}
+                  style={{
+                    borderColor: on ? m.color : undefined,
+                    background: on ? `color-mix(in srgb, ${m.color} 22%, var(--surface))` : undefined,
+                  }}
                   aria-pressed={on}
                   onClick={() => toggle(m.id)}
                 >

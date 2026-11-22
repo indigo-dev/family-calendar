@@ -99,7 +99,10 @@
   justify-content: center;
   gap: 6px;
   text-align: center;
-  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+  transition:
+    transform 0.12s ease,
+    background 0.15s ease,
+    border-color 0.15s ease;
   -webkit-touch-callout: none;
 }
 .shop-tile:active {

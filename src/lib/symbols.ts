@@ -33,7 +33,13 @@ export interface SymbolSetInfo {
 }
 
 export const SYMBOL_SETS: SymbolSetInfo[] = [
-  { id: 'system', label: 'Gerät (Standard)', group: 'Farbig', mode: 'native', note: 'Emoji des Geräts – sieht auf iPad, Windows und Android verschieden aus' },
+  {
+    id: 'system',
+    label: 'Gerät (Standard)',
+    group: 'Farbig',
+    mode: 'native',
+    note: 'Emoji des Geräts – sieht auf iPad, Windows und Android verschieden aus',
+  },
   { id: 'fluent-3d', label: 'Fluent 3D', group: 'Farbig', mode: 'image', ext: 'png', note: 'Microsoft, plastisch' },
   { id: 'fluent-color', label: 'Fluent Farbig', group: 'Farbig', mode: 'image', ext: 'svg', note: 'Microsoft, mit Verläufen' },
   { id: 'fluent-flat', label: 'Fluent Flach', group: 'Farbig', mode: 'image', ext: 'svg', note: 'Microsoft, flache Farben' },

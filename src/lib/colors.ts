@@ -8,8 +8,18 @@ import type { ColorPalette } from '../types';
 
 /** base palette – the vivid colours people pick from */
 export const PALETTE = [
-  '#3b82f6', '#e8613c', '#22a06b', '#a855f7', '#eab308', '#ec4899',
-  '#14b8a6', '#f97316', '#6366f1', '#84cc16', '#ef4444', '#64748b',
+  '#3b82f6',
+  '#e8613c',
+  '#22a06b',
+  '#a855f7',
+  '#eab308',
+  '#ec4899',
+  '#14b8a6',
+  '#f97316',
+  '#6366f1',
+  '#84cc16',
+  '#ef4444',
+  '#64748b',
 ];
 
 /** "Edel": muted, slightly greyed tones in the spirit of fashion colour cards */

@@ -27,9 +27,7 @@ function load(): Todo[] {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? '[]');
     if (!Array.isArray(v)) return [];
-    return v.filter(
-      (t): t is Todo => t && typeof t.id === 'string' && typeof t.text === 'string' && Array.isArray(t.memberIds),
-    );
+    return v.filter((t): t is Todo => t && typeof t.id === 'string' && typeof t.text === 'string' && Array.isArray(t.memberIds));
   } catch {
     return [];
   }

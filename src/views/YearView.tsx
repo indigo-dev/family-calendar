@@ -50,7 +50,9 @@ export function YearView({ date, now, events, onOpen, marks }: ViewProps) {
                   <button
                     key={d.toISOString()}
                     className={`year-day ${isSameDay(d, now) ? 'today' : ''} ${markClass(marks.get(dayKey(d)))}`}
-                    title={[...(marks.get(dayKey(d))?.publicNames ?? []), ...(marks.get(dayKey(d))?.schoolNames ?? [])].join(', ') || undefined}
+                    title={
+                      [...(marks.get(dayKey(d))?.publicNames ?? []), ...(marks.get(dayKey(d))?.schoolNames ?? [])].join(', ') || undefined
+                    }
                     onClick={() => onOpen('day', d)}
                   >
                     <span>{d.getDate()}</span>

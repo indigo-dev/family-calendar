@@ -125,7 +125,10 @@
   position: relative;
   background: #fbfaf7;
   border: 14px solid #23201d;
-  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.25), 0 24px 50px rgba(40, 30, 20, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.25),
+    0 24px 50px rgba(40, 30, 20, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 .pf-picture::after {
   /* bevel of the mat around the photo */
@@ -140,7 +143,10 @@
 }
 .pf-picture img {
   display: block;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12), 0 0 0 5px #f1eee8, 0 0 0 6px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 0 0 5px #f1eee8,
+    0 0 0 6px rgba(0, 0, 0, 0.08);
 }
 
 .pf-clock {
@@ -148,7 +154,9 @@
   left: max(4vmin, env(safe-area-inset-left));
   bottom: max(4vmin, env(safe-area-inset-bottom));
   color: #fff;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.4);
+  text-shadow:
+    0 2px 18px rgba(0, 0, 0, 0.55),
+    0 1px 3px rgba(0, 0, 0, 0.4);
   pointer-events: none;
 }
 .pf-time {
@@ -321,7 +329,9 @@
   height: 100%;
   object-fit: cover;
   display: block;
-  transition: transform 0.2s, opacity 0.2s;
+  transition:
+    transform 0.2s,
+    opacity 0.2s;
 }
 .fr-tile.off img {
   opacity: 0.45;
@@ -579,8 +589,9 @@
   display: block;
   height: 100%;
   aspect-ratio: 3 / 4;
-  background: radial-gradient(circle at 70% 28%, #ffd36b 0 9%, transparent 10%),
-    linear-gradient(to bottom, transparent 62%, #4f9a5a 62%), linear-gradient(#78b6f0, #bfe0fb);
+  background:
+    radial-gradient(circle at 70% 28%, #ffd36b 0 9%, transparent 10%), linear-gradient(to bottom, transparent 62%, #4f9a5a 62%),
+    linear-gradient(#78b6f0, #bfe0fb);
 }
 .fit-cover i {
   width: 100%;
@@ -595,5 +606,7 @@
 .fit-mat i {
   height: 72%;
   outline: 3px solid #fbfaf7;
-  box-shadow: 0 0 0 5px #23201d, 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 0 0 5px #23201d,
+    0 4px 8px rgba(0, 0, 0, 0.3);
 }

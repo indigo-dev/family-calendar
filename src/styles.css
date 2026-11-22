@@ -1202,7 +1202,10 @@ h4 {
   border: 2px solid var(--line);
   background: var(--surface);
   text-align: left;
-  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
 }
 .pick-card:hover {
   border-color: var(--line-strong);
@@ -1293,12 +1296,15 @@ h4 {
   border-radius: 7px;
 }
 .st-liquid {
-  background: radial-gradient(circle at 20% 20%, #b8d3ff, transparent 60%), radial-gradient(circle at 85% 80%, #f3c6ff, transparent 60%), #e9eefb;
+  background:
+    radial-gradient(circle at 20% 20%, #b8d3ff, transparent 60%), radial-gradient(circle at 85% 80%, #f3c6ff, transparent 60%), #e9eefb;
 }
 .st-liquid i {
   border-radius: 999px !important;
   background: rgba(255, 255, 255, 0.55);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 6px rgba(0, 0, 0, 0.08);
 }
 .st-liquid .st-a {
   border-radius: 12px !important;
@@ -1307,7 +1313,9 @@ h4 {
   background: #0a7cff;
 }
 .st-flow {
-  background: radial-gradient(rgba(0, 0, 0, 0.14) 1px, transparent 1px) 0 0 / 8px 8px, #f4f2ee;
+  background:
+    radial-gradient(rgba(0, 0, 0, 0.14) 1px, transparent 1px) 0 0 / 8px 8px,
+    #f4f2ee;
 }
 .st-flow i {
   border-radius: 3px;
@@ -1331,7 +1339,9 @@ h4 {
   box-shadow: 0 0 12px rgba(167, 139, 250, 0.7);
 }
 .st-n8n {
-  background: radial-gradient(#c9ccd3 1px, transparent 1.3px) 0 0 / 9px 9px, #eff0f2;
+  background:
+    radial-gradient(#c9ccd3 1px, transparent 1.3px) 0 0 / 9px 9px,
+    #eff0f2;
 }
 .st-n8n i {
   background: #fff;
@@ -1350,8 +1360,10 @@ h4 {
   box-shadow: 0 0 0 1.5px #ff6d5a;
 }
 .st-stately {
-  background: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 12px 12px,
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 12px 12px, #111219;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 12px 12px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 12px 12px,
+    #111219;
 }
 .st-stately i {
   background: #1d1f2a;
@@ -1376,7 +1388,9 @@ h4 {
   box-shadow: 0 0 0 1px #d6d3cb;
 }
 .st-braun .st-a {
-  background: radial-gradient(#b9b5ab 1.1px, transparent 1.4px) 0 0 / 6px 6px, #f8f7f3;
+  background:
+    radial-gradient(#b9b5ab 1.1px, transparent 1.4px) 0 0 / 6px 6px,
+    #f8f7f3;
 }
 .st-braun .st-b {
   width: 22px;
@@ -1808,7 +1822,9 @@ hr {
   padding: 2px;
   opacity: 0.35;
   filter: grayscale(0.8);
-  transition: opacity 0.15s, filter 0.15s;
+  transition:
+    opacity 0.15s,
+    filter 0.15s;
 }
 .assign-btn.on {
   opacity: 1;

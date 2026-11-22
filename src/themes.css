@@ -146,7 +146,9 @@
 }
 [data-style='sonoma'] .segmented > .active {
   background: var(--seg-thumb);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 3px 8px rgba(0, 0, 0, 0.12),
+    0 0 0 0.5px rgba(0, 0, 0, 0.04);
 }
 [data-style='sonoma'] .chip {
   border-width: 1.5px;
@@ -192,7 +194,9 @@
 }
 [data-style='sonoma'] .modal {
   border-radius: 14px;
-  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 22px 60px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.12),
+    0 22px 60px rgba(0, 0, 0, 0.28);
 }
 [data-style='sonoma'] .field input:not([type='checkbox']):not([type='color']),
 [data-style='sonoma'] .field select {
@@ -256,10 +260,10 @@
    ===================================================================================== */
 :root[data-style='liquid'] {
   --bg: #e9eefb;
-  --bg-image: radial-gradient(45% 55% at 12% 18%, #9fd0ff 0, transparent 70%),
-    radial-gradient(40% 50% at 88% 8%, #ffcfe4 0, transparent 70%),
-    radial-gradient(50% 55% at 72% 96%, #b9f0cf 0, transparent 70%),
-    radial-gradient(35% 40% at 35% 85%, #d9c8ff 0, transparent 70%), linear-gradient(160deg, #e6efff, #f7f0ff);
+  --bg-image:
+    radial-gradient(45% 55% at 12% 18%, #9fd0ff 0, transparent 70%), radial-gradient(40% 50% at 88% 8%, #ffcfe4 0, transparent 70%),
+    radial-gradient(50% 55% at 72% 96%, #b9f0cf 0, transparent 70%), radial-gradient(35% 40% at 35% 85%, #d9c8ff 0, transparent 70%),
+    linear-gradient(160deg, #e6efff, #f7f0ff);
   --surface: rgba(255, 255, 255, 0.58);
   --surface-2: rgba(255, 255, 255, 0.5);
   --tint-base: #f3f5fc;
@@ -287,7 +291,8 @@
 }
 :root[data-style='liquid'][data-mode='dark'] {
   --bg: #070b1a;
-  --bg-image: radial-gradient(45% 55% at 12% 18%, rgba(37, 99, 235, 0.5) 0, transparent 70%),
+  --bg-image:
+    radial-gradient(45% 55% at 12% 18%, rgba(37, 99, 235, 0.5) 0, transparent 70%),
     radial-gradient(40% 50% at 88% 8%, rgba(190, 24, 93, 0.36) 0, transparent 70%),
     radial-gradient(50% 55% at 72% 96%, rgba(13, 148, 136, 0.42) 0, transparent 70%),
     radial-gradient(35% 40% at 35% 85%, rgba(109, 40, 217, 0.42) 0, transparent 70%), linear-gradient(160deg, #0a1124, #120c24);
@@ -334,7 +339,9 @@
 [data-style='liquid'] .btn.primary {
   background: var(--accent);
   border-color: transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 6px 18px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 [data-style='liquid'] .btn.danger {
   color: var(--danger);
@@ -387,7 +394,9 @@
 [data-style='liquid'] .segmented > .active {
   background: var(--glass-strong);
   font-weight: 600;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 10px rgba(0, 0, 0, 0.1);
 }
 [data-style='liquid'] .chip.all.on {
   background: var(--accent);
@@ -435,7 +444,9 @@
 [data-style='liquid'] .module-btn.active {
   background: var(--glass-strong);
   color: var(--accent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 2px 10px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 10px rgba(0, 0, 0, 0.08);
 }
 @media (min-width: 641px) {
   [data-style='liquid'] .module-nav {
@@ -504,7 +515,12 @@
   --holiday: #d9480f;
   --school-text: #0b6bcb;
   color-scheme: light;
-  font-family: 'Geist Variable', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  font-family:
+    'Geist Variable',
+    -apple-system,
+    'Segoe UI',
+    system-ui,
+    sans-serif;
 }
 :root[data-style='flow'][data-mode='dark'] {
   --bg: #121319;
@@ -707,7 +723,8 @@
    ===================================================================================== */
 :root[data-style='aurora'] {
   --bg: #eef0fb;
-  --bg-image: radial-gradient(42% 52% at 18% 22%, rgba(124, 92, 255, 0.36), transparent 70%),
+  --bg-image:
+    radial-gradient(42% 52% at 18% 22%, rgba(124, 92, 255, 0.36), transparent 70%),
     radial-gradient(36% 46% at 82% 16%, rgba(34, 211, 238, 0.32), transparent 70%),
     radial-gradient(46% 52% at 62% 98%, rgba(236, 72, 153, 0.22), transparent 70%);
   --surface: rgba(255, 255, 255, 0.55);
@@ -734,11 +751,17 @@
   --holiday: #c2410c;
   --school-text: #0b6b8f;
   color-scheme: light;
-  font-family: 'Manrope Variable', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  font-family:
+    'Manrope Variable',
+    -apple-system,
+    'Segoe UI',
+    system-ui,
+    sans-serif;
 }
 :root[data-style='aurora'][data-mode='dark'] {
   --bg: #080918;
-  --bg-image: radial-gradient(42% 52% at 18% 22%, rgba(124, 92, 255, 0.48), transparent 70%),
+  --bg-image:
+    radial-gradient(42% 52% at 18% 22%, rgba(124, 92, 255, 0.48), transparent 70%),
     radial-gradient(36% 46% at 82% 16%, rgba(34, 211, 238, 0.3), transparent 70%),
     radial-gradient(46% 52% at 62% 98%, rgba(236, 72, 153, 0.28), transparent 70%);
   --surface: rgba(255, 255, 255, 0.06);
@@ -841,7 +864,9 @@
 }
 [data-style='aurora'] .segmented > .active {
   background: var(--sheet);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 10px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 2px 10px rgba(0, 0, 0, 0.12);
 }
 [data-style='aurora'] .chip {
   border-width: 1.5px;
@@ -887,7 +912,9 @@
   border-radius: 24px;
   -webkit-backdrop-filter: blur(34px) saturate(170%);
   backdrop-filter: blur(34px) saturate(170%);
-  box-shadow: var(--shadow), 0 24px 60px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    var(--shadow),
+    0 24px 60px rgba(0, 0, 0, 0.3);
 }
 [data-style='aurora'] .field input:not([type='checkbox']):not([type='color']),
 [data-style='aurora'] .field select {
@@ -897,7 +924,11 @@
   border: 1px solid transparent;
 }
 [data-style='aurora'] .module-btn.active {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 26%, transparent), color-mix(in srgb, var(--accent-2) 14%, transparent));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 26%, transparent),
+    color-mix(in srgb, var(--accent-2) 14%, transparent)
+  );
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
   color: var(--text);
   box-shadow: 0 0 22px var(--glow);
@@ -1121,8 +1152,8 @@
    ===================================================================================== */
 :root[data-style='stately'] {
   --bg: #f4f5f8;
-  --bg-image: linear-gradient(rgba(40, 50, 80, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(40, 50, 80, 0.055) 1px, transparent 1px);
+  --bg-image:
+    linear-gradient(rgba(40, 50, 80, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(40, 50, 80, 0.055) 1px, transparent 1px);
   --bg-size: 24px 24px;
   --surface: #ffffff;
   --surface-2: #f0f1f5;
@@ -1147,12 +1178,17 @@
   --school-text: #3b5bdb;
   --school: color-mix(in srgb, #4f6bff 7%, transparent);
   color-scheme: light;
-  font-family: 'Inter Variable', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  font-family:
+    'Inter Variable',
+    -apple-system,
+    'Segoe UI',
+    system-ui,
+    sans-serif;
 }
 :root[data-style='stately'][data-mode='dark'] {
   --bg: #0e0f15;
-  --bg-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  --bg-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   --bg-size: 24px 24px;
   --surface: #181a23;
   --surface-2: #20232e;
@@ -1266,7 +1302,9 @@
 /* today = the active state: filled dot with a ring */
 [data-style='stately'] .month-cell.today .month-dn,
 [data-style='stately'] .tg-dayhead.today .tg-dn {
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 3.5px var(--accent);
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 3.5px var(--accent);
 }
 [data-style='stately'] .chip-event {
   border-radius: 999px;
@@ -1429,7 +1467,9 @@
   border: 0;
   background: var(--key);
   color: var(--key-text);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 1px 2px rgba(0, 0, 0, 0.18);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.18);
 }
 [data-style='braun'] .btn {
   border: 0;
@@ -1528,7 +1568,9 @@
   border-radius: 50%;
   background: var(--surface-2);
   color: var(--text);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 2px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.12);
 }
 [data-style='braun'] .module-btn.active {
   color: var(--text);
@@ -1540,7 +1582,9 @@
 @media (min-width: 641px) {
   /* speaker grille */
   [data-style='braun'] .module-nav {
-    background: radial-gradient(var(--grille) 1.3px, transparent 1.7px) 0 0 / 9px 9px, var(--surface);
+    background:
+      radial-gradient(var(--grille) 1.3px, transparent 1.7px) 0 0 / 9px 9px,
+      var(--surface);
     border-right: 1px solid var(--line);
     padding-right: 8px;
   }

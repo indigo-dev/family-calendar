@@ -71,7 +71,7 @@ export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (i
   };
   useLayoutEffect(place, [order]);
 
-  const vertical = () => navRef.current ? getComputedStyle(navRef.current).flexDirection === 'column' : true;
+  const vertical = () => (navRef.current ? getComputedStyle(navRef.current).flexDirection === 'column' : true);
 
   const start = (d: Drag) => {
     d.active = true;

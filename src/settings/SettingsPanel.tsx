@@ -54,7 +54,12 @@ export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; in
         <nav className="settings-nav" aria-label="Bereiche">
           <h2>Einstellungen</h2>
           {TABS.map((t) => (
-            <button key={t.id} className={`settings-nav-item ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)} aria-current={tab === t.id}>
+            <button
+              key={t.id}
+              className={`settings-nav-item ${tab === t.id ? 'active' : ''}`}
+              onClick={() => setTab(t.id)}
+              aria-current={tab === t.id}
+            >
               <span className="settings-nav-icon" aria-hidden>
                 {t.icon}
               </span>
@@ -123,7 +128,19 @@ function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
-function Stepper({ value, min, max, unit, onChange }: { value: number; min: number; max: number; unit: string; onChange: (v: number) => void }) {
+function Stepper({
+  value,
+  min,
+  max,
+  unit,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  unit: string;
+  onChange: (v: number) => void;
+}) {
   return (
     <div className="stepper">
       <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label="weniger">
@@ -418,13 +435,16 @@ function CalendarsTab() {
         </div>
         {proxyTest && !proxyTest.busy && <p className={proxyTest.ok ? 'success' : 'error'}>{proxyTest.text}</p>}
         {!settings.proxyUrl && (
-          <p className="help">Ohne Weiterleitung kann die App die Kalender-Links nicht laden (Google und Microsoft blockieren direkte Zugriffe aus dem Browser).</p>
+          <p className="help">
+            Ohne Weiterleitung kann die App die Kalender-Links nicht laden (Google und Microsoft blockieren direkte Zugriffe aus dem
+            Browser).
+          </p>
         )}
       </div>
 
       <p className="help">
-        Tippe bei einem Kalender auf die Personen, denen er gehört – ein gemeinsamer Familienkalender kann mehreren Personen
-        gehören. Kalender ohne Person werden nicht angezeigt.
+        Tippe bei einem Kalender auf die Personen, denen er gehört – ein gemeinsamer Familienkalender kann mehreren Personen gehören.
+        Kalender ohne Person werden nicht angezeigt.
       </p>
 
       <div className="cal-account">
@@ -820,7 +840,10 @@ function DesignTab() {
         )}
       </Group>
 
-      <Group title="Wetter-Symbole" note="Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht.">
+      <Group
+        title="Wetter-Symbole"
+        note="Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht."
+      >
         <WeatherIconPicker value={settings.weatherIcons} onChange={(weatherIcons) => updateSettings({ weatherIcons })} />
       </Group>
 
@@ -908,10 +931,22 @@ function DeviceTab() {
       <Group>
         <div className="set-card">
           <Row label="Termine aktualisieren" hint="Wie oft die Kalender neu geladen werden">
-            <Stepper value={settings.refreshMinutes} min={1} max={120} unit="Min." onChange={(v) => updateSettings({ refreshMinutes: v })} />
+            <Stepper
+              value={settings.refreshMinutes}
+              min={1}
+              max={120}
+              unit="Min."
+              onChange={(v) => updateSettings({ refreshMinutes: v })}
+            />
           </Row>
           <Row label="Zurück zur Übersicht" hint="Nach so vielen Minuten ohne Bedienung · 0 = nie">
-            <Stepper value={settings.idleResetMinutes} min={0} max={120} unit="Min." onChange={(v) => updateSettings({ idleResetMinutes: v })} />
+            <Stepper
+              value={settings.idleResetMinutes}
+              min={0}
+              max={120}
+              unit="Min."
+              onChange={(v) => updateSettings({ idleResetMinutes: v })}
+            />
           </Row>
           <Row label="Bildschirm wach halten" hint="Das Tablet geht nicht in den Ruhezustand">
             <Switch checked={settings.keepAwake} onChange={(keepAwake) => updateSettings({ keepAwake })} label="Bildschirm wach halten" />
@@ -922,7 +957,14 @@ function DeviceTab() {
   );
 }
 
-const WEATHER_PREVIEW: WeatherKey[] = ['clear-day', 'partly-cloudy-day', 'partly-cloudy-day-rain', 'thunderstorms-day-rain', 'snow', 'clear-night'];
+const WEATHER_PREVIEW: WeatherKey[] = [
+  'clear-day',
+  'partly-cloudy-day',
+  'partly-cloudy-day-rain',
+  'thunderstorms-day-rain',
+  'snow',
+  'clear-night',
+];
 
 function WeatherIconPicker({ value, onChange }: { value: WeatherIconSet; onChange: (v: WeatherIconSet) => void }) {
   return (
@@ -946,7 +988,9 @@ function WeatherIconPicker({ value, onChange }: { value: WeatherIconSet; onChang
           </button>
         ))}
       </div>
-      <span className="sym-credits">Meteocons © Bas Milius (MIT) · Material Symbols © Google (Apache 2.0) · Fluent Emoji © Microsoft (MIT)</span>
+      <span className="sym-credits">
+        Meteocons © Bas Milius (MIT) · Material Symbols © Google (Apache 2.0) · Fluent Emoji © Microsoft (MIT)
+      </span>
     </div>
   );
 }
@@ -992,8 +1036,8 @@ function SymbolPicker({ value, onChange }: { value: SymbolSet; onChange: (v: Sym
         </div>
       ))}
       <span className="sym-credits">
-        Fluent Emoji © Microsoft (MIT) · Noto Emoji © Google (Apache 2.0) · Twemoji © Twitter, Inc. u. a. (CC BY 4.0) · OpenMoji
-        (CC BY-SA 4.0) · Tabler, Phosphor (MIT) · Lucide (ISC)
+        Fluent Emoji © Microsoft (MIT) · Noto Emoji © Google (Apache 2.0) · Twemoji © Twitter, Inc. u. a. (CC BY 4.0) · OpenMoji (CC BY-SA
+        4.0) · Tabler, Phosphor (MIT) · Lucide (ISC)
       </span>
     </div>
   );
@@ -1028,8 +1072,8 @@ function BackupTab() {
   return (
     <div className="form narrow">
       <p>
-        Die Konfiguration (Personen, Kalenderkonten, Zuordnungen, Einstellungen) wird nur auf diesem Gerät gespeichert. Mit
-        Export/Import kannst du sie sichern oder z.&nbsp;B. vom Computer auf das iPad übertragen.
+        Die Konfiguration (Personen, Kalenderkonten, Zuordnungen, Einstellungen) wird nur auf diesem Gerät gespeichert. Mit Export/Import
+        kannst du sie sichern oder z.&nbsp;B. vom Computer auf das iPad übertragen.
       </p>
       <p className="warn">
         Die Datei enthält die geheimen Abo-Links deiner Kalender. Wer sie hat, kann die Termine lesen – bitte nicht weitergeben.
@@ -1051,7 +1095,10 @@ function BackupTab() {
           if (confirm('Alle Einstellungen, Personen, Kalender und zwischengespeicherten Termine auf diesem Gerät löschen?')) {
             // msal.* / login.*: leftovers of the former Microsoft sign-in on older installs
             Object.keys(localStorage)
-              .filter((k) => k.startsWith('fc.') || k.startsWith('msal.') || k.includes('login.windows.net') || k.includes('login.microsoftonline'))
+              .filter(
+                (k) =>
+                  k.startsWith('fc.') || k.startsWith('msal.') || k.includes('login.windows.net') || k.includes('login.microsoftonline'),
+              )
               .forEach((k) => localStorage.removeItem(k));
             window.location.reload();
           }

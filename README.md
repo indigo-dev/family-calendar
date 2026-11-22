@@ -22,7 +22,8 @@ Unter Windows einfach **`start-lokal.bat`** doppelklicken. Oder manuell:
 npm install
 npm run dev        # http://localhost:5173 (auch im WLAN erreichbar, --host)
 npm run build      # Produktions-Build nach dist/
-npm run check      # Typecheck, ESLint und Tests (läuft auch vor jedem Deploy)
+npm run check      # Typecheck, ESLint, Prettier und Tests (läuft auch vor jedem Deploy)
+npm run format     # Code mit Prettier formatieren
 ```
 
 ## Weiterleitung (Cloudflare Worker, einmalig, kostenlos)

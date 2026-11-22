@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import {
-  BUILTIN,
-  CATEGORIES,
-  EMOJI_CHOICES,
-  norm,
-  useShopping,
-  type CategoryId,
-  type ListEntry,
-  type ShopItem,
-} from '../lib/shopping';
+import { BUILTIN, CATEGORIES, EMOJI_CHOICES, norm, useShopping, type CategoryId, type ListEntry, type ShopItem } from '../lib/shopping';
 import { useTapOrLongPress } from '../lib/hooks';
 import { Sym } from '../components/Sym';
 import type { Paint } from '../lib/colors';
@@ -34,7 +25,13 @@ function loadCats(): CategoryId[] {
 }
 
 /** Tap = only this department, long press = add/remove it (same as the person chips). */
-function CategoryChip({ cat, active, dimmed, onTap, onLongPress }: {
+function CategoryChip({
+  cat,
+  active,
+  dimmed,
+  onTap,
+  onLongPress,
+}: {
   cat: (typeof CATEGORIES)[number];
   active: boolean;
   dimmed: boolean;
@@ -166,7 +163,12 @@ export function ShoppingModule() {
         <button role="tab" aria-selected={pane === 'list'} className={pane === 'list' ? 'active' : ''} onClick={() => setPane('list')}>
           🛒 Liste{listCount > 0 ? ` · ${listCount}` : ''}
         </button>
-        <button role="tab" aria-selected={pane === 'pantry'} className={pane === 'pantry' ? 'active' : ''} onClick={() => setPane('pantry')}>
+        <button
+          role="tab"
+          aria-selected={pane === 'pantry'}
+          className={pane === 'pantry' ? 'active' : ''}
+          onClick={() => setPane('pantry')}
+        >
           🧺 Vorrat
         </button>
       </div>
@@ -191,22 +193,22 @@ export function ShoppingModule() {
               <>
                 <div className="shop-group-head shop-list-hint">Antippen zum Abhaken</div>
                 <div className="shop-grid big">
-                    {listed.map(({ entry, item }) => (
-                      <button
-                        key={item.id}
-                        className={`shop-tile on-list ${leaving.has(item.id) ? 'leaving' : ''}`}
-                        style={tileStyle(item, paint)}
-                        onClick={() => checkOff(entry, item)}
-                        aria-label={`${item.name}${entry.qty > 1 ? `, ${entry.qty} Stück` : ''} abhaken`}
-                      >
-                        <ItemSym item={item} />
-                        <span className="shop-name">{item.name}</span>
-                        {entry.qty > 1 && <span className="shop-qty">×{entry.qty}</span>}
-                        <span className="shop-check" aria-hidden>
-                          ✓
-                        </span>
-                      </button>
-                    ))}
+                  {listed.map(({ entry, item }) => (
+                    <button
+                      key={item.id}
+                      className={`shop-tile on-list ${leaving.has(item.id) ? 'leaving' : ''}`}
+                      style={tileStyle(item, paint)}
+                      onClick={() => checkOff(entry, item)}
+                      aria-label={`${item.name}${entry.qty > 1 ? `, ${entry.qty} Stück` : ''} abhaken`}
+                    >
+                      <ItemSym item={item} />
+                      <span className="shop-name">{item.name}</span>
+                      {entry.qty > 1 && <span className="shop-qty">×{entry.qty}</span>}
+                      <span className="shop-check" aria-hidden>
+                        ✓
+                      </span>
+                    </button>
+                  ))}
                 </div>
               </>
             )}
@@ -236,13 +238,7 @@ export function ShoppingModule() {
             <h2>Vorrat</h2>
             <div className="shop-search">
               <span aria-hidden>🔍</span>
-              <input
-                type="search"
-                value={query}
-                placeholder="Suchen…"
-                onChange={(e) => setQuery(e.target.value)}
-                enterKeyHint="search"
-              />
+              <input type="search" value={query} placeholder="Suchen…" onChange={(e) => setQuery(e.target.value)} enterKeyHint="search" />
               {query && (
                 <button className="shop-search-clear" onClick={() => setQuery('')} aria-label="Suche leeren">
                   ×
@@ -286,7 +282,14 @@ export function ShoppingModule() {
                 </div>
                 <div className="shop-grid">
                   {frequent.map((item) => (
-                    <PantryTile key={item.id} item={item} qty={qtyById.get(item.id) ?? 0} editMode={false} onTap={tapPantry} onLess={shop.setQty} />
+                    <PantryTile
+                      key={item.id}
+                      item={item}
+                      qty={qtyById.get(item.id) ?? 0}
+                      editMode={false}
+                      onTap={tapPantry}
+                      onLess={shop.setQty}
+                    />
                   ))}
                 </div>
               </div>
@@ -306,10 +309,21 @@ export function ShoppingModule() {
                 </div>
                 <div className="shop-grid">
                   {catItems.map((item) => (
-                    <PantryTile key={item.id} item={item} qty={qtyById.get(item.id) ?? 0} editMode={editMode} onTap={tapPantry} onLess={shop.setQty} />
+                    <PantryTile
+                      key={item.id}
+                      item={item}
+                      qty={qtyById.get(item.id) ?? 0}
+                      editMode={editMode}
+                      onTap={tapPantry}
+                      onLess={shop.setQty}
+                    />
                   ))}
                   {!q && (
-                    <button className="shop-tile add" onClick={() => setCreating({ name: '', cat: cat.id })} aria-label={`Neuer Artikel in ${cat.label}`}>
+                    <button
+                      className="shop-tile add"
+                      onClick={() => setCreating({ name: '', cat: cat.id })}
+                      aria-label={`Neuer Artikel in ${cat.label}`}
+                    >
                       <span className="shop-emoji" aria-hidden>
                         ＋
                       </span>
@@ -347,7 +361,13 @@ export function ShoppingModule() {
   );
 }
 
-function PantryTile({ item, qty, editMode, onTap, onLess }: {
+function PantryTile({
+  item,
+  qty,
+  editMode,
+  onTap,
+  onLess,
+}: {
   item: ShopItem;
   qty: number;
   editMode: boolean;
@@ -361,7 +381,9 @@ function PantryTile({ item, qty, editMode, onTap, onLess }: {
         className={`shop-tile ${qty > 0 ? 'picked' : ''} ${editMode ? 'removable' : ''}`}
         style={tileStyle(item, paint)}
         onClick={() => onTap(item)}
-        aria-label={editMode ? `${item.name} entfernen` : qty > 0 ? `${item.name}: noch eins mehr (jetzt ${qty})` : `${item.name} auf die Liste`}
+        aria-label={
+          editMode ? `${item.name} entfernen` : qty > 0 ? `${item.name}: noch eins mehr (jetzt ${qty})` : `${item.name} auf die Liste`
+        }
       >
         <ItemSym item={item} />
         <span className="shop-name">{item.name}</span>
@@ -381,7 +403,11 @@ function PantryTile({ item, qty, editMode, onTap, onLess }: {
   );
 }
 
-function ItemEditor({ initial, onSave, onClose }: {
+function ItemEditor({
+  initial,
+  onSave,
+  onClose,
+}: {
   initial: { name: string; cat: CategoryId };
   onSave: (name: string, emoji: string, cat: CategoryId) => void;
   onClose: () => void;
@@ -397,7 +423,14 @@ function ItemEditor({ initial, onSave, onClose }: {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal shop-editor" style={{ ['--cat' as string]: paint(catColor.get(cat)) }} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Neuer Artikel">
+      <div
+        className="modal shop-editor"
+        style={{ ['--cat' as string]: paint(catColor.get(cat)) }}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Neuer Artikel"
+      >
         <div className="shop-editor-preview" style={{ ['--cat' as string]: paint(catColor.get(cat)) }}>
           <span className="shop-emoji">
             <Sym emoji={emoji} />

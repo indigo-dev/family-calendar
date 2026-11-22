@@ -6,17 +6,7 @@ import { uid } from './id';
  * in that order. Stored per device in localStorage `fc.dashboard` (like photos and weather places).
  */
 
-export type WidgetType =
-  | 'clock'
-  | 'weather'
-  | 'events'
-  | 'timetable'
-  | 'todos'
-  | 'shopping'
-  | 'photos'
-  | 'holidays'
-  | 'pollen'
-  | 'family';
+export type WidgetType = 'clock' | 'weather' | 'events' | 'timetable' | 'todos' | 'shopping' | 'photos' | 'holidays' | 'pollen' | 'family';
 
 /** Klein 1×1, Mittel 2×1, Hoch 1×2, Groß 2×2, Breit 3×2 */
 export type WidgetSize = 's' | 'm' | 't' | 'l' | 'xl';
@@ -74,7 +64,14 @@ export const WIDGETS: WidgetDef[] = [
     sizes: ['s', 'm', 't', 'l', 'xl'],
     module: 'timetable',
   },
-  { type: 'todos', title: 'To-dos', icon: '📌', description: 'Offene Aufgaben – direkt abhaken', sizes: ['s', 'm', 't', 'l'], module: 'todos' },
+  {
+    type: 'todos',
+    title: 'To-dos',
+    icon: '📌',
+    description: 'Offene Aufgaben – direkt abhaken',
+    sizes: ['s', 'm', 't', 'l'],
+    module: 'todos',
+  },
   {
     type: 'shopping',
     title: 'Einkaufsliste',
@@ -83,8 +80,21 @@ export const WIDGETS: WidgetDef[] = [
     sizes: ['s', 'm', 't', 'l'],
     module: 'shopping',
   },
-  { type: 'photos', title: 'Fotos', icon: '🖼️', description: 'Wechselnde Fotos, Antippen startet die Diashow', sizes: ['s', 'm', 't', 'l', 'xl'], module: 'frame' },
-  { type: 'holidays', title: 'Ferien-Countdown', icon: '🏖️', description: 'Tage bis zu den nächsten Ferien und Feiertagen', sizes: ['s', 'm'] },
+  {
+    type: 'photos',
+    title: 'Fotos',
+    icon: '🖼️',
+    description: 'Wechselnde Fotos, Antippen startet die Diashow',
+    sizes: ['s', 'm', 't', 'l', 'xl'],
+    module: 'frame',
+  },
+  {
+    type: 'holidays',
+    title: 'Ferien-Countdown',
+    icon: '🏖️',
+    description: 'Tage bis zu den nächsten Ferien und Feiertagen',
+    sizes: ['s', 'm'],
+  },
 ];
 
 export const widgetDef = (type: WidgetType) => WIDGETS.find((w) => w.type === type)!;
