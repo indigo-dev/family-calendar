@@ -13,9 +13,14 @@ import {
   toggleSelected,
   useFrameSettings,
   usePhotos,
+  CLOCK_FACES,
+  CLOCK_LAYOUTS,
+  isAnalog,
+  type ClockFace,
   type FrameFit,
   type Motif,
 } from '../lib/frame';
+import { Clock } from './Clocks';
 import './frame.css';
 
 type Tab = 'mine' | 'motifs';
@@ -37,6 +42,7 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
 
   const selected = new Set(cfg.selected);
   const count = photos?.filter((p) => selected.has(p.id)).length ?? 0;
+  const clockOnly = cfg.clockFace !== 'none' && (count === 0 || cfg.clockLayout === 'solo');
 
   const onFiles = async (list: FileList | null) => {
     const files = [...(list ?? [])];
@@ -147,10 +153,14 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
       </section>
 
       <aside className="view fr-side">
-        <button className="btn primary fr-start" disabled={count === 0} onClick={() => onStart()}>
-          ▶ {count === 1 ? 'Foto zeigen' : 'Diashow starten'}
+        <button className="btn primary fr-start" disabled={count === 0 && !clockOnly} onClick={() => onStart()}>
+          ▶ {clockOnly ? 'Uhr zeigen' : count === 1 ? 'Foto zeigen' : 'Diashow starten'}
         </button>
-        {count === 0 && <p className="fr-start-hint">Tippe Fotos an, um sie für die Diashow auszuwählen.</p>}
+        {count === 0 && (
+          <p className="fr-start-hint">
+            {clockOnly ? 'Ohne ausgewählte Fotos zeigt der Fotorahmen nur die Uhr.' : 'Tippe Fotos an, um sie für die Diashow auszuwählen.'}
+          </p>
+        )}
 
         <div className="fr-field">
           <span>Bildwechsel alle</span>
@@ -199,19 +209,6 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
             ))}
           </div>
           <label className="fr-toggle">
-            Uhrzeit und Datum einblenden
-            <input type="checkbox" checked={cfg.clock} onChange={(e) => patchFrameSettings({ clock: e.target.checked })} />
-          </label>
-          <label className="fr-toggle">
-            Wetter unter der Uhr
-            <input
-              type="checkbox"
-              checked={cfg.weather}
-              disabled={!cfg.clock}
-              onChange={(e) => patchFrameSettings({ weather: e.target.checked })}
-            />
-          </label>
-          <label className="fr-toggle">
             Langsamer Zoom
             <input
               type="checkbox"
@@ -221,6 +218,8 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
             />
           </label>
         </div>
+
+        <ClockSettings />
 
         <div className="fr-field">
           <span>Bildschirmschoner</span>
@@ -238,6 +237,81 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
           </p>
         </div>
       </aside>
+    </div>
+  );
+}
+
+/** 10:09 – the classic watch pose, so the previews show both hands nicely */
+const PREVIEW_TIME = new Date(2026, 0, 1, 10, 9);
+
+/** Clock face, its place and what is shown next to it – each choice with a small preview. */
+function ClockSettings() {
+  const cfg = useFrameSettings();
+  const on = cfg.clockFace !== 'none';
+  const faceCard = (id: ClockFace, label: string) => (
+    <button
+      key={id}
+      role="radio"
+      aria-checked={cfg.clockFace === id}
+      className={`fr-ck ${cfg.clockFace === id ? 'on' : ''}`}
+      onClick={() => patchFrameSettings({ clockFace: id })}
+    >
+      <span className="fr-ck-thumb" aria-hidden>
+        {id === 'none' ? <span className="fr-ck-none">—</span> : <Clock face={id} now={PREVIEW_TIME} seconds={cfg.seconds} still />}
+      </span>
+      <span>{label}</span>
+    </button>
+  );
+  return (
+    <div className="fr-field">
+      <span>Uhr</span>
+      <div className="fr-cks" role="radiogroup" aria-label="Uhr">
+        {faceCard('none', 'Keine')}
+        {CLOCK_FACES.filter((f) => f.kind === 'digital').map((f) => faceCard(f.id, f.label))}
+      </div>
+      <div className="fr-cks" role="radiogroup" aria-label="Analoge Uhr">
+        {CLOCK_FACES.filter((f) => f.kind === 'analog').map((f) => faceCard(f.id, f.label))}
+      </div>
+
+      {on && (
+        <>
+          <div className="fr-fits" role="radiogroup" aria-label="Platz der Uhr">
+            {CLOCK_LAYOUTS.map((l) => (
+              <button
+                key={l.id}
+                role="radio"
+                aria-checked={cfg.clockLayout === l.id}
+                className={`fr-fit ${cfg.clockLayout === l.id ? 'on' : ''}`}
+                onClick={() => patchFrameSettings({ clockLayout: l.id })}
+              >
+                <span className={`fr-fit-thumb fr-lay-${l.id}`} aria-hidden>
+                  {l.id !== 'solo' && <i />}
+                  <b />
+                </span>
+                <span>{l.label}</span>
+              </button>
+            ))}
+          </div>
+          <label className="fr-toggle">
+            Datum
+            <input type="checkbox" checked={cfg.date} onChange={(e) => patchFrameSettings({ date: e.target.checked })} />
+          </label>
+          <label className="fr-toggle">
+            Wetter
+            <input type="checkbox" checked={cfg.weather} onChange={(e) => patchFrameSettings({ weather: e.target.checked })} />
+          </label>
+          <label className="fr-toggle">
+            Termine von heute und morgen
+            <input type="checkbox" checked={cfg.events} onChange={(e) => patchFrameSettings({ events: e.target.checked })} />
+          </label>
+          {isAnalog(cfg.clockFace) && (
+            <label className="fr-toggle">
+              Sekundenzeiger
+              <input type="checkbox" checked={cfg.seconds} onChange={(e) => patchFrameSettings({ seconds: e.target.checked })} />
+            </label>
+          )}
+        </>
+      )}
     </div>
   );
 }

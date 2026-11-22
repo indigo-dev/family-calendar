@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useSize, useSwipe, useWakeLock } from '../lib/hooks';
 import { useMinute } from '../lib/clock';
-import { photoById, shuffle, useFrameSettings, type Photo } from '../lib/frame';
+import { isAnalog, photoById, shuffle, useFrameSettings, type Photo } from '../lib/frame';
 import { FrameWeather } from '../weather/WeatherChip';
+import { Clock, FrameEvents } from './Clocks';
 import './frame.css';
 
 const FADE_MS = 1600;
 const CONTROLS_MS = 4000;
+/** fade-out when the frame ends */
+const CLOSE_MS = 450;
 
 interface Slide {
   key: number;
@@ -20,14 +23,40 @@ export type FrameMode = 'manual' | 'screensaver';
  * Full-screen photo frame. Manual: tap shows controls, swipe changes the photo.
  * Screensaver: any tap ends it.
  */
-export function PhotoFrame({ ids, mode, startId, onClose }: { ids: string[]; mode: FrameMode; startId?: string; onClose: () => void }) {
+export function PhotoFrame({
+  ids,
+  mode,
+  startId,
+  onClose: close,
+}: {
+  ids: string[];
+  mode: FrameMode;
+  startId?: string;
+  onClose: () => void;
+}) {
   const cfg = useFrameSettings();
   const now = useMinute();
   const [rootRef, size] = useSize<HTMLDivElement>();
   useWakeLock(true);
 
+  // without photos (or when chosen) the frame is a big clock only
+  const [solo] = useState(() => cfg.clockLayout === 'solo' || ids.length === 0);
+  const layout = solo ? 'solo' : cfg.clockLayout;
+  const face = cfg.clockFace === 'none' && solo ? 'd-light' : cfg.clockFace;
+
+  // fade out, then close
+  const [closing, setClosing] = useState(false);
+  const closeTimer = useRef<number | undefined>(undefined);
+  const onClose = useCallback(() => {
+    if (closeTimer.current !== undefined) return;
+    setClosing(true);
+    closeTimer.current = window.setTimeout(close, CLOSE_MS);
+  }, [close]);
+  useEffect(() => () => window.clearTimeout(closeTimer.current), []);
+
   // the playlist is fixed when the frame opens (shuffle once, then go round)
   const playlist = useMemo(() => {
+    if (solo) return [];
     const list = cfg.order === 'shuffle' ? shuffle(ids) : [...ids];
     if (startId && list.includes(startId)) list.unshift(...list.splice(list.indexOf(startId), 1));
     return list;
@@ -40,7 +69,10 @@ export function PhotoFrame({ ids, mode, startId, onClose }: { ids: string[]; mod
   const keyRef = useRef(0);
   const controlsTimer = useRef<number | undefined>(undefined);
 
-  const go = useCallback((dir: 1 | -1) => setIndex((i) => (i + dir + playlist.length) % playlist.length), [playlist.length]);
+  const go = useCallback(
+    (dir: 1 | -1) => playlist.length > 1 && setIndex((i) => (i + dir + playlist.length) % playlist.length),
+    [playlist.length],
+  );
 
   // load + decode the photo before it fades in, so there is never a half-drawn image
   useEffect(() => {
@@ -132,27 +164,39 @@ export function PhotoFrame({ ids, mode, startId, onClose }: { ids: string[]; mod
     else showControls();
   };
 
-  const time = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   const date = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  const cornerClock = face !== 'none' && layout === 'corner';
+  const meta = cfg.date || cfg.weather || cfg.events;
+  // the solo clock wanders a little every minute, so nothing stands still on the screen for hours
+  const m = now.getHours() * 60 + now.getMinutes();
+  const drift = solo ? ({ ['--drift' as string]: `${((m * 7) % 9) - 4}vmin, ${((m * 5) % 7) - 3}vmin` } as CSSProperties) : undefined;
 
   return (
     <div
       ref={rootRef}
-      className={`pf pf-${cfg.fit} ${cfg.clock ? 'pf-with-clock' : ''} ${controls ? 'pf-controls-on' : ''}`}
+      className={`pf pf-${solo ? 'solo' : cfg.fit} pf-layout-${layout} pf-mode-${mode} ${cornerClock ? 'pf-with-clock' : ''} ${
+        controls ? 'pf-controls-on' : ''
+      } ${closing ? 'pf-closing' : ''}`}
       onClick={onTap}
       {...swipe}
       role="dialog"
       aria-label="Fotorahmen"
     >
       {slides.map((s) => (
-        <SlideView key={s.key} slide={s} fit={cfg.fit} motion={cfg.motion} clock={cfg.clock} durationSec={cfg.intervalSec} size={size} />
+        <SlideView key={s.key} slide={s} fit={cfg.fit} motion={cfg.motion} clock={cornerClock} durationSec={cfg.intervalSec} size={size} />
       ))}
+      {layout === 'center' && face !== 'none' && <div className="pf-scrim" />}
 
-      {cfg.clock && (
-        <div className="pf-clock" aria-hidden>
-          <div className="pf-time">{time}</div>
-          <div className="pf-date">{date}</div>
-          {cfg.weather && <FrameWeather />}
+      {face !== 'none' && (
+        <div className={`pf-clock ${isAnalog(face) ? 'pf-analog' : 'pf-digital'}`} style={drift} aria-hidden>
+          <Clock face={face} now={now} seconds={cfg.seconds} />
+          {meta && (
+            <div className="pf-meta">
+              {cfg.date && <div className="pf-date">{date}</div>}
+              {cfg.weather && <FrameWeather />}
+              {cfg.events && <FrameEvents />}
+            </div>
+          )}
         </div>
       )}
 

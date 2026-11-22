@@ -7,6 +7,7 @@ import { WEATHER_ICON_SETS, type WeatherIconSet, type WeatherKey } from '../lib/
 import { WxIcon } from '../weather/WxIcon';
 import { CORE_SUGGESTIONS, PALETTES, paletteColors } from '../lib/colors';
 import { Group, Row } from './controls';
+import { MODULE_TRANSITIONS } from '../lib/transition';
 
 const STYLE_NOTES: Record<Settings['style'], string> = {
   classic: 'Schlicht und klar',
@@ -127,6 +128,31 @@ export function DesignTab() {
             </div>
           </div>
         )}
+      </Group>
+
+      <Group title="Übergänge" note="Wie die Bereiche beim Wechseln ineinander übergehen.">
+        <div className="pick-grid" role="radiogroup" aria-label="Übergänge">
+          {MODULE_TRANSITIONS.map((t) => (
+            <button
+              key={t.id}
+              role="radio"
+              aria-checked={settings.moduleTransition === t.id}
+              className={`pick-card ${settings.moduleTransition === t.id ? 'on' : ''}`}
+              onClick={() => updateSettings({ moduleTransition: t.id })}
+            >
+              {/* two mini pages that swap back and forth with this animation */}
+              <span className={`tr-thumb tr-${t.id}`} aria-hidden>
+                <i className="tr-rail" />
+                <span className="tr-stage">
+                  <i className="tr-a" />
+                  <i className="tr-b" />
+                </span>
+              </span>
+              <span className="pick-label">{t.label}</span>
+              <span className="pick-note">{t.note}</span>
+            </button>
+          ))}
+        </div>
       </Group>
 
       <Group

@@ -4,7 +4,8 @@ import { oneOf, persisted, usePersisted } from './lib/persisted';
 import { useWakeLock } from './lib/hooks';
 import { onMinute, useMinute } from './lib/clock';
 import { MemberFilter, ModuleHeader } from './components/Header';
-import { MODULES, ModuleNav, type ModuleId } from './components/ModuleNav';
+import { MODULES, ModuleNav, navIndex, type ModuleId } from './components/ModuleNav';
+import { switchModule } from './lib/transition';
 import type { SettingsTab } from './settings/SettingsPanel';
 import type { FrameMode } from './frame/PhotoFrame';
 import { useFrameSettings, usePhotos } from './lib/frame';
@@ -102,15 +103,16 @@ export function App() {
   );
 
   // screensaver: the photo frame after inactivity
-  const hasFramePhotos = frameIds.length > 0;
+  // (with a clock chosen it also runs without photos: then it is a big clock)
+  const canFrame = frameIds.length > 0 || frameCfg.clockFace !== 'none';
   useEffect(
     () =>
       onMinute(() => {
-        if (!frameCfg.screensaverMin || settingsOpen || frame || !hasFramePhotos) return;
+        if (!frameCfg.screensaverMin || settingsOpen || frame || !canFrame) return;
         if (Date.now() - lastInteraction.current < frameCfg.screensaverMin * 60_000) return;
         setFrame({ mode: 'screensaver' });
       }),
-    [frameCfg.screensaverMin, settingsOpen, frame, hasFramePhotos],
+    [frameCfg.screensaverMin, settingsOpen, frame, canFrame],
   );
 
   const openSettings = (tab?: SettingsTab) => {
@@ -123,8 +125,15 @@ export function App() {
       <ModuleNav
         active={module}
         onSelect={(id) => {
-          setModule(id);
-          setDashEditing(false);
+          if (id === module) return;
+          switchModule(
+            () => {
+              setModule(id);
+              setDashEditing(false);
+            },
+            settings.moduleTransition,
+            navIndex(id) >= navIndex(module) ? 1 : -1,
+          );
         }}
       />
       <div className="app">
@@ -201,7 +210,7 @@ export function App() {
           </Suspense>
         </ErrorBoundary>
       </div>
-      {frame && frameIds.length > 0 && (
+      {frame && canFrame && (
         <ErrorBoundary label="Fotorahmen" fallback={null} retrySec={0} onError={() => setFrame(null)}>
           <Suspense fallback={null}>
             <PhotoFrame

@@ -26,6 +26,9 @@ const orderStore = persisted<ModuleId[]>(ORDER_KEY, (raw) => {
 });
 const setOrder = (order: ModuleId[]) => orderStore.set(order);
 
+/** position of a module in the navigation as the user sorted it */
+export const navIndex = (id: ModuleId) => (id === 'dashboard' ? 0 : orderStore.get().indexOf(id) + 1);
+
 interface Drag {
   id: ModuleId;
   pointerId: number;

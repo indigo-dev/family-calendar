@@ -1,3 +1,4 @@
+import type { ModuleTransition } from './lib/transition';
 import type { SymbolSet } from './lib/symbols';
 import type { WeatherIconSet } from './lib/weatherIcons';
 
@@ -87,6 +88,8 @@ export interface Settings {
   palette: ColorPalette;
   /** base colour of the 'core' palette */
   coreColor: string;
+  /** animation when switching modules */
+  moduleTransition: ModuleTransition;
 }
 
 export type ColorPalette = 'vivid' | 'muted' | 'core';

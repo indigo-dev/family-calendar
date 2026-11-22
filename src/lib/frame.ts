@@ -16,9 +16,18 @@ export interface FrameSettings {
   intervalSec: number;
   order: FrameOrder;
   fit: FrameFit;
-  clock: boolean;
-  /** weather of the home place under the clock */
+  /** which clock is shown, 'none' = no clock */
+  clockFace: ClockFace;
+  /** where the clock sits; 'solo' shows the clock without photos */
+  clockLayout: ClockLayout;
+  /** second hand of the analog clocks */
+  seconds: boolean;
+  /** date next to the clock */
+  date: boolean;
+  /** weather of the home place next to the clock */
   weather: boolean;
+  /** today's and tomorrow's events next to the clock */
+  events: boolean;
   /** slow zoom/pan while a photo is shown */
   motion: boolean;
   /** start the frame as screensaver after this many idle minutes, 0 = off */
@@ -49,14 +58,41 @@ export const INTERVALS = [
 ];
 export const SCREENSAVER = [0, 2, 5, 10, 15, 30, 60];
 
+export type ClockFace = 'none' | 'd-light' | 'd-bold' | 'd-flip' | 'd-words' | 'a-classic' | 'a-minimal' | 'a-dots' | 'a-roman';
+export type ClockLayout = 'corner' | 'center' | 'solo';
+
+export const CLOCK_FACES: { id: Exclude<ClockFace, 'none'>; label: string; kind: 'digital' | 'analog' }[] = [
+  { id: 'd-light', label: 'Schlicht', kind: 'digital' },
+  { id: 'd-bold', label: 'Kräftig', kind: 'digital' },
+  { id: 'd-flip', label: 'Klappzahlen', kind: 'digital' },
+  { id: 'd-words', label: 'Wortuhr', kind: 'digital' },
+  { id: 'a-classic', label: 'Klassisch', kind: 'analog' },
+  { id: 'a-minimal', label: 'Minimal', kind: 'analog' },
+  { id: 'a-dots', label: 'Punkte', kind: 'analog' },
+  { id: 'a-roman', label: 'Römisch', kind: 'analog' },
+];
+const FACE_IDS: ClockFace[] = ['none', ...CLOCK_FACES.map((f) => f.id)];
+
+export const CLOCK_LAYOUTS: { id: ClockLayout; label: string }[] = [
+  { id: 'corner', label: 'In der Ecke' },
+  { id: 'center', label: 'Groß in der Mitte' },
+  { id: 'solo', label: 'Nur die Uhr' },
+];
+
+export const isAnalog = (f: ClockFace) => f.startsWith('a-');
+
 const KEY = 'fc.frame';
 const DEFAULTS: FrameSettings = {
   selected: [],
   intervalSec: 60,
   order: 'seq',
   fit: 'cover',
-  clock: true,
+  clockFace: 'd-light',
+  clockLayout: 'corner',
+  seconds: true,
+  date: true,
   weather: true,
+  events: false,
   motion: true,
   screensaverMin: 0,
 };
@@ -78,8 +114,13 @@ function parseSettings(raw: unknown): FrameSettings {
     ),
     order: oneOf(v.order, ['seq', 'shuffle'] as const, DEFAULTS.order),
     fit: oneOf(v.fit, ['cover', 'contain', 'mat'] as const, DEFAULTS.fit),
-    clock: typeof v.clock === 'boolean' ? v.clock : DEFAULTS.clock,
+    // older versions only had an on/off switch `clock` for the simple digital clock
+    clockFace: oneOf(v.clockFace, FACE_IDS, v.clock === false ? 'none' : DEFAULTS.clockFace),
+    clockLayout: oneOf(v.clockLayout, ['corner', 'center', 'solo'] as const, DEFAULTS.clockLayout),
+    seconds: typeof v.seconds === 'boolean' ? v.seconds : DEFAULTS.seconds,
+    date: typeof v.date === 'boolean' ? v.date : DEFAULTS.date,
     weather: typeof v.weather === 'boolean' ? v.weather : DEFAULTS.weather,
+    events: typeof v.events === 'boolean' ? v.events : DEFAULTS.events,
     motion: typeof v.motion === 'boolean' ? v.motion : DEFAULTS.motion,
     screensaverMin: oneOf(v.screensaverMin, SCREENSAVER, DEFAULTS.screensaverMin),
   };

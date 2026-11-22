@@ -1,3 +1,4 @@
+import { isModuleTransition } from './transition';
 import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings, Timetable, UiStyle } from '../types';
 import { DEFAULT_PERIODS, parseSchool, parseTimetable } from './school';
 import { DEFAULT_SYMBOL_SET, isSymbolSet } from './symbols';
@@ -118,6 +119,7 @@ export const DEFAULT_SETTINGS: Settings = {
   weatherIcons: DEFAULT_WEATHER_ICONS,
   palette: 'vivid',
   coreColor: DEFAULT_CORE_COLOR,
+  moduleTransition: 'fade',
 };
 
 export const UI_STYLES: { id: UiStyle; label: string }[] = [
@@ -241,6 +243,7 @@ export function parseConfig(raw: unknown): AppConfig {
   if (!isSymbolSet(settings.symbols)) settings.symbols = DEFAULT_SETTINGS.symbols;
   if (!isWeatherIconSet(settings.weatherIcons)) settings.weatherIcons = DEFAULT_SETTINGS.weatherIcons;
   if (!PALETTES.some((x) => x.id === settings.palette)) settings.palette = DEFAULT_SETTINGS.palette;
+  if (!isModuleTransition(settings.moduleTransition)) settings.moduleTransition = DEFAULT_SETTINGS.moduleTransition;
   if (!/^#[0-9a-f]{6}$/i.test(settings.coreColor)) settings.coreColor = DEFAULT_CORE_COLOR;
 
   return { schemaVersion: 3, settings, members, calendars, school: parseSchool(o.school) };
