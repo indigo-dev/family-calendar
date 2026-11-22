@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CalEvent, ViewMode } from './types';
 import { useStore } from './store';
 import { rangeFor, startOfDay, stepDate, titleFor } from './lib/dates';
-import { useEvents } from './lib/events';
+import { proxyOf, useEvents } from './lib/events';
 import { useHolidayMarks } from './lib/holidays';
 import { clampDays } from './lib/config';
 import { useSwipe } from './lib/hooks';
@@ -40,7 +40,7 @@ export function CalendarModule({ reloadKey, settingsOpen, onSettings, onWeather 
   }, [reloadKey]);
 
   const range = useMemo(() => rangeFor(view, date, settings.weekStartsOn, nDays), [view, date, settings.weekStartsOn, nDays]);
-  const { events, loading, status, lastUpdated } = useEvents(range, members, calendars, settings.proxyUrl, nonce);
+  const { events, loading, status, lastUpdated } = useEvents(range, members, calendars, proxyOf(settings), nonce);
   const { marks } = useHolidayMarks(range, settings.holidays);
 
   // calendar problems shown at the person: memberId -> message

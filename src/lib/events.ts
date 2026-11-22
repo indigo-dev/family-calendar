@@ -47,16 +47,40 @@ export function normalizeIcsUrl(url: string): string {
   return url.trim().replace(/^webcals?:\/\//i, 'https://');
 }
 
-/** Loads an ICS link through the Cloudflare worker (calendar providers don't allow direct browser access). */
-export async function fetchIcs(proxyUrl: string, url: string, force = false): Promise<string> {
+/** The Cloudflare worker that fetches the calendars, with its optional access key. */
+export interface Proxy {
+  url: string;
+  key: string;
+}
+
+export const proxyOf = (s: { proxyUrl: string; proxyKey: string }): Proxy => ({ url: s.proxyUrl, key: s.proxyKey });
+
+const proxyBase = (proxy: Proxy) => proxy.url.trim().replace(/\/+$/, '');
+
+/**
+ * Loads an ICS link through the Cloudflare worker (calendar providers don't allow direct browser access).
+ * The secret link goes in the request body, so it does not end up in the worker's URL logs.
+ * `force` also makes the worker skip its edge cache.
+ */
+export async function fetchIcs(proxy: Proxy, url: string, force = false): Promise<string> {
   const target = normalizeIcsUrl(url);
   const hit = textCache.get(target);
   if (!force && hit && Date.now() - hit.at < TEXT_TTL_MS) return hit.text;
-  const base = proxyUrl.trim().replace(/\/+$/, '');
+  const base = proxyBase(proxy);
   if (!base) throw new Error('Weiterleitung (Worker-Adresse) fehlt in den Einstellungen.');
+  const key = proxy.key.trim();
   let res: Response;
   try {
-    res = await fetch(`${base}/?url=${encodeURIComponent(target)}`, { cache: 'no-store' });
+    // text/plain and no extra header (without a key) = a "simple" request without CORS preflight,
+    // which older workers can answer with 405 instead of failing the preflight
+    res = await fetch(`${base}/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8', ...(key ? { 'X-Access-Key': key } : {}) },
+      body: JSON.stringify({ url: target, fresh: force }),
+      cache: 'no-store',
+    });
+    // workers before version 2 only know GET ?url=
+    if (res.status === 405) res = await fetch(`${base}/?url=${encodeURIComponent(target)}`, { cache: 'no-store' });
   } catch {
     throw new Error('Weiterleitung nicht erreichbar (offline oder falsche Adresse?)');
   }
@@ -67,16 +91,50 @@ export async function fetchIcs(proxyUrl: string, url: string, force = false): Pr
   return text;
 }
 
+export type ProxyCheck = { ok: true; text: string } | { ok: false; text: string };
+
+/** For the settings: is the worker reachable, is it up to date and does the access key fit? */
+export async function checkProxy(proxy: Proxy): Promise<ProxyCheck> {
+  const base = proxyBase(proxy);
+  const key = proxy.key.trim();
+  let res: Response;
+  try {
+    res = await fetch(`${base}/`, { cache: 'no-store', headers: key ? { 'X-Access-Key': key } : {} });
+  } catch {
+    return {
+      ok: false,
+      text: key
+        ? 'Nicht erreichbar. Adresse prüfen – oder der Worker ist noch die alte Version ohne Schlüssel.'
+        : 'Nicht erreichbar. Adresse prüfen (https://…workers.dev).',
+    };
+  }
+  const text = await res.text();
+  let info: { service?: string; version?: number; keyRequired?: boolean; keyOk?: boolean } | null = null;
+  try {
+    info = JSON.parse(text);
+  } catch {
+    /* older worker: plain text */
+  }
+  if (info?.service === 'Familienkalender-Weiterleitung') {
+    if (info.keyRequired && !info.keyOk)
+      return { ok: false, text: key ? 'Der Schlüssel ist falsch.' : 'Dieser Worker verlangt einen Schlüssel.' };
+    return { ok: true, text: info.keyRequired ? 'Weiterleitung erreichbar, Schlüssel passt.' : 'Weiterleitung erreichbar.' };
+  }
+  if (res.ok && text.includes('Familienkalender'))
+    return { ok: true, text: 'Weiterleitung erreichbar (ältere Version – bitte den Worker aktualisieren, siehe README).' };
+  return { ok: false, text: `Unerwartete Antwort (${res.status}). Ist das die Worker-Adresse?` };
+}
+
 /** For the settings: checks a link and returns the calendar name and number of upcoming events. */
-export async function testCalendarLink(proxyUrl: string, url: string): Promise<{ name?: string; upcoming: number }> {
-  const text = await fetchIcs(proxyUrl, url, true);
+export async function testCalendarLink(proxy: Proxy, url: string): Promise<{ name?: string; upcoming: number }> {
+  const text = await fetchIcs(proxy, url, true);
   const from = new Date();
   const to = new Date(from.getTime() + 60 * 86400000);
   return { name: icsCalendarName(text), upcoming: parseIcs(text, from, to).length };
 }
 
-async function fetchCalendar(proxyUrl: string, cal: CalendarSource, range: DateRange, force: boolean): Promise<CalEvent[]> {
-  const text = await fetchIcs(proxyUrl, cal.url, force);
+async function fetchCalendar(proxy: Proxy, cal: CalendarSource, range: DateRange, force: boolean): Promise<CalEvent[]> {
+  const text = await fetchIcs(proxy, cal.url, force);
   return parseIcs(text, range.start, range.end).map((e) => ({
     key: `${e.uid}|${e.start.getTime()}`,
     title: e.title,
@@ -132,7 +190,7 @@ export function useEvents(
   range: DateRange,
   members: Member[],
   calendars: CalendarSource[],
-  proxyUrl: string,
+  proxy: Proxy,
   refreshNonce: number,
 ): EventsState {
   const [state, setState] = useState<EventsState>({ events: [], loading: false, status: {} });
@@ -140,7 +198,12 @@ export function useEvents(
   const lastNonce = useRef(refreshNonce);
   const active = calendars.filter((c) => c.enabled && c.url && c.memberIds.length > 0);
   const key = cacheKey(range, active);
-  const sig = JSON.stringify([proxyUrl, active.map((c) => [c.id, c.url, c.name, c.memberIds]), members.map((m) => [m.id, m.demo])]);
+  const sig = JSON.stringify([
+    proxy.url,
+    proxy.key,
+    active.map((c) => [c.id, c.url, c.name, c.memberIds]),
+    members.map((m) => [m.id, m.demo]),
+  ]);
 
   useEffect(() => {
     const id = ++runId.current;
@@ -162,7 +225,7 @@ export function useEvents(
       const results = await Promise.all(
         active.map(async (cal) => {
           try {
-            const evs = await fetchCalendar(proxyUrl, cal, range, force);
+            const evs = await fetchCalendar(proxy, cal, range, force);
             status[cal.id] = { state: 'ok' };
             return evs;
           } catch (e) {

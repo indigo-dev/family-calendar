@@ -29,17 +29,50 @@ npm run format     # Code mit Prettier formatieren
 ## Weiterleitung (Cloudflare Worker, einmalig, kostenlos)
 
 Google und Microsoft erlauben nicht, dass eine Webseite die Abo-Links direkt im Browser lädt (CORS). Der kleine Worker in
-`worker/worker.js` holt die Links ab und reicht sie weiter. Er speichert nichts. Erlaubt ist jeder `https`-Kalender-Link
-(nicht nur Google, Outlook/Microsoft und iCloud); weitergegeben werden aber nur echte iCal-Dateien bis 5 MB, keine
-IP-Adressen und kein `localhost`.
+`worker/worker.js` holt die Links ab und reicht sie weiter. Er speichert nichts und schreibt keine Logs.
+
+- Die App schickt den geheimen Kalender-Link im Body einer `POST`-Anfrage – er steht nicht in der Adresse und taucht so
+  nicht in Cloudflare-Logs oder -Statistiken auf.
+- Weitergegeben werden nur echte iCal-Dateien bis 5 MB; IP-Adressen, `localhost` und Heimnetz-Namen sind gesperrt,
+  auch als Ziel einer Weiterleitung des Kalender-Anbieters.
+- Cloudflare hält einen Kalender 5 Minuten vor; „Neu laden“ in der App holt ihn am Cache vorbei frisch.
+
+### Einrichten mit wrangler (empfohlen)
+
+```bash
+npx wrangler@4 login
+```
+
+```bash
+npm run worker:deploy
+```
+
+Die Einstellungen stehen in `worker/wrangler.toml`: `ALLOWED_HOSTS` (erlaubte Kalender-Server, Standard `*` = alle;
+strenger z. B. `calendar.google.com, outlook.live.com, outlook.office365.com, *.icloud.com`) und `ALLOWED_ORIGINS`
+(Seiten, die den Worker im Browser nutzen dürfen – localhost und Heimnetz sind immer erlaubt). Lokal testen:
+`npm run worker:dev`.
+
+### Oder im Cloudflare-Dashboard
 
 1. <https://dash.cloudflare.com> → Workers & Pages → Erstellen → „Mit Hello World beginnen“, Name `familienkalender-ics`, Bereitstellen.
 2. „Code bearbeiten“, alles durch den Inhalt von `worker/worker.js` ersetzen, Bereitstellen.
-3. Die Adresse (`https://familienkalender-ics.<name>.workers.dev`) in der App unter **Einstellungen → Kalender → Weiterleitung** eintragen.
+3. Optional unter Einstellungen → Variablen `ALLOWED_HOSTS` / `ALLOWED_ORIGINS` setzen.
 
-Welche Seiten den Worker im Browser nutzen dürfen (GitHub-Pages-Adresse, localhost, Heimnetz), steht oben im Worker-Code
-(`ALLOWED_ORIGINS`). Das schützt nur vor fremden Webseiten: Wer die Worker-Adresse kennt, kann ihn ohne Browser trotzdem
-aufrufen. Die Kalender-Links selbst gehen als Teil der Adresse an den Worker und können in den Cloudflare-Logs auftauchen.
+Danach die Adresse (`https://familienkalender-ics.<name>.workers.dev`) in der App unter
+**Einstellungen → Kalender → Weiterleitung** eintragen und „Speichern & testen“.
+
+### Schlüssel (empfohlen)
+
+Ohne Schlüssel kann jeder, der die Worker-Adresse kennt, ihn als ICS-Weiterleitung benutzen. Mit Schlüssel bedient der
+Worker nur noch die eigene App:
+
+1. Einen langen Zufallswert als Secret `ACCESS_KEY` setzen – `npx wrangler@4 secret put ACCESS_KEY --config worker/wrangler.toml`
+   oder im Dashboard unter Einstellungen → Variablen und Secrets (Typ „Secret“).
+2. Denselben Wert in der App unter **Einstellungen → Kalender → Weiterleitung** ins Feld „Schlüssel“ eintragen,
+   „Speichern & testen“. Auf jedem Gerät nötig (oder per Sicherung übertragen).
+
+Reihenfolge beim Umstieg von einer älteren Version: erst den neuen Worker bereitstellen, dann den Schlüssel setzen.
+Die App kommt mit altem und neuem Worker zurecht.
 
 ## Abo-Links finden
 
@@ -69,7 +102,7 @@ Die Links sind geheim: Wer sie kennt, kann die Termine lesen. Änderungen kommen
 ## Konfiguration & Datenschutz
 
 - Alles (Personen, Kalender-Links, Einstellungen, Termin-Cache) liegt nur im `localStorage` des Geräts.
-- Der Export enthält die geheimen Kalender-Links – nicht weitergeben.
+- Der Export enthält die geheimen Kalender-Links und den Schlüssel der Weiterleitung – nicht weitergeben.
 - Feiertage/Ferien: [OpenHolidays API](https://www.openholidaysapi.org), Lizenz ODbL.
 
 ## Projektstruktur
@@ -86,5 +119,5 @@ src/
   lib/config.ts         Defaults, Migration, Export/Import, Avatar-Bilder
   views/                Tag/Woche, Monat, Jahr, Agenda
   settings/             Einstellungsdialog
-worker/worker.js        Cloudflare Worker (Weiterleitung)
+worker/                 Cloudflare Worker (Weiterleitung), wrangler.toml, Tests
 ```

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from 'react';
 import { useStore } from '../store';
 import { addDays, dayKey, startOfDay } from '../lib/dates';
-import { useEvents } from '../lib/events';
+import { proxyOf, useEvents } from '../lib/events';
 import { useHolidayMarks } from '../lib/holidays';
 import { useSize } from '../lib/hooks';
 import { useTodos } from '../lib/todos';
@@ -78,7 +78,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
       document.removeEventListener('visibilitychange', onVis);
     };
   }, [settings.refreshMinutes]);
-  const { events: raw } = useEvents(range, members, calendars, settings.proxyUrl, nonce);
+  const { events: raw } = useEvents(range, members, calendars, proxyOf(settings), nonce);
   const events = useMemo(() => {
     const ids = new Set(members.map((m) => m.id));
     return raw.map((e) => ({ ...e, memberIds: e.memberIds.filter((id) => ids.has(id)) })).filter((e) => e.memberIds.length > 0);

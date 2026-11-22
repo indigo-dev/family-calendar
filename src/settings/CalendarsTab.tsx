@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { CalendarSource } from '../types';
 import { useStore } from '../store';
 import { LINK_HELP, newCalendar } from '../lib/config';
-import { normalizeIcsUrl, testCalendarLink } from '../lib/events';
+import { checkProxy, normalizeIcsUrl, proxyOf, testCalendarLink } from '../lib/events';
 import { Avatar } from '../components/Avatar';
 
 type TestState = { busy: true } | { busy: false; ok: true; text: string } | { busy: false; ok: false; text: string };
@@ -10,25 +10,18 @@ type TestState = { busy: true } | { busy: false; ok: true; text: string } | { bu
 export function CalendarsTab() {
   const { calendars, settings, updateSettings } = useStore();
   const [proxy, setProxy] = useState(settings.proxyUrl);
+  const [proxyKey, setProxyKey] = useState(settings.proxyKey);
   const [proxyTest, setProxyTest] = useState<TestState | null>(null);
 
   const saveProxy = async () => {
     const url = proxy.trim().replace(/\/+$/, '');
+    const key = proxyKey.trim();
     setProxy(url);
-    updateSettings({ proxyUrl: url });
+    setProxyKey(key);
+    updateSettings({ proxyUrl: url, proxyKey: key });
     if (!url) return setProxyTest(null);
     setProxyTest({ busy: true });
-    try {
-      const res = await fetch(url + '/', { cache: 'no-store' });
-      const text = await res.text();
-      setProxyTest(
-        res.ok && text.includes('Familienkalender')
-          ? { busy: false, ok: true, text: 'Weiterleitung erreichbar.' }
-          : { busy: false, ok: false, text: `Unerwartete Antwort (${res.status}). Ist das die Worker-Adresse?` },
-      );
-    } catch {
-      setProxyTest({ busy: false, ok: false, text: 'Nicht erreichbar. Adresse prüfen (https://…workers.dev).' });
-    }
+    setProxyTest({ busy: false, ...(await checkProxy({ url, key })) });
   };
 
   return (
@@ -49,6 +42,19 @@ export function CalendarsTab() {
             Speichern & testen
           </button>
         </div>
+        <input
+          className="proxy-key"
+          style={{ minHeight: 44, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '0 12px', marginTop: 8 }}
+          type="password"
+          value={proxyKey}
+          placeholder="Schlüssel (nur falls im Worker ACCESS_KEY gesetzt ist)"
+          aria-label="Schlüssel der Weiterleitung"
+          onChange={(e) => setProxyKey(e.target.value)}
+          autoComplete="off"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+        />
         {proxyTest && !proxyTest.busy && <p className={proxyTest.ok ? 'success' : 'error'}>{proxyTest.text}</p>}
         {!settings.proxyUrl && (
           <p className="help">
@@ -94,7 +100,7 @@ function AddCalendar() {
     if (!force) {
       setAdding({ busy: true });
       try {
-        const res = await testCalendarLink(settings.proxyUrl, link);
+        const res = await testCalendarLink(proxyOf(settings), link);
         calName ||= res.name ?? '';
       } catch (e) {
         setAdding({ busy: false, ok: false, text: e instanceof Error ? e.message : String(e) });
@@ -180,7 +186,7 @@ function CalendarRow({ cal }: { cal: CalendarSource }) {
   const run = async () => {
     setTest({ busy: true });
     try {
-      const res = await testCalendarLink(settings.proxyUrl, cal.url);
+      const res = await testCalendarLink(proxyOf(settings), cal.url);
       setTest({ busy: false, ok: true, text: `OK · ${res.upcoming} Termine in den nächsten 60 Tagen` });
     } catch (e) {
       setTest({ busy: false, ok: false, text: e instanceof Error ? e.message : String(e) });

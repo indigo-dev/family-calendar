@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import type { ClockFace } from '../lib/frame';
 import { useStore } from '../store';
-import { useEvents } from '../lib/events';
+import { proxyOf, useEvents } from '../lib/events';
 import { useMinute, useToday } from '../lib/clock';
 import { addDays } from '../lib/dates';
 import type { CalEvent } from '../types';
@@ -168,7 +168,7 @@ export function FrameEvents() {
     const t = setInterval(() => setNonce((n) => n + 1), settings.refreshMinutes * 60_000);
     return () => clearInterval(t);
   }, [settings.refreshMinutes]);
-  const { events } = useEvents(range, members, calendars, settings.proxyUrl, nonce);
+  const { events } = useEvents(range, members, calendars, proxyOf(settings), nonce);
 
   const colorOf = (e: CalEvent) => members.find((m) => e.memberIds.includes(m.id))?.color;
   const tomorrow = addDays(today, 1);

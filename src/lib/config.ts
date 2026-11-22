@@ -104,6 +104,7 @@ export const DEFAULT_HOLIDAYS: HolidaySettings = { region: '', showPublic: true,
 
 export const DEFAULT_SETTINGS: Settings = {
   proxyUrl: '',
+  proxyKey: '',
   holidays: { ...DEFAULT_HOLIDAYS },
   weekStartsOn: 1,
   dayStartHour: 6,

@@ -67,6 +67,8 @@ export interface HolidaySettings {
 export interface Settings {
   /** Cloudflare worker that fetches ICS links (CORS) */
   proxyUrl: string;
+  /** access key of the worker (its ACCESS_KEY secret); empty = none */
+  proxyKey: string;
   holidays: HolidaySettings;
   weekStartsOn: 0 | 1;
   dayStartHour: number;

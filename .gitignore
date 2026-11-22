@@ -5,3 +5,6 @@ dist
 *.tsbuildinfo
 install-log.txt
 _claude-*
+# Cloudflare Worker (wrangler): local state and local secrets
+.wrangler
+.dev.vars
