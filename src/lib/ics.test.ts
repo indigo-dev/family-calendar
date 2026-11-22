@@ -152,8 +152,7 @@ describe('recurring events', () => {
     expect(evs.map((e) => local(e.start))).toEqual(['2026-06-01 07:00', '2026-06-08 07:00', '2026-06-15 07:00', '2026-06-22 07:00', '2026-06-29 07:00']);
   });
 
-  // Known gap: negative BYMONTHDAY is only handled for MONTHLY/YEARLY rules, not for DAILY.
-  it.fails('handles negative BYMONTHDAY in DAILY rules', () => {
+  it('handles negative BYMONTHDAY in DAILY rules', () => {
     const text = ics(['UID:a', 'DTSTART:20260131T080000Z', 'RRULE:FREQ=DAILY;BYMONTHDAY=-1;COUNT=2', 'SUMMARY:Monatsende']);
     const evs = parseIcs(text, ...range('2026-01-01', '2026-12-31'));
     expect(evs.map((e) => e.start.toISOString().slice(0, 10))).toEqual(['2026-01-31', '2026-02-28']);

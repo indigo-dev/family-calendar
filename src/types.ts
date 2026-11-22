@@ -114,6 +114,8 @@ export interface CalEvent {
   location?: string;
   notes?: string;
   calendarName?: string;
+  /** subscribed calendars (CalendarSource ids) the event comes from; missing for demo events */
+  calendarIds?: string[];
   memberIds: string[];
 }
 

@@ -1,6 +1,8 @@
 // Minimal offline support: network-first for same-origin GETs, cache fallback.
-// Cross-origin requests (Microsoft login, Graph API) are never touched.
-const CACHE = 'family-calendar-v1';
+// Cross-origin requests (calendar worker, weather, photos) are never touched.
+// The build id below is filled in per build (vite.config.ts), so every deploy gets a fresh cache
+// and the caches of older builds are deleted when the new worker activates.
+const CACHE = 'family-calendar-__BUILD_ID__';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {

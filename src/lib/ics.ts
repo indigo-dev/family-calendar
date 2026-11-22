@@ -279,6 +279,11 @@ function daysInMonth(y: number, m: number): number {
   return new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
 }
 
+/** BYMONTHDAY match: positive from the start, negative from the end of the month (-1 = last day). */
+function matchesMonthDay(monthDays: number[], d: number, dim: number): boolean {
+  return monthDays.some((md) => (md > 0 ? md === d : dim + md + 1 === d));
+}
+
 /** Candidate days (naive midnight) of one month for MONTHLY/YEARLY rules. */
 function monthDays(y: number, m: number, rule: Rule, startDay: number): Naive[] {
   const dim = daysInMonth(y, m);
@@ -288,7 +293,7 @@ function monthDays(y: number, m: number, rule: Rule, startDay: number): Naive[] 
   if (!hasDay && !hasMd) return startDay <= dim ? [Date.UTC(y, m, startDay)] : [];
   return all.filter((n) => {
     const { d, wd } = ymd(n);
-    if (hasMd && !rule.byMonthDay.some((md) => (md > 0 ? md === d : dim + md + 1 === d))) return false;
+    if (hasMd && !matchesMonthDay(rule.byMonthDay, d, dim)) return false;
     if (hasDay) {
       return rule.byDay.some((bd) => {
         if (bd.wd !== wd) return false;
@@ -319,9 +324,9 @@ function periodDays(rule: Rule, start: Naive, k: number): Naive[] {
   switch (rule.freq) {
     case 'DAILY': {
       const day = startMidnight + k * rule.interval * DAY;
-      const { m, d, wd } = ymd(day);
+      const { y, m, d, wd } = ymd(day);
       if (rule.byMonth.length && !rule.byMonth.includes(m + 1)) return [];
-      if (rule.byMonthDay.length && !rule.byMonthDay.includes(d)) return [];
+      if (rule.byMonthDay.length && !matchesMonthDay(rule.byMonthDay, d, daysInMonth(y, m))) return [];
       if (rule.byDay.length && !rule.byDay.some((b) => b.wd === wd)) return [];
       return [day];
     }

@@ -93,24 +93,38 @@ async function fetchCalendar(proxyUrl: string, cal: CalendarSource, range: DateR
     location: e.location,
     notes: e.notes,
     calendarName: cal.name,
+    calendarIds: [cal.id],
     memberIds: [...cal.memberIds],
   }));
 }
 
 /** Merges the same meeting appearing in several family members' calendars into one event. */
-function merge(lists: CalEvent[][]): CalEvent[] {
+export function merge(lists: CalEvent[][]): CalEvent[] {
   const map = new Map<string, CalEvent>();
   for (const list of lists) {
     for (const e of list) {
       const existing = map.get(e.key);
       if (existing) {
         for (const id of e.memberIds) if (!existing.memberIds.includes(id)) existing.memberIds.push(id);
+        if (e.calendarIds) existing.calendarIds = [...new Set([...(existing.calendarIds ?? []), ...e.calendarIds])];
       } else {
-        map.set(e.key, { ...e, memberIds: [...e.memberIds] });
+        map.set(e.key, { ...e, memberIds: [...e.memberIds], calendarIds: e.calendarIds && [...e.calendarIds] });
       }
     }
   }
   return [...map.values()].sort((a, b) => a.start.getTime() - b.start.getTime() || b.end.getTime() - a.end.getTime());
+}
+
+/**
+ * The cached events of one calendar (used when loading it fails). Matched by calendar id, so a
+ * renamed calendar or two calendars with the same name keep their own events; caches written
+ * before ids were stored fall back to the name.
+ */
+export function cachedEventsOf(cached: CalEvent[], cal: CalendarSource): CalEvent[] {
+  return cached
+    .filter((ev) => (ev.calendarIds ? ev.calendarIds.includes(cal.id) : ev.calendarName === cal.name))
+    .map((ev) => ({ ...ev, calendarIds: [cal.id], memberIds: ev.memberIds.filter((m) => cal.memberIds.includes(m)) }))
+    .filter((ev) => ev.memberIds.length > 0);
 }
 
 export interface EventsState {
@@ -161,7 +175,7 @@ export function useEvents(
           } catch (e) {
             status[cal.id] = { state: 'error', message: e instanceof Error ? e.message : String(e) };
             // keep previously cached events of this calendar if the fetch failed
-            return (cached ?? []).filter((ev) => ev.calendarName === cal.name && ev.memberIds.some((m) => cal.memberIds.includes(m)));
+            return cachedEventsOf(cached ?? [], cal);
           }
         }),
       );

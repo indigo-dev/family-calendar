@@ -28,13 +28,17 @@ npm run check      # Typecheck, ESLint und Tests (läuft auch vor jedem Deploy)
 ## Weiterleitung (Cloudflare Worker, einmalig, kostenlos)
 
 Google und Microsoft erlauben nicht, dass eine Webseite die Abo-Links direkt im Browser lädt (CORS). Der kleine Worker in
-`worker/worker.js` holt die Links ab und reicht sie weiter. Er speichert nichts und lässt nur Google, Outlook/Microsoft und iCloud zu.
+`worker/worker.js` holt die Links ab und reicht sie weiter. Er speichert nichts. Erlaubt ist jeder `https`-Kalender-Link
+(nicht nur Google, Outlook/Microsoft und iCloud); weitergegeben werden aber nur echte iCal-Dateien bis 5 MB, keine
+IP-Adressen und kein `localhost`.
 
 1. <https://dash.cloudflare.com> → Workers & Pages → Erstellen → „Mit Hello World beginnen“, Name `familienkalender-ics`, Bereitstellen.
 2. „Code bearbeiten“, alles durch den Inhalt von `worker/worker.js` ersetzen, Bereitstellen.
 3. Die Adresse (`https://familienkalender-ics.<name>.workers.dev`) in der App unter **Einstellungen → Kalender → Weiterleitung** eintragen.
 
-Erlaubte Seiten (GitHub-Pages-Adresse, localhost, Heimnetz) stehen oben im Worker-Code.
+Welche Seiten den Worker im Browser nutzen dürfen (GitHub-Pages-Adresse, localhost, Heimnetz), steht oben im Worker-Code
+(`ALLOWED_ORIGINS`). Das schützt nur vor fremden Webseiten: Wer die Worker-Adresse kennt, kann ihn ohne Browser trotzdem
+aufrufen. Die Kalender-Links selbst gehen als Teil der Adresse an den Worker und können in den Cloudflare-Logs auftauchen.
 
 ## Abo-Links finden
 
