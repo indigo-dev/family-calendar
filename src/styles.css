@@ -823,6 +823,11 @@ h4 {
   color: var(--muted);
 }
 
+/* placeholder while a module's code loads (usually already preloaded, so barely visible) */
+.module-loading {
+  flex: 1;
+}
+
 /* ------------------------------------------------------------ error boundary fallback */
 .error-fallback {
   flex: 1;

@@ -1,19 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import { useStore } from './store';
 import { oneOf, persisted, usePersisted } from './lib/persisted';
 import { useWakeLock } from './lib/hooks';
 import { onMinute, useMinute } from './lib/clock';
 import { MemberFilter, ModuleHeader } from './components/Header';
 import { MODULES, ModuleNav, type ModuleId } from './components/ModuleNav';
-import { SettingsPanel, type SettingsTab } from './settings/SettingsPanel';
-import { CalendarModule } from './CalendarModule';
-import { TodoBoard } from './todos/TodoBoard';
-import { TimetableModule } from './timetable/TimetableModule';
-import { ShoppingModule } from './shopping/ShoppingModule';
-import { FrameModule } from './frame/FrameModule';
-import { PhotoFrame, type FrameMode } from './frame/PhotoFrame';
+import type { SettingsTab } from './settings/SettingsPanel';
+import type { FrameMode } from './frame/PhotoFrame';
 import { useFrameSettings, usePhotos } from './lib/frame';
-import { WeatherModule } from './weather/WeatherModule';
+import { lazyNamed, preloadWhenIdle } from './lib/lazy';
 import { Dashboard } from './dashboard/Dashboard';
 import { GlyphIcon } from './components/Icon';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -31,6 +26,18 @@ const moduleStore = persisted<ModuleId>(
 );
 const setModule = (id: ModuleId) => moduleStore.set(id);
 
+// The dashboard is the start page and loads with the app; everything else is loaded on first use
+// (and fetched in the background shortly after the start, see preloadWhenIdle).
+const CalendarModule = lazyNamed(() => import('./CalendarModule'), 'CalendarModule');
+const WeatherModule = lazyNamed(() => import('./weather/WeatherModule'), 'WeatherModule');
+const TimetableModule = lazyNamed(() => import('./timetable/TimetableModule'), 'TimetableModule');
+const TodoBoard = lazyNamed(() => import('./todos/TodoBoard'), 'TodoBoard');
+const ShoppingModule = lazyNamed(() => import('./shopping/ShoppingModule'), 'ShoppingModule');
+const FrameModule = lazyNamed(() => import('./frame/FrameModule'), 'FrameModule');
+const PhotoFrame = lazyNamed(() => import('./frame/PhotoFrame'), 'PhotoFrame');
+const SettingsPanel = lazyNamed(() => import('./settings/SettingsPanel'), 'SettingsPanel');
+const LAZY = [CalendarModule, WeatherModule, TimetableModule, TodoBoard, ShoppingModule, FrameModule, PhotoFrame, SettingsPanel];
+
 export function App() {
   const { settings, members } = useStore();
   const module = usePersisted(moduleStore);
@@ -47,6 +54,7 @@ export function App() {
   const frameIds = (photos ?? []).filter((p) => frameCfg.selected.includes(p.id)).map((p) => p.id);
 
   useWakeLock(settings.keepAwake);
+  useEffect(() => preloadWhenIdle(LAZY), []);
 
   // theme
   useEffect(() => {
@@ -121,92 +129,103 @@ export function App() {
       />
       <div className="app">
         <ErrorBoundary label={MODULES.find((m) => m.id === module)?.label ?? 'Modul'} resetKey={module}>
-          {module === 'dashboard' && (
-            <>
-              <ModuleHeader
-                title={<Greeting />}
-                clock={false}
-                onSettings={() => openSettings()}
-                actions={
-                  !dashEditing && (
-                    <button className="icon-btn" onClick={() => setDashEditing(true)} aria-label="Dashboard bearbeiten" title="Bearbeiten">
-                      <GlyphIcon glyph="✎" name="edit" />
-                    </button>
-                  )
-                }
-              />
-              <Dashboard
+          <Suspense fallback={<div className="module-loading" aria-busy="true" />}>
+            {module === 'dashboard' && (
+              <>
+                <ModuleHeader
+                  title={<Greeting />}
+                  clock={false}
+                  onSettings={() => openSettings()}
+                  actions={
+                    !dashEditing && (
+                      <button
+                        className="icon-btn"
+                        onClick={() => setDashEditing(true)}
+                        aria-label="Dashboard bearbeiten"
+                        title="Bearbeiten"
+                      >
+                        <GlyphIcon glyph="✎" name="edit" />
+                      </button>
+                    )
+                  }
+                />
+                <Dashboard
+                  reloadKey={reloadKey}
+                  editing={dashEditing}
+                  onEditing={setDashEditing}
+                  openModule={setModule}
+                  startFrame={(startId) => setFrame({ mode: 'manual', startId })}
+                  openSettings={openSettings}
+                />
+              </>
+            )}
+            {module === 'calendar' && (
+              <CalendarModule
                 reloadKey={reloadKey}
-                editing={dashEditing}
-                onEditing={setDashEditing}
-                openModule={setModule}
-                startFrame={(startId) => setFrame({ mode: 'manual', startId })}
-                openSettings={openSettings}
+                settingsOpen={settingsOpen}
+                onSettings={() => openSettings()}
+                onWeather={() => setModule('weather')}
               />
-            </>
-          )}
-          {module === 'calendar' && (
-            <CalendarModule
-              reloadKey={reloadKey}
-              settingsOpen={settingsOpen}
-              onSettings={() => openSettings()}
-              onWeather={() => setModule('weather')}
-            />
-          )}
-          {module === 'weather' && (
-            <>
-              <ModuleHeader title="Wetter" onSettings={() => openSettings()} />
-              <WeatherModule />
-            </>
-          )}
-          {module === 'timetable' && (
-            <>
-              <ModuleHeader title="Stundenplan" onSettings={() => openSettings('school')} />
-              <TimetableModule onSettings={() => openSettings('family')} />
-            </>
-          )}
-          {module === 'todos' && (
-            <>
-              <ModuleHeader title="To-dos" onSettings={() => openSettings()} />
-              <MemberFilter issues={{}} onIssue={() => {}} />
-              <TodoBoard />
-            </>
-          )}
-          {module === 'frame' && (
-            <>
-              <ModuleHeader title="Fotorahmen" onSettings={() => openSettings()} />
-              <FrameModule onStart={(startId) => setFrame({ mode: 'manual', startId })} />
-            </>
-          )}
-          {module === 'shopping' && (
-            <>
-              <ModuleHeader title="Einkaufsliste" onSettings={() => openSettings()} />
-              <ShoppingModule />
-            </>
-          )}
+            )}
+            {module === 'weather' && (
+              <>
+                <ModuleHeader title="Wetter" onSettings={() => openSettings()} />
+                <WeatherModule />
+              </>
+            )}
+            {module === 'timetable' && (
+              <>
+                <ModuleHeader title="Stundenplan" onSettings={() => openSettings('school')} />
+                <TimetableModule onSettings={() => openSettings('family')} />
+              </>
+            )}
+            {module === 'todos' && (
+              <>
+                <ModuleHeader title="To-dos" onSettings={() => openSettings()} />
+                <MemberFilter issues={{}} onIssue={() => {}} />
+                <TodoBoard />
+              </>
+            )}
+            {module === 'frame' && (
+              <>
+                <ModuleHeader title="Fotorahmen" onSettings={() => openSettings()} />
+                <FrameModule onStart={(startId) => setFrame({ mode: 'manual', startId })} />
+              </>
+            )}
+            {module === 'shopping' && (
+              <>
+                <ModuleHeader title="Einkaufsliste" onSettings={() => openSettings()} />
+                <ShoppingModule />
+              </>
+            )}
+          </Suspense>
         </ErrorBoundary>
       </div>
       {frame && frameIds.length > 0 && (
         <ErrorBoundary label="Fotorahmen" fallback={null} retrySec={0} onError={() => setFrame(null)}>
-          <PhotoFrame
-            ids={frameIds}
-            mode={frame.mode}
-            startId={frame.startId}
-            onClose={() => {
-              lastInteraction.current = Date.now();
-              setFrame(null);
-            }}
-          />
+          <Suspense fallback={null}>
+            <PhotoFrame
+              ids={frameIds}
+              mode={frame.mode}
+              startId={frame.startId}
+              onClose={() => {
+                lastInteraction.current = Date.now();
+                setFrame(null);
+              }}
+            />
+          </Suspense>
         </ErrorBoundary>
       )}
       {settingsOpen && (
-        <SettingsPanel
-          initialTab={settingsTab}
-          onClose={() => {
-            setSettingsOpen(false);
-            setReloadKey((n) => n + 1);
-          }}
-        />
+        <Suspense fallback={null}>
+          <SettingsPanel
+            initialTab={settingsTab}
+            onClose={() => {
+              setSettingsOpen(false);
+              setReloadKey((n) => n + 1);
+            }}
+          />
+        </Suspense>
       )}
     </div>
   );
