@@ -1,15 +1,5 @@
 import { useEffect, useRef, useState, type TouchEvent } from 'react';
 
-/** Current time, re-rendering every `intervalMs`. */
-export function useNow(intervalMs = 30_000): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), intervalMs);
-    return () => clearInterval(t);
-  }, [intervalMs]);
-  return now;
-}
-
 /** Observes an element's size. */
 export function useSize<T extends HTMLElement>() {
   const ref = useRef<T>(null);

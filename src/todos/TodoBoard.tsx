@@ -7,10 +7,12 @@ import './todos.css';
 import { Canvas } from './Canvas';
 import { Note } from './Note';
 import { TodoEditor } from './TodoEditor';
+import { useToday } from '../lib/clock';
 
 type Tab = 'open' | 'done';
 
-export function TodoBoard({ now }: { now: Date }) {
+export function TodoBoard() {
+  const now = useToday();
   const { members, memberById, selectedIds } = useStore();
   const { todos, upsert, remove, toggleDone, clearDone, patchMany } = useTodos();
   const [tab, setTab] = useState<Tab>('open');

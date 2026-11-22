@@ -5,6 +5,7 @@ import { addDays, dayKey, fmt, startOfDay } from '../../lib/dates';
 import { minutes, subjectMap } from '../../lib/school';
 import { Avatar } from '../../components/Avatar';
 import { Empty, Head, lastEnd, useDash, type WidgetProps } from './shared';
+import { useMinute } from '../../lib/clock';
 
 interface SchoolDay {
   date: Date;
@@ -38,7 +39,8 @@ function nextSchoolDay(now: Date, marks: Map<string, DayMarks>, kids: Member[]):
 }
 
 export function TimetableWidget({ size }: WidgetProps) {
-  const { now, marks, openSettings } = useDash();
+  const { marks, openSettings } = useDash();
+  const now = useMinute();
   const { members, school, paint } = useStore();
   const kids = members.filter((m) => m.timetable);
   const subjects = subjectMap(school, paint);

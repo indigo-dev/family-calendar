@@ -3,6 +3,7 @@ import { useStore } from '../../store';
 import { addDays, dayKey, fmt } from '../../lib/dates';
 import type { Todo } from '../../lib/todos';
 import { gradient, Head, stop, useDash, useUndo, type WidgetProps } from './shared';
+import { useToday } from '../../lib/clock';
 
 function sortTodos(list: Todo[]): Todo[] {
   return [...list].sort((a, b) => (a.due ?? '9999').localeCompare(b.due ?? '9999') || a.createdAt - b.createdAt);
@@ -18,7 +19,8 @@ function dueLabel(due: string | undefined, now: Date): { text: string; cls: stri
 }
 
 export function TodosWidget({ size }: WidgetProps) {
-  const { now, todos } = useDash();
+  const { todos } = useDash();
+  const now = useToday();
   const { memberById } = useStore();
   const [setUndo, undoNode] = useUndo();
   const [leaving, setLeaving] = useState<string[]>([]);

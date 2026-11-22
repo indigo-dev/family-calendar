@@ -12,9 +12,9 @@ import { TimeGridView } from './views/TimeGridView';
 import { MonthView } from './views/MonthView';
 import { YearView } from './views/YearView';
 import { AgendaView } from './views/AgendaView';
+import { onMinute, useMinute, useToday } from './lib/clock';
 
 interface Props {
-  now: Date;
   /** changes when the settings panel closes -> reload calendars */
   reloadKey: number;
   settingsOpen: boolean;
@@ -22,7 +22,7 @@ interface Props {
   onWeather: () => void;
 }
 
-export function CalendarModule({ now, reloadKey, settingsOpen, onSettings, onWeather }: Props) {
+export function CalendarModule({ reloadKey, settingsOpen, onSettings, onWeather }: Props) {
   const { settings, updateSettings, members, calendars, selectedIds, memberById } = useStore();
   const nDays = settings.multiDays;
   const [view, setView] = useState<ViewMode>(settings.defaultView);
@@ -75,24 +75,29 @@ export function CalendarModule({ now, reloadKey, settingsOpen, onSettings, onWea
       window.removeEventListener('keydown', mark);
     };
   }, []);
-  useEffect(() => {
-    if (!settings.idleResetMinutes || settingsOpen) return;
-    if (Date.now() - lastInteraction.current < settings.idleResetMinutes * 60_000) return;
-    setSelected(null);
-    setView(settings.defaultView);
-    setDate(startOfDay(new Date()));
-  }, [now, settings.idleResetMinutes, settings.defaultView, settingsOpen]);
+  useEffect(
+    () =>
+      onMinute(() => {
+        if (!settings.idleResetMinutes || settingsOpen) return;
+        if (Date.now() - lastInteraction.current < settings.idleResetMinutes * 60_000) return;
+        setSelected(null);
+        setView(settings.defaultView);
+        setDate(startOfDay(new Date()));
+      }),
+    [settings.idleResetMinutes, settings.defaultView, settingsOpen],
+  );
 
   // date rollover at midnight: keep "today" current if the user is looking at today
-  const prevDay = useRef(startOfDay(now).getTime());
+  const today = useToday();
+  const prevDay = useRef(today.getTime());
   useEffect(() => {
-    const today = startOfDay(now).getTime();
-    if (today !== prevDay.current) {
-      setDate((d) => (d.getTime() === prevDay.current ? new Date(today) : d));
-      prevDay.current = today;
-      setNonce((n) => n + 1);
-    }
-  }, [now]);
+    if (today.getTime() === prevDay.current) return;
+    setDate((d) => (d.getTime() === prevDay.current ? today : d));
+    prevDay.current = today.getTime();
+    setNonce((n) => n + 1);
+  }, [today]);
+  // the views show the current time (now line, past events)
+  const now = useMinute();
 
   const step = useCallback((dir: 1 | -1) => setDate((d) => stepDate(view, d, dir, nDays)), [view, nDays]);
   const swipe = useSwipe(step);
@@ -133,7 +138,6 @@ export function CalendarModule({ now, reloadKey, settingsOpen, onSettings, onWea
         view={view}
         multiDays={nDays}
         onMultiDays={(n) => setDayCount(clampDays(n))}
-        now={now}
         loading={loading}
         onView={setView}
         onStep={step}

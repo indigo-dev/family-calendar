@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from './store';
 import { oneOf, persisted, usePersisted } from './lib/persisted';
-import { useNow, useWakeLock } from './lib/hooks';
+import { useWakeLock } from './lib/hooks';
+import { onMinute, useMinute } from './lib/clock';
 import { MemberFilter, ModuleHeader } from './components/Header';
 import { MODULES, ModuleNav, type ModuleId } from './components/ModuleNav';
 import { SettingsPanel, type SettingsTab } from './settings/SettingsPanel';
@@ -37,7 +38,6 @@ export function App() {
   const [settingsTab, setSettingsTab] = useState<SettingsTab | undefined>();
   const [reloadKey, setReloadKey] = useState(0);
   const [dashEditing, setDashEditing] = useState(false);
-  const now = useNow();
   const [mountedAt] = useState(Date.now);
   const lastInteraction = useRef(mountedAt);
   const frameCfg = useFrameSettings();
@@ -81,19 +81,29 @@ export function App() {
       window.removeEventListener('keydown', mark);
     };
   }, []);
-  useEffect(() => {
-    if (!settings.idleResetMinutes || settingsOpen) return;
-    if (Date.now() - lastInteraction.current < settings.idleResetMinutes * 60_000) return;
-    setModule('dashboard');
-    setDashEditing(false);
-  }, [now, settings.idleResetMinutes, settingsOpen]);
+  // checked on every minute tick – without re-rendering the app
+  useEffect(
+    () =>
+      onMinute(() => {
+        if (!settings.idleResetMinutes || settingsOpen) return;
+        if (Date.now() - lastInteraction.current < settings.idleResetMinutes * 60_000) return;
+        setModule('dashboard');
+        setDashEditing(false);
+      }),
+    [settings.idleResetMinutes, settingsOpen],
+  );
 
   // screensaver: the photo frame after inactivity
-  useEffect(() => {
-    if (!frameCfg.screensaverMin || settingsOpen || frame || frameIds.length === 0) return;
-    if (Date.now() - lastInteraction.current < frameCfg.screensaverMin * 60_000) return;
-    setFrame({ mode: 'screensaver' });
-  }, [now, frameCfg.screensaverMin, settingsOpen, frame, frameIds.length]);
+  const hasFramePhotos = frameIds.length > 0;
+  useEffect(
+    () =>
+      onMinute(() => {
+        if (!frameCfg.screensaverMin || settingsOpen || frame || !hasFramePhotos) return;
+        if (Date.now() - lastInteraction.current < frameCfg.screensaverMin * 60_000) return;
+        setFrame({ mode: 'screensaver' });
+      }),
+    [frameCfg.screensaverMin, settingsOpen, frame, hasFramePhotos],
+  );
 
   const openSettings = (tab?: SettingsTab) => {
     setSettingsTab(tab);
@@ -114,8 +124,7 @@ export function App() {
           {module === 'dashboard' && (
             <>
               <ModuleHeader
-                title={greeting(now)}
-                now={now}
+                title={<Greeting />}
                 clock={false}
                 onSettings={() => openSettings()}
                 actions={
@@ -127,7 +136,6 @@ export function App() {
                 }
               />
               <Dashboard
-                now={now}
                 reloadKey={reloadKey}
                 editing={dashEditing}
                 onEditing={setDashEditing}
@@ -139,7 +147,6 @@ export function App() {
           )}
           {module === 'calendar' && (
             <CalendarModule
-              now={now}
               reloadKey={reloadKey}
               settingsOpen={settingsOpen}
               onSettings={() => openSettings()}
@@ -148,32 +155,32 @@ export function App() {
           )}
           {module === 'weather' && (
             <>
-              <ModuleHeader title="Wetter" now={now} onSettings={() => openSettings()} />
-              <WeatherModule now={now} />
+              <ModuleHeader title="Wetter" onSettings={() => openSettings()} />
+              <WeatherModule />
             </>
           )}
           {module === 'timetable' && (
             <>
-              <ModuleHeader title="Stundenplan" now={now} onSettings={() => openSettings('school')} />
-              <TimetableModule now={now} onSettings={() => openSettings('family')} />
+              <ModuleHeader title="Stundenplan" onSettings={() => openSettings('school')} />
+              <TimetableModule onSettings={() => openSettings('family')} />
             </>
           )}
           {module === 'todos' && (
             <>
-              <ModuleHeader title="To-dos" now={now} onSettings={() => openSettings()} />
+              <ModuleHeader title="To-dos" onSettings={() => openSettings()} />
               <MemberFilter issues={{}} onIssue={() => {}} />
-              <TodoBoard now={now} />
+              <TodoBoard />
             </>
           )}
           {module === 'frame' && (
             <>
-              <ModuleHeader title="Fotorahmen" now={now} onSettings={() => openSettings()} />
+              <ModuleHeader title="Fotorahmen" onSettings={() => openSettings()} />
               <FrameModule onStart={(startId) => setFrame({ mode: 'manual', startId })} />
             </>
           )}
           {module === 'shopping' && (
             <>
-              <ModuleHeader title="Einkaufsliste" now={now} onSettings={() => openSettings()} />
+              <ModuleHeader title="Einkaufsliste" onSettings={() => openSettings()} />
               <ShoppingModule />
             </>
           )}
@@ -205,8 +212,12 @@ export function App() {
   );
 }
 
-function greeting(now: Date): string {
-  const h = now.getHours();
+/** Greeting by time of day; its own component so only it follows the clock. */
+function Greeting() {
+  return <>{greeting(useMinute().getHours())}</>;
+}
+
+function greeting(h: number): string {
   if (h < 5) return 'Gute Nacht';
   if (h < 11) return 'Guten Morgen';
   if (h < 18) return 'Hallo zusammen';

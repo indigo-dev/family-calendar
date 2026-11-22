@@ -3,6 +3,7 @@ import { useStore } from '../../store';
 import { dayKey, startOfDay } from '../../lib/dates';
 import { loadHolidays, type Holiday } from '../../lib/holidays';
 import { Empty, useDash, type WidgetProps } from './shared';
+import { useToday } from '../../lib/clock';
 
 const parseDay = (s: string) => {
   const [y, m, d] = s.split('-').map(Number);
@@ -11,7 +12,8 @@ const parseDay = (s: string) => {
 const daysBetween = (a: Date, b: Date) => Math.round((startOfDay(b).getTime() - startOfDay(a).getTime()) / 86400000);
 
 export function HolidaysWidget({ size }: WidgetProps) {
-  const { now, openSettings } = useDash();
+  const { openSettings } = useDash();
+  const now = useToday();
   const { settings } = useStore();
   const region = settings.holidays.region;
   const year = now.getFullYear();

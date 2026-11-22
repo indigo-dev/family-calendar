@@ -25,12 +25,12 @@ import { Modal } from '../components/Modal';
 import type { SettingsTab } from '../settings/SettingsPanel';
 import { DashCtx, WIDGET_COMPONENTS, type DashData } from './widgets';
 import './dashboard.css';
+import { useToday } from '../lib/clock';
 
 const GAP = 12;
 const LONG_PRESS_MS = 550;
 
 interface Props {
-  now: Date;
   reloadKey: number;
   editing: boolean;
   onEditing: (on: boolean) => void;
@@ -44,14 +44,14 @@ function columnsFor(width: number) {
   return width >= 960 ? 6 : width >= 560 ? 4 : 2;
 }
 
-export function Dashboard({ now, reloadKey, editing, onEditing, openModule, startFrame, openSettings }: Props) {
+export function Dashboard({ reloadKey, editing, onEditing, openModule, startFrame, openSettings }: Props) {
   const { members, calendars, settings } = useStore();
   const layout = useLayout();
   const [gridRef, size] = useSize<HTMLDivElement>();
   const [gallery, setGallery] = useState(false);
 
   /* ---------------- shared data for all widgets */
-  const todayKey = dayKey(now);
+  const todayKey = dayKey(useToday());
   const range = useMemo(() => {
     const start = startOfDay(new Date(todayKey + 'T12:00'));
     return { start, end: addDays(start, 2) };
@@ -86,7 +86,10 @@ export function Dashboard({ now, reloadKey, editing, onEditing, openModule, star
 
   const todos = useTodos();
   const shopping = useShopping();
-  const data: DashData = { now, events, todos, shopping, marks, openModule, startFrame, openSettings };
+  const data = useMemo<DashData>(
+    () => ({ events, todos, shopping, marks, openModule, startFrame, openSettings }),
+    [events, todos, shopping, marks, openModule, startFrame, openSettings],
+  );
 
   /* ---------------- grid geometry */
   const cols = columnsFor(size.width);

@@ -2,9 +2,11 @@ import { dayKey, fmt, isoWeek } from '../../lib/dates';
 
 import { deg, describe, useHomeWeather } from '../../lib/weather';
 import { hhmm, useDash, type WidgetProps } from './shared';
+import { useMinute } from '../../lib/clock';
 
 export function ClockWidget({ size }: WidgetProps) {
-  const { now, marks } = useDash();
+  const { marks } = useDash();
+  const now = useMinute();
   const { data } = useHomeWeather();
   const m = marks.get(dayKey(now));
   const special = m?.publicNames[0] ?? m?.schoolNames[0];

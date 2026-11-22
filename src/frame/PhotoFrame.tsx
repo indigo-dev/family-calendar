@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { useNow, useSize, useSwipe, useWakeLock } from '../lib/hooks';
+import { useSize, useSwipe, useWakeLock } from '../lib/hooks';
+import { useMinute } from '../lib/clock';
 import { photoById, shuffle, useFrameSettings, type Photo } from '../lib/frame';
 import { FrameWeather } from '../weather/WeatherChip';
 import './frame.css';
@@ -21,7 +22,7 @@ export type FrameMode = 'manual' | 'screensaver';
  */
 export function PhotoFrame({ ids, mode, startId, onClose }: { ids: string[]; mode: FrameMode; startId?: string; onClose: () => void }) {
   const cfg = useFrameSettings();
-  const now = useNow(10_000);
+  const now = useMinute();
   const [rootRef, size] = useSize<HTMLDivElement>();
   useWakeLock(true);
 

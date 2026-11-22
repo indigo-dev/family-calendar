@@ -11,7 +11,6 @@ import { schoolHours } from '../../lib/school';
 /* What all dashboard widgets share: the data of the dashboard, the head line, empty states, undo. */
 
 export interface DashData {
-  now: Date;
   /** today and tomorrow, all family members */
   events: CalEvent[];
   todos: ReturnType<typeof useTodos>;

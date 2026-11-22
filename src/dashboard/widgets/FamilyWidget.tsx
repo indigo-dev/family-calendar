@@ -4,9 +4,11 @@ import { addDays, dayKey, startOfDay } from '../../lib/dates';
 import { minutes, subjectMap } from '../../lib/school';
 import { Avatar } from '../../components/Avatar';
 import { Empty, Head, hhmm, lastEnd, useDash, type WidgetProps } from './shared';
+import { useMinute } from '../../lib/clock';
 
 export function FamilyWidget({ size }: WidgetProps) {
-  const { now, events, todos, marks } = useDash();
+  const { events, todos, marks } = useDash();
+  const now = useMinute();
   const { members, school, paint } = useStore();
   const subjects = subjectMap(school, paint);
   const tomorrow = addDays(startOfDay(now), 1);

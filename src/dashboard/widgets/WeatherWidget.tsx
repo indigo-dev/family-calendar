@@ -3,9 +3,11 @@ import { dayKey, fmt } from '../../lib/dates';
 import { activeAlerts, deg, describe, SEVERITY_LABEL, useHomeWeather } from '../../lib/weather';
 import { WxIcon } from '../../weather/WxIcon';
 import { Empty, useDash, type WidgetProps } from './shared';
+import { useMinute } from '../../lib/clock';
 
 export function WeatherWidget({ size }: WidgetProps) {
-  const { now, openModule } = useDash();
+  const { openModule } = useDash();
+  const now = useMinute();
   const { place, data, error } = useHomeWeather();
   if (!place)
     return (

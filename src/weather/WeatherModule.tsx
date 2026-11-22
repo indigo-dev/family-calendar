@@ -5,11 +5,13 @@ import { WxIcon } from './WxIcon';
 import './weather.css';
 import { Forecast } from './Forecast';
 import { AddPlace, PlacesSheet } from './Places';
+import { useMinute } from '../lib/clock';
 
 const clock = (ms: number) => new Date(ms).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
 /** Weather of the chosen place. Places are tabs on top; managing them opens a sheet. */
-export function WeatherModule({ now }: { now: Date }) {
+export function WeatherModule() {
+  const now = useMinute();
   const { places, activeId } = useWeatherSettings();
   const place = places.find((p) => p.id === activeId) ?? places[0];
   const { data, loading, error } = useWeather(place);

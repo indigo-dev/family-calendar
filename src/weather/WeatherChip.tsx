@@ -1,10 +1,12 @@
 import { activeAlerts, deg, describe, useHomeWeather } from '../lib/weather';
 import { WxIcon } from './WxIcon';
+import { useMinute } from '../lib/clock';
 import './weather.css';
 
 /** Current weather of the home place for the calendar header; tap opens the weather module. */
-export function WeatherChip({ now, onClick }: { now: Date; onClick: () => void }) {
+export function WeatherChip({ onClick }: { onClick: () => void }) {
   const { place, data } = useHomeWeather();
+  const now = useMinute();
   if (!place || !data) return null;
   const w = describe(data.current.code, data.current.isDay);
   const warn = activeAlerts(data, now).length > 0;

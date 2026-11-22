@@ -2,9 +2,11 @@ import { dayKey } from '../../lib/dates';
 
 import { pollenLevel, POLLEN_LABELS, POLLEN_TYPES, protectionWindow, useHomeWeather, uvLevel } from '../../lib/weather';
 import { Empty, Head, useDash, type WidgetProps } from './shared';
+import { useToday } from '../../lib/clock';
 
 export function PollenWidget({ size }: WidgetProps) {
-  const { now, openModule } = useDash();
+  const { openModule } = useDash();
+  const now = useToday();
   const { place, data } = useHomeWeather();
   if (!place)
     return (

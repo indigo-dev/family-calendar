@@ -3,6 +3,7 @@ import { useStore } from '../../store';
 import { addDays, fmt, startOfDay } from '../../lib/dates';
 import { AvatarStack } from '../../components/Avatar';
 import { gradient, Head, hhmm, useDash, type WidgetProps } from './shared';
+import { useMinute } from '../../lib/clock';
 
 function EventRow({ e, now, byId }: { e: CalEvent; now: Date; byId: Map<string, Member> }) {
   const ms = e.memberIds.map((id) => byId.get(id)!).filter(Boolean);
@@ -18,7 +19,8 @@ function EventRow({ e, now, byId }: { e: CalEvent; now: Date; byId: Map<string, 
 }
 
 export function EventsWidget({ size }: WidgetProps) {
-  const { now, events } = useDash();
+  const { events } = useDash();
+  const now = useMinute();
   const { memberById } = useStore();
   const today = startOfDay(now);
   const tomorrow = addDays(today, 1);

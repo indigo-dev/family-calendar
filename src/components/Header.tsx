@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useTapOrLongPress } from '../lib/hooks';
 import type { Member, ViewMode } from '../types';
 import { fmt } from '../lib/dates';
+import { useMinute } from '../lib/clock';
 import { useStore } from '../store';
 import { Avatar } from './Avatar';
 import { GlyphIcon } from './Icon';
@@ -19,7 +20,6 @@ const VIEWS: { id: ViewMode; label: string }[] = [
 interface Props {
   title: string;
   view: ViewMode;
-  now: Date;
   loading: boolean;
   /** day count of the 'days' view */
   multiDays: number;
@@ -32,20 +32,7 @@ interface Props {
   onWeather: () => void;
 }
 
-export function Header({
-  title,
-  view,
-  now,
-  loading,
-  multiDays,
-  onMultiDays,
-  onView,
-  onStep,
-  onToday,
-  onRefresh,
-  onSettings,
-  onWeather,
-}: Props) {
+export function Header({ title, view, loading, multiDays, onMultiDays, onView, onStep, onToday, onRefresh, onSettings, onWeather }: Props) {
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -89,8 +76,8 @@ export function Header({
         )}
       </div>
       <div className="topbar-right">
-        <WeatherChip now={now} onClick={onWeather} />
-        <Clock now={now} />
+        <WeatherChip onClick={onWeather} />
+        <Clock />
         <button className={`icon-btn ${loading ? 'spin' : ''}`} onClick={onRefresh} aria-label="Aktualisieren">
           <GlyphIcon glyph="⟳" name="refresh" />
         </button>
@@ -118,7 +105,9 @@ function Title({ text }: { text: string }) {
   );
 }
 
-function Clock({ now }: { now: Date }) {
+/** Time and date; the only part of the header that changes every minute. */
+function Clock() {
+  const now = useMinute();
   return (
     <div className="clock">
       <span className="clock-time">{fmt(now, { hour: '2-digit', minute: '2-digit' })}</span>
@@ -130,13 +119,11 @@ function Clock({ now }: { now: Date }) {
 /** Simple header for modules without date navigation (to-dos, ...). */
 export function ModuleHeader({
   title,
-  now,
   onSettings,
   actions,
   clock = true,
 }: {
-  title: string;
-  now: Date;
+  title: ReactNode;
   onSettings: () => void;
   actions?: ReactNode;
   clock?: boolean;
@@ -147,7 +134,7 @@ export function ModuleHeader({
         <h1 className="title">{title}</h1>
       </div>
       <div className="topbar-right">
-        {clock && <Clock now={now} />}
+        {clock && <Clock />}
         {actions}
         <button className="icon-btn" onClick={onSettings} aria-label="Einstellungen">
           <GlyphIcon glyph="⚙" name="settings" />

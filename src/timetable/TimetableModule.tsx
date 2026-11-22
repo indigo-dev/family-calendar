@@ -5,6 +5,7 @@ import { addDays, dayKey, fmt, startOfDay, startOfWeek } from '../lib/dates';
 import { useHolidayMarks } from '../lib/holidays';
 import { minutes, newSubject, SCHOOL_DAYS, SCHOOL_TYPES, SUBJECT_COLORS, subjectMap, subjectsFor } from '../lib/school';
 import { Avatar } from '../components/Avatar';
+import { useMinute } from '../lib/clock';
 
 /** Breaks of at least this many minutes get their own row. */
 const BREAK_MIN = 10;
@@ -29,7 +30,8 @@ function schoolWeek(now: Date, marks: Map<string, DayMarks>): DayInfo[] {
   });
 }
 
-export function TimetableModule({ now, onSettings }: { now: Date; onSettings: () => void }) {
+export function TimetableModule({ onSettings }: { onSettings: () => void }) {
+  const now = useMinute();
   const { members, school, updateMember, updateSchool, selectedIds, settings, paint: paintColor } = useStore();
   const kids = members.filter((m) => m.timetable);
   const [choice, setChoice] = useState<string | null>(() => {
