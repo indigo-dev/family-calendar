@@ -1,6 +1,6 @@
 import type { Period, SchoolConfig, SchoolType, Subject, Timetable } from '../types';
-import { uid } from './config';
-import { paint } from './colors';
+import { uid } from './id';
+import type { Paint } from './colors';
 
 export const SCHOOL_TYPES: Record<SchoolType, string> = {
   grundschule: 'Grundschule',
@@ -85,15 +85,15 @@ function rawSubjectMap(school: SchoolConfig): Map<string, Subject> {
 }
 
 /** All subjects for display: colours mapped to the chosen palette, lookup by id. Cheap – no memo needed. */
-export function subjectMap(school: SchoolConfig): Map<string, Subject> {
+export function subjectMap(school: SchoolConfig, paint: Paint): Map<string, Subject> {
   const map = rawSubjectMap(school);
   for (const [id, s] of map) map.set(id, { ...s, color: paint(s.color) });
   return map;
 }
 
 /** Subjects offered for a school type: predefined ones of that type, then the family's own subjects. */
-export function subjectsFor(type: SchoolType, school: SchoolConfig): Subject[] {
-  const map = subjectMap(school);
+export function subjectsFor(type: SchoolType, school: SchoolConfig, paint: Paint): Subject[] {
+  const map = subjectMap(school, paint);
   return [...CATALOG.filter((s) => s.schools.includes(type)).map((s) => map.get(s.id)!), ...school.custom.map((s) => map.get(s.id)!)];
 }
 
@@ -111,6 +111,17 @@ export function catalogGroups(school: SchoolConfig): { label: string; subjects: 
 
 export function catalogColor(id: string): string | undefined {
   return CATALOG.find((s) => s.id === id)?.color;
+}
+
+/** Start of the first and end of the last lesson on a weekday (0 = Mo), null on a day without lessons. */
+export function schoolHours(t: Timetable, day: number): Period | null {
+  const row = t.cells[day] ?? [];
+  const first = row.findIndex((c) => c);
+  if (first < 0) return null;
+  const last = row.length - 1 - [...row].reverse().findIndex((c) => c);
+  const start = t.periods[first]?.start;
+  const end = t.periods[last]?.end;
+  return start && end ? { start, end } : null;
 }
 
 export function minutes(hhmm: string): number {

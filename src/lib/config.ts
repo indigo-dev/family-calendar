@@ -1,8 +1,9 @@
-import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings, UiStyle } from '../types';
-import { parseSchool, parseTimetable } from './school';
+import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings, Timetable, UiStyle } from '../types';
+import { DEFAULT_PERIODS, parseSchool, parseTimetable } from './school';
 import { DEFAULT_SYMBOL_SET, isSymbolSet } from './symbols';
 import { DEFAULT_WEATHER_ICONS, isWeatherIconSet } from './weatherIcons';
 import { DEFAULT_CORE_COLOR, PALETTE, PALETTES } from './colors';
+import { uid } from './id';
 
 const CONFIG_KEY = 'fc.config.v1';
 
@@ -110,9 +111,6 @@ export function defaultConfig(): AppConfig {
   return { schemaVersion: 3, settings: { ...DEFAULT_SETTINGS, holidays: { ...DEFAULT_HOLIDAYS } }, members: [], calendars: [], school: { colors: {}, custom: [] } };
 }
 
-export function uid(): string {
-  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
-}
 
 export function newMember(existing: Member[]): Member {
   const used = new Set(existing.map((m) => m.color));
@@ -124,12 +122,39 @@ export function newCalendar(name: string, url: string, memberIds: string[] = [])
   return { id: uid(), name: name.trim() || 'Kalender', url: url.trim(), memberIds, enabled: true };
 }
 
+/** Mo..Fr × lessons; null = free. Lena goes to the Gymnasium (one long day), Max to the Grundschule. */
+const DEMO_TIMETABLES: Record<'Lena' | 'Max', Timetable> = {
+  Lena: {
+    schoolType: 'gymnasium',
+    periods: DEFAULT_PERIODS.map((p) => ({ ...p })),
+    cells: [
+      ['de', 'ma', 'en', 'bi', 'ge', 'sp', null, null],
+      ['ma', 'ma', 'fr', 'de', 'mu', 'ku', null, null],
+      ['en', 'de', 'ek', 'ma', 're', 'kl', null, null],
+      ['bi', 'fr', 'de', 'de', 'ma', 'en', 'sp', 'sp'],
+      ['ge', 'en', 'ma', 'fr', 'ku', 'ku', null, null],
+    ],
+  },
+  Max: {
+    schoolType: 'grundschule',
+    periods: DEFAULT_PERIODS.map((p) => ({ ...p })),
+    cells: [
+      ['de', 'de', 'ma', 'su', 'sp', null, null, null],
+      ['ma', 'de', 'en', 'mu', 'lz', null, null, null],
+      ['de', 'ma', 'su', 'ku', 'ku', null, null, null],
+      ['ma', 'de', 'sw', 'sw', 're', null, null, null],
+      ['kr', 'de', 'ma', 'sp', null, null, null, null],
+    ],
+  },
+};
+
 export function demoMembers(): Member[] {
+  const timetable = (name: keyof typeof DEMO_TIMETABLES): Timetable => structuredClone(DEMO_TIMETABLES[name]);
   return [
     { id: uid(), name: 'Papa', color: '#3b82f6', avatar: { type: 'emoji', value: '👨' }, demo: true },
     { id: uid(), name: 'Mama', color: '#e8613c', avatar: { type: 'emoji', value: '👩' }, demo: true },
-    { id: uid(), name: 'Lena', color: '#a855f7', avatar: { type: 'emoji', value: '🦄' }, demo: true },
-    { id: uid(), name: 'Max', color: '#22a06b', avatar: { type: 'emoji', value: '🦖' }, demo: true },
+    { id: uid(), name: 'Lena', color: '#a855f7', avatar: { type: 'emoji', value: '🦄' }, demo: true, timetable: timetable('Lena') },
+    { id: uid(), name: 'Max', color: '#22a06b', avatar: { type: 'emoji', value: '🦖' }, demo: true, timetable: timetable('Max') },
   ];
 }
 

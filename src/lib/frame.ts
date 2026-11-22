@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { uid } from './id';
 
 /**
  * Photo frame: photos live in IndexedDB on this device (localStorage is far too small for images),
@@ -227,7 +228,7 @@ async function store(source: Blob, meta: Pick<Photo, 'source' | 'credit' | 'moti
   const full = await scale(source, FULL_EDGE, 0.88);
   const thumb = await scale(full.blob, THUMB_EDGE, 0.8);
   const photo: Photo = {
-    id: crypto.randomUUID(),
+    id: uid(),
     ...meta,
     addedAt: Date.now(),
     width: full.width,

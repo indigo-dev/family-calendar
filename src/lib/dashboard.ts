@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { uid } from './config';
+import { uid } from './id';
 
 /**
  * Dashboard layout: an ordered list of widgets, each with a size step. The grid packs them densely

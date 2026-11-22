@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { uid } from './config';
+import { uid } from './id';
 
 const KEY = 'fc.todos';
 

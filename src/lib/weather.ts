@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
+import { uid } from './id';
 
 /**
  * Weather: forecast + pollen + UV from Open-Meteo, official warnings of the DWD via Bright Sky.
@@ -160,7 +161,7 @@ export function addPlace(p: Omit<Place, 'id'>): Place {
     setSettings({ ...settings, activeId: existing.id });
     return existing;
   }
-  const place: Place = { ...p, lat, lon, id: crypto.randomUUID() };
+  const place: Place = { ...p, lat, lon, id: uid() };
   setSettings({ places: [...settings.places, place], activeId: place.id });
   return place;
 }

@@ -7,7 +7,7 @@ import { useStore } from '../store';
 import { addDays, dayKey, fmt, isoWeek, startOfDay } from '../lib/dates';
 import { useTodos, type Todo } from '../lib/todos';
 import { BUILTIN, CATEGORIES, useShopping, type ListEntry, type ShopItem } from '../lib/shopping';
-import { minutes, subjectMap } from '../lib/school';
+import { minutes, schoolHours, subjectMap } from '../lib/school';
 import { loadHolidays, type Holiday } from '../lib/holidays';
 import {
   activeAlerts,
@@ -24,7 +24,6 @@ import {
 import { WxIcon } from '../weather/WxIcon';
 import { thumbUrl, useFrameSettings, usePhotos, type Photo } from '../lib/frame';
 import { Avatar, AvatarStack } from '../components/Avatar';
-import { paint } from '../lib/colors';
 
 /* ------------------------------------------------------------------ shared data */
 
@@ -312,11 +311,7 @@ interface SchoolDay {
   isToday: boolean;
 }
 
-function lastEnd(t: Timetable, idx: number): string | null {
-  const row = t.cells[idx] ?? [];
-  for (let p = row.length - 1; p >= 0; p--) if (row[p]) return t.periods[p]?.end ?? null;
-  return null;
-}
+const lastEnd = (t: Timetable, idx: number): string | null => schoolHours(t, idx)?.end ?? null;
 
 /** Today if school is still running, otherwise the next school day (skips weekends and holidays). */
 function nextSchoolDay(now: Date, marks: Map<string, DayMarks>, kids: Member[]): { day: SchoolDay | null; offToday?: string } {
@@ -343,9 +338,9 @@ function nextSchoolDay(now: Date, marks: Map<string, DayMarks>, kids: Member[]):
 
 function TimetableWidget({ size }: WidgetProps) {
   const { now, marks, openSettings } = useDash();
-  const { members, school } = useStore();
+  const { members, school, paint } = useStore();
   const kids = members.filter((m) => m.timetable);
-  const subjects = subjectMap(school);
+  const subjects = subjectMap(school, paint);
   if (kids.length === 0) return <Empty action="Einrichten" onAction={() => openSettings('family')}>Noch kein Stundenplan</Empty>;
   const { day, offToday } = nextSchoolDay(now, marks, kids);
   const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -493,6 +488,7 @@ const CAT_ORDER = new Map(CATEGORIES.map((c, i) => [c.id, i]));
 
 function ShoppingWidget({ size }: WidgetProps) {
   const { shopping } = useDash();
+  const { paint } = useStore();
   const [setUndo, undoNode] = useUndo();
   const [leaving, setLeaving] = useState<string[]>([]);
   const items = useMemo(() => {
@@ -684,8 +680,8 @@ function HolidaysWidget({ size }: WidgetProps) {
 
 function FamilyWidget({ size }: WidgetProps) {
   const { now, events, todos, marks } = useDash();
-  const { members, school } = useStore();
-  const subjects = subjectMap(school);
+  const { members, school, paint } = useStore();
+  const subjects = subjectMap(school, paint);
   const tomorrow = addDays(startOfDay(now), 1);
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const m = marks.get(dayKey(now));

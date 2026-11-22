@@ -1,24 +1,36 @@
-import { afterEach, describe, expect, it } from 'vitest';
-import { corePalette, paint, PALETTE, setColorScheme } from './colors';
+import { describe, expect, it } from 'vitest';
+import { colorScheme, corePalette, painter, PALETTE } from './colors';
 
-afterEach(() => setColorScheme('vivid', '#4f6d9a'));
+const CORE = '#4f6d9a';
 
-describe('paint', () => {
+describe('painter', () => {
   it('leaves colours unchanged in the vivid palette', () => {
-    setColorScheme('vivid', '#4f6d9a');
+    const paint = painter(colorScheme('vivid', CORE));
     expect(paint('#123456')).toBe('#123456');
     expect(paint(undefined)).toBeUndefined();
   });
 
   it('keeps the slot of base palette colours when switching palettes', () => {
-    setColorScheme('core', '#4f6d9a');
-    const core = corePalette('#4f6d9a');
+    const paint = painter(colorScheme('core', CORE));
+    const core = corePalette(CORE);
     PALETTE.forEach((c, i) => expect(paint(c)).toBe(core[i]));
   });
 
   it('maps other colours into the current palette', () => {
-    setColorScheme('core', '#4f6d9a');
-    expect(corePalette('#4f6d9a')).toContain(paint('#0000ff'));
+    const paint = painter(colorScheme('core', CORE));
+    expect(corePalette(CORE)).toContain(paint('#0000ff'));
+  });
+
+  it('greys out colours in the muted palette', () => {
+    const paint = painter(colorScheme('muted', CORE));
+    expect(paint('#ff0000')).not.toBe('#ff0000');
+    expect(paint('#ff0000')).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it('is cached per scheme, so equal settings give the same function', () => {
+    expect(colorScheme('core', CORE)).toBe(colorScheme('core', CORE.toUpperCase()));
+    expect(painter(colorScheme('muted', CORE))).toBe(painter(colorScheme('muted', '#000000')));
+    expect(painter(colorScheme('core', CORE))).not.toBe(painter(colorScheme('core', '#c4705a')));
   });
 });
 
@@ -31,6 +43,6 @@ describe('corePalette', () => {
   });
 
   it('falls back to the default core colour for invalid input', () => {
-    expect(corePalette('nope')).toEqual(corePalette('#4f6d9a'));
+    expect(corePalette('nope')).toEqual(corePalette(CORE));
   });
 });

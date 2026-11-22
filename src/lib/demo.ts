@@ -1,5 +1,6 @@
 import type { CalEvent, DateRange, Member } from '../types';
 import { addDays, dayKey, startOfDay } from './dates';
+import { minutes, schoolHours } from './school';
 
 /** Deterministic pseudo random number in [0,1) from a string seed. */
 function rand(seed: string): number {
@@ -65,15 +66,18 @@ export function demoEvents(members: Member[], range: DateRange): CalEvent[] {
           memberIds: [m.id],
         });
       }
-      // school / daycare for kids on weekdays
-      if (idx >= 2 && dow >= 1 && dow <= 5 && idx < 4) {
+      // school (from the timetable, if the kid has one) / daycare on weekdays
+      const hours = m.timetable ? schoolHours(m.timetable, dow - 1) : null;
+      if (idx >= 2 && idx < 4 && dow >= 1 && dow <= 5 && (!m.timetable || hours)) {
+        const from = hours ? minutes(hours.start) : idx === 2 ? 8 * 60 : 8 * 60 + 30;
+        const to = hours ? minutes(hours.end) : from + (idx === 2 ? 6 : 6.5) * 60;
         const start = new Date(d);
-        start.setHours(idx === 2 ? 8 : 8, idx === 2 ? 0 : 30, 0, 0);
+        start.setHours(0, from, 0, 0);
         out.push({
           key: `demo-${m.id}-${key}-school`,
-          title: idx === 2 ? 'Schule' : 'Kita',
+          title: m.timetable || idx === 2 ? 'Schule' : 'Kita',
           start,
-          end: new Date(start.getTime() + (idx === 2 ? 6 * 60 : 6.5 * 60) * 60000),
+          end: new Date(start.getTime() + (to - from) * 60000),
           allDay: false,
           calendarName: 'Demo',
           memberIds: [m.id],

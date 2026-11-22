@@ -2,7 +2,7 @@ import type { ColorPalette } from '../types';
 
 /**
  * Colour palettes. Stored colours (people, subjects, shopping departments) stay unchanged in the config;
- * `paint()` maps them to the chosen palette when they are drawn. Colours from the base palette keep
+ * `painter()` maps them to the chosen palette when they are drawn. Colours from the base palette keep
  * their slot (Papa stays "the first colour"), other colours are mapped by hue.
  */
 
@@ -123,49 +123,70 @@ export function corePalette(core: string): string[] {
   );
 }
 
-/* ---------------------------------------------------------------- current scheme */
+/* ---------------------------------------------------------------- schemes and painting */
 
-let scheme: { palette: ColorPalette; colors: string[] } = { palette: 'vivid', colors: PALETTE };
-const cache = new Map<string, string>();
-
-/** Sets the palette used by `paint()`. Called by the store whenever the settings change. */
-export function setColorScheme(palette: ColorPalette, coreColor: string) {
-  const colors = palette === 'muted' ? MUTED : palette === 'core' ? corePalette(coreColor) : PALETTE;
-  if (scheme.palette === palette && scheme.colors.join() === colors.join()) return;
-  scheme = { palette, colors };
-  cache.clear();
+/** A palette resolved to its twelve colours. Objects are cached, so equal settings give the same scheme. */
+export interface ColorScheme {
+  palette: ColorPalette;
+  colors: string[];
 }
 
-/** the palette people choose from in the settings (in the current scheme) */
-export function paletteColors(palette: ColorPalette = scheme.palette, coreColor?: string): string[] {
-  if (palette === scheme.palette && coreColor === undefined) return scheme.colors;
-  return palette === 'muted' ? MUTED : palette === 'core' ? corePalette(coreColor ?? DEFAULT_CORE_COLOR) : PALETTE;
+/** Maps a stored colour to a scheme; undefined stays undefined. */
+export interface Paint {
+  (color: string): string;
+  (color: string | undefined): string | undefined;
 }
 
-/** Maps a stored colour to the current palette. */
-export function paint(color: string): string;
-export function paint(color: string | undefined): string | undefined;
-export function paint(color: string | undefined): string | undefined {
-  if (!color) return color;
-  if (scheme.palette === 'vivid') return color;
-  const key = color.toLowerCase();
-  const hit = cache.get(key);
-  if (hit) return hit;
-  let out = color;
-  const slot = PALETTE.indexOf(key);
-  if (slot >= 0) out = scheme.colors[slot];
-  else {
-    const hsl = hexToHsl(color);
-    if (hsl) {
-      if (scheme.palette === 'muted') {
-        // greyed, calmer and with medium lightness
-        out = hslToHex([hsl[0], Math.min(hsl[1] * 0.55, 48), 40 + (hsl[2] - 40) * 0.45]);
-      } else {
-        out = scheme.colors[nearestSlot(hsl)];
-      }
-    }
+/** the colours of a palette (the core palette depends on the chosen core colour) */
+export function paletteColors(palette: ColorPalette, coreColor: string): string[] {
+  return palette === 'muted' ? MUTED : palette === 'core' ? corePalette(coreColor) : PALETTE;
+}
+
+const schemes = new Map<string, ColorScheme>();
+
+export function colorScheme(palette: ColorPalette, coreColor: string): ColorScheme {
+  const key = palette === 'core' ? `core:${coreColor.toLowerCase()}` : palette;
+  let s = schemes.get(key);
+  if (!s) {
+    s = { palette, colors: paletteColors(palette, coreColor) };
+    schemes.set(key, s);
   }
-  cache.set(key, out);
-  return out;
+  return s;
 }
 
+function mapColor(scheme: ColorScheme, color: string): string {
+  if (scheme.palette === 'vivid') return color;
+  const slot = PALETTE.indexOf(color.toLowerCase());
+  if (slot >= 0) return scheme.colors[slot];
+  const hsl = hexToHsl(color);
+  if (!hsl) return color;
+  // muted: greyed, calmer and with medium lightness; core: the nearest slot of the core palette
+  return scheme.palette === 'muted'
+    ? hslToHex([hsl[0], Math.min(hsl[1] * 0.55, 48), 40 + (hsl[2] - 40) * 0.45])
+    : scheme.colors[nearestSlot(hsl)];
+}
+
+const painters = new WeakMap<ColorScheme, Paint>();
+
+/**
+ * The paint function of a scheme (cached per scheme). Stored colours (people, subjects, shopping
+ * departments) stay unchanged in the config and are only mapped when they are drawn.
+ */
+export function painter(scheme: ColorScheme): Paint {
+  let p = painters.get(scheme);
+  if (!p) {
+    const cache = new Map<string, string>();
+    p = ((color: string | undefined) => {
+      if (!color) return color;
+      const key = color.toLowerCase();
+      let out = cache.get(key);
+      if (out === undefined) {
+        out = mapColor(scheme, color);
+        cache.set(key, out);
+      }
+      return out;
+    }) as Paint;
+    painters.set(scheme, p);
+  }
+  return p;
+}

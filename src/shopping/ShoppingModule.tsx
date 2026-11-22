@@ -11,8 +11,9 @@ import {
 } from '../lib/shopping';
 import { useTapOrLongPress } from '../lib/hooks';
 import { Sym } from '../components/Sym';
+import type { Paint } from '../lib/colors';
+import { useStore } from '../store';
 import './shopping.css';
-import { paint } from '../lib/colors';
 
 type Pane = 'list' | 'pantry';
 
@@ -41,6 +42,7 @@ function CategoryChip({ cat, active, dimmed, onTap, onLongPress }: {
   onLongPress: () => void;
 }) {
   const press = useTapOrLongPress(onTap, onLongPress);
+  const { paint } = useStore();
   const color = paint(cat.color);
   return (
     <button
@@ -71,10 +73,11 @@ function ItemSym({ item }: { item: ShopItem }) {
     </span>
   );
 }
-const tileStyle = (item: ShopItem): CSSProperties => ({ ['--cat' as string]: paint(catColor.get(item.cat)) ?? '#8a8f98' });
+const tileStyle = (item: ShopItem, paint: Paint): CSSProperties => ({ ['--cat' as string]: paint(catColor.get(item.cat)) ?? '#8a8f98' });
 
 export function ShoppingModule() {
   const shop = useShopping();
+  const { paint } = useStore();
   const [pane, setPane] = useState<Pane>('list');
   const [query, setQuery] = useState('');
   const [editMode, setEditMode] = useState(false);
@@ -192,7 +195,7 @@ export function ShoppingModule() {
                       <button
                         key={item.id}
                         className={`shop-tile on-list ${leaving.has(item.id) ? 'leaving' : ''}`}
-                        style={tileStyle(item)}
+                        style={tileStyle(item, paint)}
                         onClick={() => checkOff(entry, item)}
                         aria-label={`${item.name}${entry.qty > 1 ? `, ${entry.qty} Stück` : ''} abhaken`}
                       >
@@ -351,11 +354,12 @@ function PantryTile({ item, qty, editMode, onTap, onLess }: {
   onTap: (item: ShopItem) => void;
   onLess: (itemId: string, qty: number) => void;
 }) {
+  const { paint } = useStore();
   return (
     <div className="shop-tile-wrap">
       <button
         className={`shop-tile ${qty > 0 ? 'picked' : ''} ${editMode ? 'removable' : ''}`}
-        style={tileStyle(item)}
+        style={tileStyle(item, paint)}
         onClick={() => onTap(item)}
         aria-label={editMode ? `${item.name} entfernen` : qty > 0 ? `${item.name}: noch eins mehr (jetzt ${qty})` : `${item.name} auf die Liste`}
       >
@@ -386,6 +390,7 @@ function ItemEditor({ initial, onSave, onClose }: {
   const [cat, setCat] = useState<CategoryId>(initial.cat);
   const [emoji, setEmoji] = useState(() => CATEGORIES.find((c) => c.id === initial.cat)?.icon ?? '🛒');
   const ref = useRef<HTMLInputElement>(null);
+  const { paint } = useStore();
   useEffect(() => ref.current?.focus(), []);
   const valid = name.trim().length > 0;
   const save = () => valid && onSave(name.trim(), emoji, cat);

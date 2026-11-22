@@ -30,7 +30,7 @@ function schoolWeek(now: Date, marks: Map<string, DayMarks>): DayInfo[] {
 }
 
 export function TimetableModule({ now, onSettings }: { now: Date; onSettings: () => void }) {
-  const { members, school, updateMember, updateSchool, selectedIds, settings } = useStore();
+  const { members, school, updateMember, updateSchool, selectedIds, settings, paint: paintColor } = useStore();
   const kids = members.filter((m) => m.timetable);
   const [choice, setChoice] = useState<string | null>(() => {
     const sel = kids.filter((k) => selectedIds.has(k.id));
@@ -47,7 +47,7 @@ export function TimetableModule({ now, onSettings }: { now: Date; onSettings: ()
   const range = useMemo(() => ({ start: new Date(monday), end: addDays(new Date(monday), 7) }), [monday]);
   const { marks } = useHolidayMarks(range, settings.holidays);
   const days = useMemo(() => schoolWeek(now, marks), [now, marks]);
-  const subjects = subjectMap(school);
+  const subjects = subjectMap(school, paintColor);
 
   // works on the current state: a fast stroke paints several cells before the next render
   const paint = (member: Member, day: number, period: number, value: string | null) =>
@@ -113,7 +113,7 @@ export function TimetableModule({ now, onSettings }: { now: Date; onSettings: ()
             <button
               className="btn"
               onClick={() => {
-                setBrush(subjectsFor(active.timetable!.schoolType, school)[0]?.id ?? null);
+                setBrush(subjectsFor(active.timetable!.schoolType, school, paintColor)[0]?.id ?? null);
                 setEditing(true);
               }}
             >
@@ -143,7 +143,7 @@ export function TimetableModule({ now, onSettings }: { now: Date; onSettings: ()
 
       {editing && active && (
         <Palette
-          subjects={subjectsFor(active.timetable!.schoolType, school)}
+          subjects={subjectsFor(active.timetable!.schoolType, school, paintColor)}
           schoolLabel={SCHOOL_TYPES[active.timetable!.schoolType]}
           brush={brush}
           onBrush={setBrush}

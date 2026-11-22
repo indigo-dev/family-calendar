@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { AppConfig, CalendarSource, Member, SchoolConfig, Settings } from './types';
 import { loadConfig, saveConfig } from './lib/config';
-import { paint, setColorScheme } from './lib/colors';
+import { colorScheme, painter, type Paint } from './lib/colors';
 
 const SELECTED_KEY = 'fc.selectedMembers';
 
@@ -11,6 +11,8 @@ interface Store {
   calendars: CalendarSource[];
   settings: Settings;
   memberById: Map<string, Member>;
+  /** maps stored colours (people, subjects, departments) to the chosen palette */
+  paint: Paint;
   updateSettings: (patch: Partial<Settings>) => void;
   upsertMember: (m: Member) => void;
   patchMember: (id: string, patch: Partial<Member>) => void;
@@ -147,11 +149,12 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
   );
   const showAll = useCallback(() => setSelected([]), []);
 
+  const paint = useMemo(
+    () => painter(colorScheme(config.settings.palette, config.settings.coreColor)),
+    [config.settings.palette, config.settings.coreColor],
+  );
   // people are handed out in the chosen palette; the settings edit the stored colours via `config`
-  const members = useMemo(() => {
-    setColorScheme(config.settings.palette, config.settings.coreColor);
-    return config.members.map((m) => ({ ...m, color: paint(m.color) }));
-  }, [config.members, config.settings.palette, config.settings.coreColor]);
+  const members = useMemo(() => config.members.map((m) => ({ ...m, color: paint(m.color) })), [config.members, paint]);
 
   const value = useMemo<Store>(
     () => ({
@@ -160,6 +163,7 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
       calendars: config.calendars,
       settings: config.settings,
       memberById: new Map(members.map((m) => [m.id, m])),
+      paint,
       updateSettings,
       upsertMember,
       patchMember,
@@ -181,6 +185,7 @@ export function StoreProvider({ initial, children }: { initial?: AppConfig; chil
     [
       config,
       members,
+      paint,
       selectedIds,
       updateSettings,
       upsertMember,

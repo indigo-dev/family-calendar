@@ -207,7 +207,7 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
   const { patchMember, removeMember, moveMember, calendars, config, settings } = useStore();
   // `member` is drawn in the chosen palette; the swatches edit the stored colour
   const rawColor = config.members.find((m) => m.id === member.id)?.color ?? member.color;
-  const shown = paletteColors();
+  const shown = paletteColors(settings.palette, settings.coreColor);
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const set = (patch: Partial<Member>) => patchMember(member.id, patch);
@@ -1049,6 +1049,7 @@ function BackupTab() {
         className="btn danger"
         onClick={() => {
           if (confirm('Alle Einstellungen, Personen, Kalender und zwischengespeicherten Termine auf diesem Gerät löschen?')) {
+            // msal.* / login.*: leftovers of the former Microsoft sign-in on older installs
             Object.keys(localStorage)
               .filter((k) => k.startsWith('fc.') || k.startsWith('msal.') || k.includes('login.windows.net') || k.includes('login.microsoftonline'))
               .forEach((k) => localStorage.removeItem(k));
