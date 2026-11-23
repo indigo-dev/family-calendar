@@ -1,4 +1,5 @@
 import type { Settings } from '../types';
+import { t } from '../i18n';
 import { oneOf, persisted, usePersisted } from '../lib/persisted';
 import { useStore } from '../store';
 import { UI_STYLES } from '../lib/config';
@@ -10,25 +11,14 @@ import { CORE_SUGGESTIONS, PALETTES, paletteColors } from '../lib/colors';
 import { Group, Row } from './controls';
 import { MODULE_TRANSITIONS } from '../lib/transition';
 
-const STYLE_NOTES: Record<Settings['style'], string> = {
-  classic: 'Schlicht und klar',
-  soft: 'Weiß, feine Linien, ruhig',
-  clear: 'Schwebendes Glas, Kapseln',
-  flow: 'Technisch, Punktraster',
-  aurora: 'Farbverläufe, Leuchten',
-  nodes: 'Knoten auf Punktraster',
-  states: 'Zustände und Übergänge',
-  minimal: 'Reduziert, warme Grautöne',
-};
-
 type DesignSection = 'style' | 'colors' | 'weather' | 'shopping' | 'motion';
 
-const SECTIONS: { id: DesignSection; label: string }[] = [
-  { id: 'style', label: 'Stil' },
-  { id: 'colors', label: 'Farben' },
-  { id: 'weather', label: 'Wetter-Symbole' },
-  { id: 'shopping', label: 'Einkaufs-Symbole' },
-  { id: 'motion', label: 'Übergänge' },
+const SECTIONS: { id: DesignSection; label: () => string }[] = [
+  { id: 'style', label: () => t('settings.design.style') },
+  { id: 'colors', label: () => t('settings.design.colors') },
+  { id: 'weather', label: () => t('settings.design.weatherIcons') },
+  { id: 'shopping', label: () => t('settings.design.shoppingIcons') },
+  { id: 'motion', label: () => t('settings.design.motion') },
 ];
 
 /** the last opened section (per device), so the settings open where you left them */
@@ -49,7 +39,7 @@ export function DesignTab() {
   const section = usePersisted(sectionStore);
   return (
     <div className="form">
-      <div className="segmented design-sections" role="tablist" aria-label="Design-Bereiche">
+      <div className="segmented design-sections" role="tablist" aria-label={t('settings.design.sections')}>
         {SECTIONS.map((s) => (
           <button
             key={s.id}
@@ -58,15 +48,15 @@ export function DesignTab() {
             className={section === s.id ? 'active' : ''}
             onClick={() => setSection(s.id)}
           >
-            {s.label}
+            {s.label()}
           </button>
         ))}
       </div>
 
       {section === 'style' && (
         <>
-          <Group title="Stil">
-            <div className="pick-grid" role="radiogroup" aria-label="Stil">
+          <Group title={t('settings.design.style')}>
+            <div className="pick-grid" role="radiogroup" aria-label={t('settings.design.style')}>
               {UI_STYLES.map((s) => (
                 <button
                   key={s.id}
@@ -82,19 +72,19 @@ export function DesignTab() {
                     <i className="st-c" />
                   </span>
                   <span className="pick-label">{s.label}</span>
-                  <span className="pick-note">{STYLE_NOTES[s.id]}</span>
+                  <span className="pick-note">{s.note}</span>
                 </button>
               ))}
             </div>
           </Group>
 
-          <Group title="Hell / Dunkel">
-            <div className="pick-grid three" role="radiogroup" aria-label="Hell / Dunkel">
+          <Group title={t('settings.design.lightDark')}>
+            <div className="pick-grid three" role="radiogroup" aria-label={t('settings.design.lightDark')}>
               {(
                 [
-                  ['auto', 'Automatisch', 'folgt dem Gerät'],
-                  ['light', 'Hell', 'immer hell'],
-                  ['dark', 'Dunkel', 'immer dunkel'],
+                  ['auto', t('settings.design.themes.auto'), t('settings.design.themes.autoNote')],
+                  ['light', t('settings.design.themes.light'), t('settings.design.themes.lightNote')],
+                  ['dark', t('settings.design.themes.dark'), t('settings.design.themes.darkNote')],
                 ] as [Settings['theme'], string, string][]
               ).map(([id, label, note]) => (
                 <button
@@ -118,11 +108,8 @@ export function DesignTab() {
       )}
 
       {section === 'colors' && (
-        <Group
-          title="Farben"
-          note="Gilt für Personen, Schulfächer und Abteilungen der Einkaufsliste. Die gewählten Farben bleiben gespeichert – es ändert sich nur die Darstellung."
-        >
-          <div className="pick-grid three" role="radiogroup" aria-label="Farbpalette">
+        <Group title={t('settings.design.colors')} note={t('settings.design.colorsNote')}>
+          <div className="pick-grid three" role="radiogroup" aria-label={t('settings.design.palette')}>
             {PALETTES.map((p) => (
               <button
                 key={p.id}
@@ -145,7 +132,7 @@ export function DesignTab() {
           </div>
           {settings.palette === 'core' && (
             <div className="set-card">
-              <Row label="Kernfarbe" hint="Daraus entstehen alle anderen Farben">
+              <Row label={t('settings.design.coreColor')} hint={t('settings.design.coreColorHint')}>
                 <div className="swatches">
                   {CORE_SUGGESTIONS.map((c) => (
                     <button
@@ -159,13 +146,13 @@ export function DesignTab() {
                   <label
                     className={`swatch custom ${CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? '' : 'on'}`}
                     style={{ background: CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? undefined : settings.coreColor }}
-                    title="Eigene Farbe"
+                    title={t('common.ownColor')}
                   >
                     <input type="color" value={settings.coreColor} onChange={(e) => updateSettings({ coreColor: e.target.value })} />+
                   </label>
                 </div>
               </Row>
-              <div className="core-strip" aria-label="Erzeugte Farben">
+              <div className="core-strip" aria-label={t('settings.design.generated')}>
                 {paletteColors('core', settings.coreColor).map((c, i) => (
                   <i key={i} style={{ background: c }} />
                 ))}
@@ -176,26 +163,26 @@ export function DesignTab() {
       )}
 
       {section === 'motion' && (
-        <Group title="Übergänge" note="Wie die Bereiche beim Wechseln ineinander übergehen.">
-          <div className="pick-grid" role="radiogroup" aria-label="Übergänge">
-            {MODULE_TRANSITIONS.map((t) => (
+        <Group title={t('settings.design.motion')} note={t('settings.design.motionNote')}>
+          <div className="pick-grid" role="radiogroup" aria-label={t('settings.design.motion')}>
+            {MODULE_TRANSITIONS.map((tr) => (
               <button
-                key={t.id}
+                key={tr.id}
                 role="radio"
-                aria-checked={settings.moduleTransition === t.id}
-                className={`pick-card ${settings.moduleTransition === t.id ? 'on' : ''}`}
-                onClick={() => updateSettings({ moduleTransition: t.id })}
+                aria-checked={settings.moduleTransition === tr.id}
+                className={`pick-card ${settings.moduleTransition === tr.id ? 'on' : ''}`}
+                onClick={() => updateSettings({ moduleTransition: tr.id })}
               >
                 {/* two mini pages that swap back and forth with this animation */}
-                <span className={`tr-thumb tr-${t.id}`} aria-hidden>
+                <span className={`tr-thumb tr-${tr.id}`} aria-hidden>
                   <i className="tr-rail" />
                   <span className="tr-stage">
                     <i className="tr-a" />
                     <i className="tr-b" />
                   </span>
                 </span>
-                <span className="pick-label">{t.label}</span>
-                <span className="pick-note">{t.note}</span>
+                <span className="pick-label">{tr.label}</span>
+                <span className="pick-note">{tr.note}</span>
               </button>
             ))}
           </div>
@@ -203,16 +190,13 @@ export function DesignTab() {
       )}
 
       {section === 'weather' && (
-        <Group
-          title="Wetter-Symbole"
-          note="Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht."
-        >
+        <Group title={t('settings.design.weatherIcons')} note={t('settings.design.weatherNote')}>
           <WeatherIconPicker value={settings.weatherIcons} onChange={(weatherIcons) => updateSettings({ weatherIcons })} />
         </Group>
       )}
 
       {section === 'shopping' && (
-        <Group title="Symbole der Einkaufsliste">
+        <Group title={t('settings.design.shoppingTitle')}>
           <SymbolPicker value={settings.symbols} onChange={(symbols) => updateSettings({ symbols })} />
         </Group>
       )}
@@ -232,7 +216,7 @@ const WEATHER_PREVIEW: WeatherKey[] = [
 function WeatherIconPicker({ value, onChange }: { value: WeatherIconSet; onChange: (v: WeatherIconSet) => void }) {
   return (
     <div className="field">
-      <div className="wx-picker" role="radiogroup" aria-label="Wetter-Symbole">
+      <div className="wx-picker" role="radiogroup" aria-label={t('settings.design.weatherIcons')}>
         {WEATHER_ICON_SETS.map((s) => (
           <button
             key={s.id}
@@ -273,8 +257,8 @@ function SymbolPicker({ value, onChange }: { value: SymbolSet; onChange: (v: Sym
     <div className="field">
       {groups.map((g) => (
         <div key={g} className="sym-picker-group">
-          <div className="muted small">{g}</div>
-          <div className="sym-picker" role="radiogroup" aria-label={`Symbole: ${g}`}>
+          <div className="muted small">{t(`symbolGroups.${g}`)}</div>
+          <div className="sym-picker" role="radiogroup" aria-label={t('settings.design.symbolsOf', { group: t(`symbolGroups.${g}`) })}>
             {SYMBOL_SETS.filter((s) => s.group === g).map((s) => (
               <button
                 key={s.id}
@@ -299,8 +283,8 @@ function SymbolPicker({ value, onChange }: { value: SymbolSet; onChange: (v: Sym
         </div>
       ))}
       <span className="sym-credits">
-        Fluent Emoji © Microsoft (MIT) · Noto Emoji © Google (Apache 2.0) · Twemoji © Twitter, Inc. u. a. (CC BY 4.0) · OpenMoji (CC BY-SA
-        4.0) · Tabler, Phosphor (MIT) · Lucide (ISC)
+        Fluent Emoji © Microsoft (MIT) · Noto Emoji © Google (Apache 2.0) · Twemoji © Twitter, Inc. {t('settings.design.andOthers')} (CC BY
+        4.0) · OpenMoji (CC BY-SA 4.0) · Tabler, Phosphor (MIT) · Lucide (ISC)
       </span>
     </div>
   );

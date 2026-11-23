@@ -4,6 +4,7 @@ import { addDays, fmt, startOfDay } from '../../lib/dates';
 import { AvatarStack } from '../../components/Avatar';
 import { gradient, Head, hhmm, useDash, type WidgetProps } from './shared';
 import { useMinute } from '../../lib/clock';
+import { t } from '../../i18n';
 
 function EventRow({ e, now, byId }: { e: CalEvent; now: Date; byId: Map<string, Member> }) {
   const ms = e.memberIds.map((id) => byId.get(id)!).filter(Boolean);
@@ -11,7 +12,7 @@ function EventRow({ e, now, byId }: { e: CalEvent; now: Date; byId: Map<string, 
   return (
     <div className={`dw-event ${running ? 'running' : ''}`}>
       <span className="dw-event-bar" style={{ background: gradient(ms) }} />
-      <span className="dw-event-time">{e.allDay ? 'ganztägig' : running ? 'jetzt' : hhmm(e.start)}</span>
+      <span className="dw-event-time">{e.allDay ? t('common.allDay') : running ? t('dashboard.now') : hhmm(e.start)}</span>
       <span className="dw-event-title">{e.title}</span>
       <AvatarStack members={ms} size={20} />
     </div>
@@ -40,10 +41,10 @@ export function EventsWidget({ size }: WidgetProps) {
 
   return (
     <div className={`dw-events ${size}`}>
-      <Head icon="📅" title="Termine" meta={fmt(now, { weekday: 'short', day: 'numeric', month: 'short' })} />
+      <Head icon="📅" title={t('dashboard.widgets.events.title')} meta={fmt(now, { weekday: 'short', day: 'numeric', month: 'short' })} />
       <div className={`dw-body dw-scroll ${size === 'xl' ? 'two-col' : ''}`}>
-        {group('Heute', todays, 'Nichts mehr geplant')}
-        {group(`Morgen · ${fmt(tomorrow, { weekday: 'long' })}`, tomorrows, 'Noch frei')}
+        {group(t('common.today'), todays, t('dashboard.nothingPlanned'))}
+        {group(t('dashboard.tomorrowDay', { day: fmt(tomorrow, { weekday: 'long' }) }), tomorrows, t('dashboard.stillFree'))}
       </div>
     </div>
   );

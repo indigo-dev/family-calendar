@@ -1,11 +1,12 @@
 import type { CSSProperties } from 'react';
 import type { DayMarks, Member } from '../../types';
 import { useStore } from '../../store';
-import { addDays, dayKey, fmt, startOfDay } from '../../lib/dates';
+import { addDays, dayKey, fmt, startOfDay, fmtHHMM } from '../../lib/dates';
 import { minutes, subjectMap } from '../../lib/school';
 import { Avatar } from '../../components/Avatar';
 import { Empty, Head, lastEnd, useDash, type WidgetProps } from './shared';
 import { useMinute } from '../../lib/clock';
+import { t } from '../../i18n';
 
 interface SchoolDay {
   date: Date;
@@ -32,7 +33,8 @@ function nextSchoolDay(now: Date, marks: Map<string, DayMarks>, kids: Member[]):
       const ends = kids.map((k) => lastEnd(k.timetable!, idx)).filter((x): x is string => !!x);
       if (!ends.length || nowMin >= Math.max(...ends.map(minutes))) continue;
     }
-    const label = i === 0 ? 'Heute' : i === 1 ? 'Morgen' : fmt(date, { weekday: 'long', day: 'numeric', month: 'numeric' });
+    const label =
+      i === 0 ? t('common.today') : i === 1 ? t('common.tomorrow') : fmt(date, { weekday: 'long', day: 'numeric', month: 'numeric' });
     return { day: { date, idx, label, isToday: i === 0 }, offToday };
   }
   return { day: null, offToday };
@@ -46,8 +48,8 @@ export function TimetableWidget({ size }: WidgetProps) {
   const subjects = subjectMap(school, paint);
   if (kids.length === 0)
     return (
-      <Empty action="Einrichten" onAction={() => openSettings('family')}>
-        Noch kein Stundenplan
+      <Empty action={t('dashboard.setUp')} onAction={() => openSettings('family')}>
+        {t('dashboard.noTimetable')}
       </Empty>
     );
   const { day, offToday } = nextSchoolDay(now, marks, kids);
@@ -55,27 +57,30 @@ export function TimetableWidget({ size }: WidgetProps) {
 
   return (
     <div className={`dw-tt ${size}`}>
-      <Head icon="🎒" title={size === 's' ? (day?.label ?? 'Schule') : `Stundenplan · ${day?.label ?? '–'}`} />
-      {offToday && size !== 's' && <div className="dw-note">🏖️ Heute: {offToday}</div>}
+      <Head
+        icon="🎒"
+        title={size === 's' ? (day?.label ?? t('dashboard.school')) : t('dashboard.timetableDay', { day: day?.label ?? '–' })}
+      />
+      {offToday && size !== 's' && <div className="dw-note">🏖️ {t('dashboard.offToday', { name: offToday })}</div>}
       {!day ? (
-        <Empty>Keine Schule in Sicht</Empty>
+        <Empty>{t('dashboard.noSchool')}</Empty>
       ) : (
         <div className={`dw-body dw-tt-kids ${size === 'l' || size === 'xl' ? 'cols' : ''}`}>
           {kids.map((k) => {
-            const t = k.timetable!;
-            const row = t.cells[day.idx] ?? [];
-            const end = lastEnd(t, day.idx);
+            const tt = k.timetable!;
+            const row = tt.cells[day.idx] ?? [];
+            const end = lastEnd(tt, day.idx);
             const lessons = row
-              .map((id, p) => ({ p, subject: id ? subjects.get(id) : undefined, period: t.periods[p] }))
+              .map((id, p) => ({ p, subject: id ? subjects.get(id) : undefined, period: tt.periods[p] }))
               .slice(0, Math.max(0, ...row.map((id, p) => (id ? p + 1 : 0))));
             const isCurrent = (p: number) =>
-              day.isToday && !!t.periods[p] && minutes(t.periods[p].start) <= nowMin && nowMin < minutes(t.periods[p].end);
+              day.isToday && !!tt.periods[p] && minutes(tt.periods[p].start) <= nowMin && nowMin < minutes(tt.periods[p].end);
             return (
               <div key={k.id} className="dw-tt-kid">
                 <div className="dw-tt-who">
                   <Avatar member={k} size={22} ring={false} />
                   <span className="dw-tt-name">{k.name}</span>
-                  <span className="dw-tt-end">{end ? `bis ${end}` : 'frei'}</span>
+                  <span className="dw-tt-end">{end ? t('dashboard.until', { time: fmtHHMM(end) }) : t('dashboard.free')}</span>
                 </div>
                 {size !== 's' &&
                   (size === 'l' || size === 'xl' ? (
@@ -84,9 +89,9 @@ export function TimetableWidget({ size }: WidgetProps) {
                         <div key={p} className={`dw-tt-lesson ${isCurrent(p) ? 'now' : ''} ${subject ? '' : 'free'}`}>
                           <span className="dw-tt-p">{p + 1}</span>
                           <span className="dw-tt-sub" style={{ '--sub': subject?.color ?? 'transparent' } as CSSProperties}>
-                            {subject?.name ?? 'frei'}
+                            {subject?.name ?? t('dashboard.free')}
                           </span>
-                          <span className="dw-tt-time">{period?.start}</span>
+                          <span className="dw-tt-time">{period && fmtHHMM(period.start)}</span>
                         </div>
                       ))}
                     </div>

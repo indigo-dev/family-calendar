@@ -4,6 +4,7 @@ import { parseIcs, icsCalendarName } from './ics';
 import { demoEvents } from './demo';
 import { arrayOf, isString, storage } from './persisted';
 import { isNative, nativeGetText } from '../native/launcher';
+import { t } from '../i18n';
 
 export type CalStatus = { state: 'ok' } | { state: 'error'; message: string };
 
@@ -73,15 +74,15 @@ export async function fetchIcs(proxy: Proxy, url: string, force = false): Promis
     try {
       res = await nativeGetText(target);
     } catch {
-      throw new Error('Kalender nicht erreichbar (offline oder falscher Link?)');
+      throw new Error(t('events.unreachable'));
     }
-    if (res.status < 200 || res.status >= 300) throw new Error(`Fehler ${res.status} vom Kalender-Server`);
-    if (!res.text.trimStart().startsWith('BEGIN:VCALENDAR')) throw new Error('Der Link liefert keinen Kalender.');
+    if (res.status < 200 || res.status >= 300) throw new Error(t('events.serverError', { status: res.status }));
+    if (!res.text.trimStart().startsWith('BEGIN:VCALENDAR')) throw new Error(t('events.notCalendar'));
     textCache.set(target, { text: res.text, at: Date.now() });
     return res.text;
   }
   const base = proxyBase(proxy);
-  if (!base) throw new Error('Weiterleitung (Worker-Adresse) fehlt in den Einstellungen.');
+  if (!base) throw new Error(t('events.noProxy'));
   const key = proxy.key.trim();
   let res: Response;
   try {
@@ -96,11 +97,11 @@ export async function fetchIcs(proxy: Proxy, url: string, force = false): Promis
     // workers before version 2 only know GET ?url=
     if (res.status === 405) res = await fetch(`${base}/?url=${encodeURIComponent(target)}`, { cache: 'no-store' });
   } catch {
-    throw new Error('Weiterleitung nicht erreichbar (offline oder falsche Adresse?)');
+    throw new Error(t('events.proxyUnreachable'));
   }
   const text = await res.text();
-  if (!res.ok) throw new Error(text.slice(0, 200) || `Fehler ${res.status}`);
-  if (!text.trimStart().startsWith('BEGIN:VCALENDAR')) throw new Error('Der Link liefert keinen Kalender.');
+  if (!res.ok) throw new Error(text.slice(0, 200) || t('events.error', { status: res.status }));
+  if (!text.trimStart().startsWith('BEGIN:VCALENDAR')) throw new Error(t('events.notCalendar'));
   textCache.set(target, { text, at: Date.now() });
   return text;
 }
@@ -117,9 +118,7 @@ export async function checkProxy(proxy: Proxy): Promise<ProxyCheck> {
   } catch {
     return {
       ok: false,
-      text: key
-        ? 'Nicht erreichbar. Adresse prüfen – oder der Worker ist noch die alte Version ohne Schlüssel.'
-        : 'Nicht erreichbar. Adresse prüfen (https://…workers.dev).',
+      text: key ? t('events.unreachableKey') : t('events.unreachableNoKey'),
     };
   }
   const text = await res.text();
@@ -130,13 +129,11 @@ export async function checkProxy(proxy: Proxy): Promise<ProxyCheck> {
     /* older worker: plain text */
   }
   if (info?.service === 'Familienkalender-Weiterleitung') {
-    if (info.keyRequired && !info.keyOk)
-      return { ok: false, text: key ? 'Der Schlüssel ist falsch.' : 'Dieser Worker verlangt einen Schlüssel.' };
-    return { ok: true, text: info.keyRequired ? 'Weiterleitung erreichbar, Schlüssel passt.' : 'Weiterleitung erreichbar.' };
+    if (info.keyRequired && !info.keyOk) return { ok: false, text: key ? t('events.wrongKey') : t('events.keyRequired') };
+    return { ok: true, text: info.keyRequired ? t('events.proxyOkKey') : t('events.proxyOk') };
   }
-  if (res.ok && text.includes('Familienkalender'))
-    return { ok: true, text: 'Weiterleitung erreichbar (ältere Version – bitte den Worker aktualisieren, siehe README).' };
-  return { ok: false, text: `Unerwartete Antwort (${res.status}). Ist das die Worker-Adresse?` };
+  if (res.ok && text.includes('Familienkalender')) return { ok: true, text: t('events.proxyOld') };
+  return { ok: false, text: t('events.unexpected', { status: res.status }) };
 }
 
 /** For the settings: checks a link and returns the calendar name and number of upcoming events. */

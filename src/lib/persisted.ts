@@ -78,7 +78,7 @@ export function persisted<T>(key: string, parse: (raw: unknown) => T, { syncTabs
     try {
       return parse(storage.read(key));
     } catch (e) {
-      console.warn(`Gespeicherte Daten „${key}“ sind ungültig und werden ersetzt.`, e);
+      console.warn(`Stored data "${key}" is invalid and will be replaced.`, e);
       return parse(undefined);
     }
   };

@@ -3,12 +3,13 @@ import { useStore } from '../store';
 import { addDays, fmt, fmtTime, isSameDay } from '../lib/dates';
 import { Avatar } from './Avatar';
 import { Modal } from './Modal';
+import { t } from '../i18n';
 
 export function describeWhen(e: CalEvent): string {
   if (e.allDay) {
     const last = addDays(e.end, -1);
     const d = (x: Date) => fmt(x, { weekday: 'short', day: 'numeric', month: 'long' });
-    return isSameDay(e.start, last) ? `${d(e.start)} · ganztägig` : `${d(e.start)} – ${d(last)} · ganztägig`;
+    return isSameDay(e.start, last) ? `${d(e.start)} · ${t('common.allDay')}` : `${d(e.start)} – ${d(last)} · ${t('common.allDay')}`;
   }
   if (isSameDay(e.start, e.end)) {
     return `${fmt(e.start, { weekday: 'short', day: 'numeric', month: 'long' })} · ${fmtTime(e.start)} – ${fmtTime(e.end)}`;
@@ -36,10 +37,10 @@ export function EventDetail({ event, onClose }: { event: CalEvent; onClose: () =
           ))}
         </div>
         {event.notes && <p className="event-notes">{event.notes}</p>}
-        {event.calendarName && <p className="muted small">Kalender: {event.calendarName}</p>}
+        {event.calendarName && <p className="muted small">{t('calendar.calendarOf', { name: event.calendarName })}</p>}
         <div className="modal-actions">
           <button className="btn primary" onClick={onClose}>
-            Schließen
+            {t('common.close')}
           </button>
         </div>
       </div>

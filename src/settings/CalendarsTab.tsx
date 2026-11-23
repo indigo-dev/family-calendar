@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import type { CalendarSource } from '../types';
 import { useStore } from '../store';
-import { LINK_HELP, newCalendar } from '../lib/config';
+import { linkHelp, newCalendar } from '../lib/config';
 import { checkProxy, normalizeIcsUrl, proxyOf, testCalendarLink } from '../lib/events';
 import { Avatar } from '../components/Avatar';
 import { isNative } from '../native/launcher';
+import { t } from '../i18n';
 
 type TestState = { busy: true } | { busy: false; ok: true; text: string } | { busy: false; ok: false; text: string };
 
@@ -28,12 +29,10 @@ export function CalendarsTab() {
   return (
     <div className="form">
       {isNative ? (
-        <p className="help">
-          In der App lädt das Tablet die Kalender-Links selbst – eine Weiterleitung (Cloudflare Worker) ist nicht nötig.
-        </p>
+        <p className="help">{t('settings.calendars.nativeNote')}</p>
       ) : (
         <div className="field">
-          <span>Weiterleitung (Cloudflare Worker)</span>
+          <span>{t('settings.calendars.proxy')}</span>
           <div className="copy-row">
             <input
               style={{ flex: 1, minHeight: 44, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '0 12px' }}
@@ -45,7 +44,7 @@ export function CalendarsTab() {
               spellCheck={false}
             />
             <button className="btn primary" onClick={saveProxy} disabled={proxyTest?.busy}>
-              Speichern & testen
+              {t('settings.calendars.saveTest')}
             </button>
           </div>
           <input
@@ -53,8 +52,8 @@ export function CalendarsTab() {
             style={{ minHeight: 44, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '0 12px', marginTop: 8 }}
             type="password"
             value={proxyKey}
-            placeholder="Schlüssel (nur falls im Worker ACCESS_KEY gesetzt ist)"
-            aria-label="Schlüssel der Weiterleitung"
+            placeholder={t('settings.calendars.keyPlaceholder')}
+            aria-label={t('settings.calendars.keyLabel')}
             onChange={(e) => setProxyKey(e.target.value)}
             autoComplete="off"
             autoCapitalize="off"
@@ -62,28 +61,20 @@ export function CalendarsTab() {
             spellCheck={false}
           />
           {proxyTest && !proxyTest.busy && <p className={proxyTest.ok ? 'success' : 'error'}>{proxyTest.text}</p>}
-          {!settings.proxyUrl && (
-            <p className="help">
-              Ohne Weiterleitung kann die App die Kalender-Links nicht laden (die Kalender-Anbieter blockieren direkte Zugriffe aus dem
-              Browser).
-            </p>
-          )}
+          {!settings.proxyUrl && <p className="help">{t('settings.calendars.noProxy')}</p>}
         </div>
       )}
 
-      <p className="help">
-        Tippe bei einem Kalender auf die Personen, denen er gehört – ein gemeinsamer Familienkalender kann mehreren Personen gehören.
-        Kalender ohne Person werden nicht angezeigt.
-      </p>
+      <p className="help">{t('settings.calendars.assignHelp')}</p>
 
       <div className="cal-account">
         <div className="cal-account-head">
-          <strong>Abonnierte Kalender</strong>
+          <strong>{t('settings.calendars.subscribed')}</strong>
         </div>
         {calendars.map((c) => (
           <CalendarRow key={c.id} cal={c} />
         ))}
-        {calendars.length === 0 && <p className="muted cal-empty">Noch keine Kalender. Füge unten den ersten hinzu.</p>}
+        {calendars.length === 0 && <p className="muted cal-empty">{t('settings.calendars.empty')}</p>}
         <AddCalendar />
       </div>
     </div>
@@ -100,7 +91,7 @@ function AddCalendar() {
   const add = async (force = false) => {
     const link = url.trim();
     if (!/^(https?|webcals?):\/\//i.test(link)) {
-      setAdding({ busy: false, ok: false, text: 'Bitte den vollständigen Link einfügen (beginnt mit https:// oder webcal://).' });
+      setAdding({ busy: false, ok: false, text: t('settings.calendars.fullLink') });
       return;
     }
     let calName = name.trim();
@@ -115,7 +106,7 @@ function AddCalendar() {
       }
     }
     // preselect nobody, but if exactly one person exists, assign it
-    upsertCalendar(newCalendar(calName || 'Kalender', link, members.length === 1 ? [members[0].id] : []));
+    upsertCalendar(newCalendar(calName, link, members.length === 1 ? [members[0].id] : []));
     setName('');
     setUrl('');
     setAdding(null);
@@ -125,14 +116,14 @@ function AddCalendar() {
   return (
     <div className="add-box">
       <div className="row-actions" style={{ justifyContent: 'space-between' }}>
-        <strong>Kalender hinzufügen</strong>
+        <strong>{t('settings.calendars.add')}</strong>
         <button className="link" onClick={() => setShowHelp((v) => !v)}>
-          {showHelp ? 'Hilfe ausblenden' : 'Wo finde ich den Link?'}
+          {showHelp ? t('settings.calendars.hideHelp') : t('settings.calendars.whereLink')}
         </button>
       </div>
       {showHelp && (
         <dl className="help link-help">
-          {Object.values(LINK_HELP).map((h) => (
+          {linkHelp().map((h) => (
             <div key={h.label}>
               <dt>
                 {h.icon} {h.label}
@@ -144,11 +135,11 @@ function AddCalendar() {
       )}
       <div className="field-row">
         <label className="field">
-          <span>Name (optional)</span>
-          <input value={name} placeholder="z. B. Papa Arbeit" onChange={(e) => setName(e.target.value)} />
+          <span>{t('settings.calendars.nameOptional')}</span>
+          <input value={name} placeholder={t('settings.calendars.namePlaceholder')} onChange={(e) => setName(e.target.value)} />
         </label>
         <label className="field">
-          <span>Abo-Link (ICS)</span>
+          <span>{t('settings.calendars.link')}</span>
           <input
             value={url}
             placeholder="https://…/basic.ics"
@@ -161,14 +152,14 @@ function AddCalendar() {
       </div>
       <div className="row-actions">
         <button className="btn primary" disabled={!url.trim() || adding?.busy} onClick={() => add()}>
-          {adding?.busy ? 'Prüfe …' : 'Prüfen & hinzufügen'}
+          {adding?.busy ? t('common.checking') : t('settings.calendars.checkAdd')}
         </button>
         {adding && !adding.busy && !adding.ok && (
           <>
             <span className="error">{adding.text}</span>
             {/^(https?|webcals?):\/\//i.test(url.trim()) && (
               <button className="btn" onClick={() => add(true)}>
-                Trotzdem hinzufügen
+                {t('settings.calendars.addAnyway')}
               </button>
             )}
           </>
@@ -182,7 +173,7 @@ function hostOf(url: string): string {
   try {
     return new URL(normalizeIcsUrl(url)).hostname;
   } catch {
-    return 'ungültiger Link';
+    return t('settings.calendars.invalidLink');
   }
 }
 
@@ -194,7 +185,7 @@ function CalendarRow({ cal }: { cal: CalendarSource }) {
     setTest({ busy: true });
     try {
       const res = await testCalendarLink(proxyOf(settings), cal.url);
-      setTest({ busy: false, ok: true, text: `OK · ${res.upcoming} Termine in den nächsten 60 Tagen` });
+      setTest({ busy: false, ok: true, text: t('settings.calendars.testOk', { n: res.upcoming }) });
     } catch (e) {
       setTest({ busy: false, ok: false, text: e instanceof Error ? e.message : String(e) });
     }
@@ -208,21 +199,25 @@ function CalendarRow({ cal }: { cal: CalendarSource }) {
         type="checkbox"
         checked={cal.enabled}
         onChange={(e) => patchCalendar(cal.id, { enabled: e.target.checked })}
-        aria-label="Kalender anzeigen"
+        aria-label={t('settings.calendars.show')}
         style={{ width: 22, height: 22, accentColor: 'var(--accent)' }}
       />
       <div className="cal-name">
-        <input value={cal.name} onChange={(e) => patchCalendar(cal.id, { name: e.target.value })} aria-label="Kalendername" />
+        <input
+          value={cal.name}
+          onChange={(e) => patchCalendar(cal.id, { name: e.target.value })}
+          aria-label={t('settings.calendars.calName')}
+        />
         <span className="cal-url" title={host}>
           {host}
         </span>
         <span className="row-actions">
-          {cal.memberIds.length === 0 && <span className="badge warn">keiner Person zugeordnet</span>}
-          {test?.busy && <span className="badge">prüfe …</span>}
+          {cal.memberIds.length === 0 && <span className="badge warn">{t('settings.calendars.unassigned')}</span>}
+          {test?.busy && <span className="badge">{t('settings.calendars.checkingSmall')}</span>}
           {test && !test.busy && <span className={`badge ${test.ok ? 'ok' : 'err'}`}>{test.text}</span>}
         </span>
       </div>
-      <div className="assign" aria-label="Personen">
+      <div className="assign" aria-label={t('settings.calendars.people')}>
         {members.map((m) => {
           const on = cal.memberIds.includes(m.id);
           return (
@@ -230,20 +225,23 @@ function CalendarRow({ cal }: { cal: CalendarSource }) {
               key={m.id}
               className={`assign-btn ${on ? 'on' : ''}`}
               aria-pressed={on}
-              title={`${m.name} ${on ? 'entfernen' : 'zuordnen'}`}
+              title={on ? t('settings.calendars.unassign', { name: m.name }) : t('settings.calendars.assign', { name: m.name })}
               onClick={() => toggleCalendarMember(cal.id, m.id)}
             >
               <Avatar member={m} size={34} ring={on} />
             </button>
           );
         })}
-        {members.length === 0 && <span className="muted small">Erst Personen anlegen</span>}
+        {members.length === 0 && <span className="muted small">{t('settings.calendars.noPeople')}</span>}
       </div>
       <div className="row-actions">
         <button className="btn" onClick={run} disabled={test?.busy}>
-          Testen
+          {t('settings.calendars.test')}
         </button>
-        <button className="btn danger" onClick={() => confirm(`Kalender „${cal.name}“ entfernen?`) && removeCalendar(cal.id)}>
+        <button
+          className="btn danger"
+          onClick={() => confirm(t('settings.calendars.confirmRemove', { name: cal.name })) && removeCalendar(cal.id)}
+        >
           ✕
         </button>
       </div>

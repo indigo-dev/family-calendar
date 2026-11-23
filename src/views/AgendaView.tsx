@@ -4,10 +4,12 @@ import { addDays, AGENDA_DAYS, dayKey, fmt, fmtTime, isSameDay, startOfDay } fro
 import type { CalEvent } from '../types';
 import { AvatarStack } from '../components/Avatar';
 import { membersOf, stripe, type ViewProps } from './common';
+import { t, useLanguage } from '../i18n';
 
 // Re-renders only when its inputs change (the clock ticks every 30 s).
 export const AgendaView = memo(function AgendaView({ date, now, events, onEvent, onOpen, marks }: ViewProps) {
   const { memberById } = useStore();
+  useLanguage(); // memo: re-render on a language change, too
   const todayKey = dayKey(now);
 
   // One pass over the events, bucketed by day (instead of filtering all events for every day).
@@ -31,7 +33,7 @@ export const AgendaView = memo(function AgendaView({ date, now, events, onEvent,
 
   return (
     <div className="agenda">
-      {groups.length === 0 && <p className="empty">Keine Termine in diesem Zeitraum.</p>}
+      {groups.length === 0 && <p className="empty">{t('calendar.noEventsRange')}</p>}
       {groups.map(({ d, list }) => {
         const today = isSameDay(d, now);
         const tomorrow = isSameDay(d, addDays(startOfDay(now), 1));
@@ -42,13 +44,13 @@ export const AgendaView = memo(function AgendaView({ date, now, events, onEvent,
             <button className="agenda-date" onClick={() => onOpen('day', d)}>
               <span className="agenda-dn">{d.getDate()}</span>
               <span className="agenda-wd">
-                {today ? 'Heute' : tomorrow ? 'Morgen' : fmt(d, { weekday: 'long' })}
+                {today ? t('common.today') : tomorrow ? t('common.tomorrow') : fmt(d, { weekday: 'long' })}
                 <small>{fmt(d, { month: 'long', year: 'numeric' })}</small>
                 {label && <small className={`agenda-hol ${mk?.publicNames.length ? 'holiday' : 'school'}`}>{label}</small>}
               </span>
             </button>
             <div className="agenda-list">
-              {list.length === 0 && <p className="muted">Keine Termine</p>}
+              {list.length === 0 && <p className="muted">{t('calendar.noEvents')}</p>}
               {list.map((e) => {
                 const ms = membersOf(e, memberById);
                 const past = !e.allDay && e.end < now;
@@ -56,7 +58,7 @@ export const AgendaView = memo(function AgendaView({ date, now, events, onEvent,
                   <button key={e.key} className={`agenda-item ${past ? 'past' : ''}`} onClick={() => onEvent(e)}>
                     <span className="agenda-time">
                       {e.allDay ? (
-                        'ganztägig'
+                        t('common.allDay')
                       ) : (
                         <>
                           {fmtTime(e.start)}

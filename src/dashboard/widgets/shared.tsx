@@ -3,10 +3,11 @@ import type { CalEvent, DayMarks, Member, Timetable } from '../../types';
 import type { WidgetSize } from '../../lib/dashboard';
 import type { ModuleId } from '../../components/ModuleNav';
 import type { SettingsTab } from '../../settings/SettingsPanel';
-import { fmt } from '../../lib/dates';
+import { fmtTime } from '../../lib/dates';
 import { useTodos } from '../../lib/todos';
 import { useShopping } from '../../lib/shopping';
 import { schoolHours } from '../../lib/school';
+import { t } from '../../i18n';
 
 /* What all dashboard widgets share: the data of the dashboard, the head line, empty states, undo. */
 
@@ -80,7 +81,7 @@ export function useUndo() {
         setUndo(null);
       }}
     >
-      <span className="dw-undo-text">{undo.label}</span> Rückgängig
+      <span className="dw-undo-text">{undo.label}</span> {t('dashboard.undo')}
     </button>
   );
   return [setUndo, node] as const;
@@ -89,6 +90,6 @@ export function useUndo() {
 export const gradient = (members: Member[]) =>
   members.length <= 1 ? (members[0]?.color ?? 'var(--muted)') : `linear-gradient(135deg, ${members.map((m) => m.color).join(', ')})`;
 
-export const hhmm = (d: Date) => fmt(d, { hour: '2-digit', minute: '2-digit' });
+export const hhmm = (d: Date) => fmtTime(d);
 
 export const lastEnd = (t: Timetable, idx: number): string | null => schoolHours(t, idx)?.end ?? null;

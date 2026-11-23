@@ -3,9 +3,10 @@ import type { ClockFace } from '../lib/frame';
 import { useStore } from '../store';
 import { proxyOf, useEvents } from '../lib/events';
 import { useMinute, useToday } from '../lib/clock';
-import { addDays } from '../lib/dates';
+import { addDays, fmtTime, uses12h } from '../lib/dates';
 import type { CalEvent } from '../types';
 import { wordTime } from '../lib/wordTime';
+import { t } from '../i18n';
 
 /*
  * Clocks for the photo frame / screensaver. Sizes come from CSS variables on a parent
@@ -16,7 +17,10 @@ import { wordTime } from '../lib/wordTime';
 const pad = (n: number) => String(n).padStart(2, '0');
 
 export function Clock({ face, now, seconds, still }: { face: ClockFace; now: Date; seconds: boolean; still?: boolean }) {
-  const hh = pad(now.getHours());
+  // a 12-hour locale (en-US) gets 1–12 on the digital faces
+  const h12 = uses12h();
+  const hours = h12 ? ((now.getHours() + 11) % 12) + 1 : now.getHours();
+  const hh = pad(hours);
   const mm = pad(now.getMinutes());
   switch (face) {
     case 'none':
@@ -24,7 +28,7 @@ export function Clock({ face, now, seconds, still }: { face: ClockFace; now: Dat
     case 'd-light':
       return (
         <div className="ck-digital ck-light">
-          {hh}
+          {h12 ? hours : hh}
           <span className="ck-colon">:</span>
           {mm}
         </div>
@@ -52,7 +56,7 @@ export function Clock({ face, now, seconds, still }: { face: ClockFace; now: Dat
       const { phrase, dots } = wordTime(now);
       return (
         <div className="ck-digital ck-words">
-          <span className="ck-words-lead">Es ist</span>
+          <span className="ck-words-lead">{t('frame.itIs')}</span>
           <span className="ck-words-main">{phrase}</span>
           <span className="ck-words-dots" aria-hidden>
             {[0, 1, 2, 3].map((i) => (
@@ -174,8 +178,8 @@ export function FrameEvents() {
   const tomorrow = addDays(today, 1);
   const visible = events.filter((e) => e.memberIds.some((id) => members.some((m) => m.id === id)));
   const groups: [string, CalEvent[]][] = [
-    ['Heute', visible.filter((e) => e.end > now && e.start < tomorrow)],
-    ['Morgen', visible.filter((e) => e.start >= tomorrow && e.start < addDays(tomorrow, 1))],
+    [t('common.today'), visible.filter((e) => e.end > now && e.start < tomorrow)],
+    [t('common.tomorrow'), visible.filter((e) => e.start >= tomorrow && e.start < addDays(tomorrow, 1))],
   ];
   let left = MAX_EVENTS;
   const shown = groups
@@ -186,7 +190,7 @@ export function FrameEvents() {
     })
     .filter(([, list]) => list.length > 0);
 
-  if (shown.length === 0) return <div className="pf-events pf-events-none">Heute und morgen keine Termine</div>;
+  if (shown.length === 0) return <div className="pf-events pf-events-none">{t('frame.noEvents')}</div>;
   return (
     <div className="pf-events">
       {shown.map(([label, list]) => (
@@ -197,9 +201,7 @@ export function FrameEvents() {
             return (
               <div key={e.key} className="pf-ev">
                 <i style={{ background: colorOf(e) }} />
-                <span className="pf-ev-time">
-                  {e.allDay ? 'ganztags' : running ? 'jetzt' : `${pad(e.start.getHours())}:${pad(e.start.getMinutes())}`}
-                </span>
+                <span className="pf-ev-time">{e.allDay ? t('frame.allDay') : running ? t('dashboard.now') : fmtTime(e.start)}</span>
                 <span className="pf-ev-title">{e.title}</span>
               </div>
             );

@@ -6,6 +6,7 @@ import { describe, useWeather, useWeatherSettings } from '../lib/weather';
 import { norm } from '../lib/shopping';
 import type { EventsRequest, WeatherRequest } from './command';
 import { findMembers, joinAnd } from './apply';
+import { t } from '../i18n';
 
 /* Answers to questions: they load their data like the modules do and speak once it is there. */
 
@@ -14,10 +15,10 @@ const fromYmd = (s: string) => new Date(`${s}T00:00`);
 /** "heute", "morgen", "Freitag, 27. November" */
 export function dayLabel(date: Date, now = new Date()): string {
   const diff = Math.round((startOfDay(date).getTime() - startOfDay(now).getTime()) / 86_400_000);
-  if (diff === 0) return 'heute';
-  if (diff === 1) return 'morgen';
-  if (diff === 2) return 'übermorgen';
-  if (diff === -1) return 'gestern';
+  if (diff === 0) return t('voice.today');
+  if (diff === 1) return t('voice.tomorrow');
+  if (diff === 2) return t('voice.dayAfter');
+  if (diff === -1) return t('voice.yesterday');
   return fmt(date, { weekday: 'long', day: 'numeric', month: 'long' });
 }
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -40,17 +41,25 @@ export function WeatherAnswer({ req, speak }: { req: WeatherRequest; speak: (t: 
   const { data, loading, error } = useWeather(place);
   const date = fromYmd(req.date);
   const day = data?.days.find((d) => d.date === req.date);
-  const where = place && places.length > 1 ? ` in ${place.name}` : '';
+  const where = place && places.length > 1 ? t('voice.in', { place: place.name }) : '';
 
   let text: string | null = null;
-  if (!place) text = 'Es ist noch kein Wetter-Ort eingerichtet.';
+  if (!place) text = t('voice.noPlace');
   else if (day) {
     const now = new Date();
     const today = req.date === data!.days[0]?.date;
-    const cur = today && data!.current ? `, gerade ${Math.round(data!.current.temp)} Grad` : '';
-    const rain = day.rainProb >= 30 ? `, Regenrisiko ${day.rainProb} Prozent` : '';
-    text = `${cap(dayLabel(date, now))}${where}: ${describe(day.code).text}, ${Math.round(day.min)} bis ${Math.round(day.max)} Grad${cur}${rain}.`;
-  } else if (data) text = `Für ${dayLabel(date)} gibt es noch keine Vorhersage.`;
+    const current = today && data!.current ? t('voice.currently', { temp: Math.round(data!.current.temp) }) : '';
+    const rain = day.rainProb >= 30 ? t('voice.rainRisk', { n: day.rainProb }) : '';
+    text = t('voice.weatherLine', {
+      day: cap(dayLabel(date, now)),
+      where,
+      text: describe(day.code).text,
+      min: Math.round(day.min),
+      max: Math.round(day.max),
+      current,
+      rain,
+    });
+  } else if (data) text = t('voice.noForecast', { day: dayLabel(date) });
   else if (error && !loading) text = error;
   useSpeakOnce(text, speak);
 
@@ -59,7 +68,7 @@ export function WeatherAnswer({ req, speak }: { req: WeatherRequest; speak: (t: 
       <span className="voice-line-icon" aria-hidden>
         {day ? describe(day.code).icon : '⛅'}
       </span>
-      <span>{text ?? 'Wetter wird geladen …'}</span>
+      <span>{text ?? t('voice.weatherLoading')}</span>
     </div>
   );
 }
@@ -73,20 +82,20 @@ export function EventsAnswer({ req, speak }: { req: EventsRequest; speak: (t: st
     (e) => e.end > range.start && e.start < range.end && (!who.length || e.memberIds.some((id) => who.some((m) => m.id === id))),
   );
   const oneDay = req.from === req.to;
-  const span = oneDay ? dayLabel(range.start) : `${dayLabel(range.start)} bis ${dayLabel(fromYmd(req.to))}`;
-  const forWho = who.length ? ` für ${joinAnd(who.map((m) => m.name))}` : '';
+  const span = oneDay ? dayLabel(range.start) : t('voice.spanTo', { from: dayLabel(range.start), to: dayLabel(fromYmd(req.to)) });
+  const forWho = who.length ? t('voice.forWhom', { names: joinAnd(who.map((m) => m.name)) }) : '';
   const names = (ids: string[]) => members.filter((m) => ids.includes(m.id)).map((m) => m.name);
 
   const when = (e: (typeof list)[number]) =>
-    `${oneDay ? '' : `${fmt(e.start, { weekday: 'short' })} `}${e.allDay ? 'ganztägig' : `${fmtTime(e.start)} Uhr`}`;
+    `${oneDay ? '' : `${fmt(e.start, { weekday: 'short' })} `}${e.allDay ? t('common.allDay') : t('voice.clock', { time: fmtTime(e.start) })}`;
 
   let text: string | null = null;
   if (lastUpdated) {
-    if (!list.length) text = `${cap(span)}${forWho} stehen keine Termine an.`;
+    if (!list.length) text = t('voice.noEvents', { span: cap(span), who: forWho });
     else {
       const first = list.slice(0, 5).map((e) => `${when(e)} ${e.title}`);
-      const more = list.length > 5 ? ` und ${list.length - 5} weitere` : '';
-      text = `${cap(span)}${forWho}: ${first.join(', ')}${more}.`;
+      const more = list.length > 5 ? t('voice.andMore', { n: list.length - 5 }) : '';
+      text = t('voice.eventsLine', { span: cap(span), who: forWho, list: first.join(', '), more });
     }
   }
   useSpeakOnce(text, speak);
@@ -100,7 +109,7 @@ export function EventsAnswer({ req, speak }: { req: EventsRequest; speak: (t: st
         <span>
           {cap(span)}
           {forWho}
-          {!lastUpdated ? ' – wird geladen …' : !list.length ? ': keine Termine' : ''}
+          {!lastUpdated ? t('voice.loading') : !list.length ? t('voice.noEventsShort') : ''}
         </span>
       </div>
       {list.length > 0 && (
@@ -112,7 +121,7 @@ export function EventsAnswer({ req, speak }: { req: EventsRequest; speak: (t: st
               <span className="voice-event-who">{names(e.memberIds).join(', ')}</span>
             </li>
           ))}
-          {list.length > 8 && <li className="muted">… und {list.length - 8} weitere</li>}
+          {list.length > 8 && <li className="muted">{t('voice.moreItems', { n: list.length - 8 })}</li>}
         </ul>
       )}
     </div>

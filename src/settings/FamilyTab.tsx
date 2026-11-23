@@ -5,6 +5,7 @@ import { demoMembers, EMOJIS, imageFileToAvatar, newMember } from '../lib/config
 import { Avatar } from '../components/Avatar';
 import { newTimetable, SCHOOL_TYPES } from '../lib/school';
 import { PALETTE, paletteColors } from '../lib/colors';
+import { t } from '../i18n';
 
 export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
   const { members, calendars, upsertMember, replaceConfig, config } = useStore();
@@ -19,8 +20,8 @@ export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
 
   const subtitle = (m: Member) => {
     const n = calendars.filter((c) => c.memberIds.includes(m.id)).length;
-    const parts = [n === 0 ? 'keine Kalender' : n === 1 ? '1 Kalender' : `${n} Kalender`];
-    if (m.demo) parts.push('Demo');
+    const parts = [n === 0 ? t('settings.family.noCalendars') : t('settings.family.calendars', { n })];
+    if (m.demo) parts.push(t('settings.family.demo'));
     return parts.join(' · ');
   };
 
@@ -37,7 +38,7 @@ export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
           </button>
         ))}
         <button className="btn" onClick={add}>
-          + Person hinzufügen
+          {t('settings.family.addPerson')}
         </button>
         {members.length === 0 && (
           <button
@@ -48,7 +49,7 @@ export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
               setSelected(demo[0].id);
             }}
           >
-            Demo-Familie laden
+            {t('settings.family.loadDemo')}
           </button>
         )}
       </aside>
@@ -56,7 +57,7 @@ export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
         {current ? (
           <MemberEditor key={current.id} member={current} onGoCalendars={onGoCalendars} onDeleted={() => setSelected(null)} />
         ) : (
-          <p className="muted">Lege ein Familienmitglied an oder wähle eines aus.</p>
+          <p className="muted">{t('settings.family.empty')}</p>
         )}
       </section>
     </div>
@@ -88,33 +89,33 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
       <div className="member-preview">
         <Avatar member={member} size={72} />
         <div className="row-actions">
-          <button className="icon-btn" onClick={() => moveMember(member.id, -1)} aria-label="Nach oben">
+          <button className="icon-btn" onClick={() => moveMember(member.id, -1)} aria-label={t('settings.family.up')}>
             ↑
           </button>
-          <button className="icon-btn" onClick={() => moveMember(member.id, 1)} aria-label="Nach unten">
+          <button className="icon-btn" onClick={() => moveMember(member.id, 1)} aria-label={t('settings.family.down')}>
             ↓
           </button>
           <button
             className="btn danger"
             onClick={() => {
-              if (confirm(`${member.name} wirklich entfernen?\n\nDie Kalender bleiben erhalten und können neu zugeordnet werden.`)) {
+              if (confirm(t('settings.family.confirmRemove', { name: member.name }))) {
                 removeMember(member.id);
                 onDeleted();
               }
             }}
           >
-            Entfernen
+            {t('common.remove')}
           </button>
         </div>
       </div>
 
       <label className="field">
-        <span>Name</span>
+        <span>{t('common.name')}</span>
         <input value={member.name} onChange={(e) => set({ name: e.target.value })} />
       </label>
 
       <div className="field">
-        <span>Farbe</span>
+        <span>{t('common.color')}</span>
         <div className="swatches">
           {PALETTE.map((c, i) => (
             <button
@@ -122,36 +123,34 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
               className={`swatch ${rawColor === c ? 'on' : ''}`}
               style={{ background: shown[i] }}
               onClick={() => set({ color: c })}
-              aria-label={`Farbe ${i + 1}`}
+              aria-label={t('settings.family.colorN', { n: i + 1 })}
             />
           ))}
           <label
             className={`swatch custom ${PALETTE.includes(rawColor) ? '' : 'on'}`}
             style={{ background: PALETTE.includes(rawColor) ? undefined : member.color }}
-            title="Eigene Farbe"
+            title={t('common.ownColor')}
           >
             <input type="color" value={rawColor} onChange={(e) => set({ color: e.target.value })} />+
           </label>
         </div>
-        {settings.palette !== 'vivid' && !PALETTE.includes(rawColor) && (
-          <p className="hint muted">Eigene Farben werden an die gewählte Farbpalette angepasst (Einstellungen → Design).</p>
-        )}
+        {settings.palette !== 'vivid' && !PALETTE.includes(rawColor) && <p className="hint muted">{t('settings.family.paletteHint')}</p>}
       </div>
 
       <div className="field">
-        <span>Avatar</span>
+        <span>{t('settings.family.avatar')}</span>
         <div className="segmented small">
           <button className={member.avatar.type === 'initials' ? 'active' : ''} onClick={() => set({ avatar: { type: 'initials' } })}>
-            Initialen
+            {t('settings.family.initials')}
           </button>
           <button
             className={member.avatar.type === 'emoji' ? 'active' : ''}
             onClick={() => set({ avatar: { type: 'emoji', value: member.avatar.type === 'emoji' ? member.avatar.value : EMOJIS[0] } })}
           >
-            Emoji
+            {t('settings.family.emoji')}
           </button>
           <button className={member.avatar.type === 'image' ? 'active' : ''} onClick={() => fileRef.current?.click()}>
-            Foto
+            {t('settings.family.photo')}
           </button>
         </div>
         <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => onPhoto(e.target.files?.[0])} />
@@ -172,9 +171,9 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
       </div>
 
       <div className="field">
-        <span>Kalender</span>
+        <span>{t('settings.family.calendarsField')}</span>
         {mine.length === 0 ? (
-          <p className="hint muted">Dieser Person ist noch kein Kalender zugeordnet.</p>
+          <p className="hint muted">{t('settings.family.noCalendar')}</p>
         ) : (
           <div className="chip-list">
             {mine.map((c) => (
@@ -186,45 +185,43 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
         )}
         <div>
           <button className="btn" onClick={onGoCalendars}>
-            Kalender zuordnen …
+            {t('settings.family.assignCalendars')}
           </button>
         </div>
       </div>
 
       <div className="field">
-        <span>Schule</span>
+        <span>{t('settings.family.school')}</span>
         <label className="check">
           <input
             type="checkbox"
             checked={!!member.timetable}
             onChange={(e) => {
               if (e.target.checked) set({ timetable: newTimetable('grundschule') });
-              else if (confirm(`Stundenplan von ${member.name} löschen?`)) set({ timetable: undefined });
+              else if (confirm(t('settings.family.confirmDeleteTimetable', { name: member.name }))) set({ timetable: undefined });
             }}
           />
-          <span>Hat Stundenplan</span>
+          <span>{t('settings.family.hasTimetable')}</span>
         </label>
         {member.timetable && (
           <div className="segmented small">
-            {(Object.keys(SCHOOL_TYPES) as (keyof typeof SCHOOL_TYPES)[]).map((t) => (
+            {(Object.keys(SCHOOL_TYPES) as (keyof typeof SCHOOL_TYPES)[]).map((type) => (
               <button
-                key={t}
-                className={member.timetable?.schoolType === t ? 'active' : ''}
-                onClick={() => set({ timetable: { ...member.timetable!, schoolType: t } })}
+                key={type}
+                className={member.timetable?.schoolType === type ? 'active' : ''}
+                onClick={() => set({ timetable: { ...member.timetable!, schoolType: type } })}
               >
-                {SCHOOL_TYPES[t]}
+                {SCHOOL_TYPES[type]}
               </button>
             ))}
           </div>
         )}
-        {member.timetable && (
-          <p className="hint muted">Fächer trägst du im Stundenplan über „Bearbeiten“ ein, Klingelzeiten unter „Schule“.</p>
-        )}
+        {member.timetable && <p className="hint muted">{t('settings.family.timetableHint')}</p>}
       </div>
 
       <label className="check">
         <input type="checkbox" checked={!!member.demo} onChange={(e) => set({ demo: e.target.checked || undefined })} />
-        <span>Beispieltermine anzeigen (Demo)</span>
+        <span>{t('settings.family.showDemo')}</span>
       </label>
     </div>
   );

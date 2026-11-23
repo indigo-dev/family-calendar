@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 /**
  * Weather icon styles. The files live in public/weather-icons/<set>/<key>.<ext> and are fetched by
  * scripts/fetch-weather-icons.mjs – nothing is loaded from the internet at runtime.
@@ -34,16 +35,27 @@ export interface WeatherIconSetInfo {
   padded?: boolean;
 }
 
-export const WEATHER_ICON_SETS: WeatherIconSetInfo[] = [
-  { id: 'mc-fill', label: 'Meteocons Farbig', note: 'Plastisch, animiert', mode: 'image', ext: 'svg', padded: true },
-  { id: 'mc-flat', label: 'Meteocons Flach', note: 'Klare Flächen, animiert', mode: 'image', ext: 'svg', padded: true },
-  { id: 'mc-line', label: 'Meteocons Linie', note: 'Farbige Umrisse, animiert', mode: 'image', ext: 'svg', padded: true },
-  { id: 'mc-mono', label: 'Meteocons Einfarbig', note: 'In der Textfarbe, zurückhaltend', mode: 'mask', ext: 'svg', padded: true },
-  { id: 'material', label: 'Material Rund', note: 'Abgerundet, in der Textfarbe', mode: 'mask', ext: 'svg' },
-  { id: 'fluent-3d', label: 'Fluent 3D', note: 'Plastisch, 3D', mode: 'image', ext: 'png' },
-  { id: 'fluent-flat', label: 'Fluent Flach', note: 'Flach und freundlich', mode: 'image', ext: 'svg' },
-  { id: 'system', label: 'Geräte-Emoji', note: 'Sieht je nach Gerät anders aus', mode: 'native' },
+const SETS: Omit<WeatherIconSetInfo, 'label' | 'note'>[] = [
+  { id: 'mc-fill', mode: 'image', ext: 'svg', padded: true },
+  { id: 'mc-flat', mode: 'image', ext: 'svg', padded: true },
+  { id: 'mc-line', mode: 'image', ext: 'svg', padded: true },
+  { id: 'mc-mono', mode: 'mask', ext: 'svg', padded: true },
+  { id: 'material', mode: 'mask', ext: 'svg' },
+  { id: 'fluent-3d', mode: 'image', ext: 'png' },
+  { id: 'fluent-flat', mode: 'image', ext: 'svg' },
+  { id: 'system', mode: 'native' },
 ];
+
+/** the sets with name and note in the active language */
+export const WEATHER_ICON_SETS: WeatherIconSetInfo[] = SETS.map((s) => ({
+  ...s,
+  get label() {
+    return t(`weatherSets.${s.id}.label`);
+  },
+  get note() {
+    return t(`weatherSets.${s.id}.note`);
+  },
+}));
 
 export const DEFAULT_WEATHER_ICONS: WeatherIconSet = 'mc-fill';
 

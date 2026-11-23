@@ -1,6 +1,7 @@
 import { CATEGORIES, type CategoryId } from '../lib/shopping';
 import { MODULES, type ModuleId } from '../components/ModuleNav';
 import { isRecord } from '../lib/persisted';
+import { getLanguage, type Language } from '../i18n';
 
 /*
  * What the model returns for one spoken request – independent of the provider. The speech part
@@ -65,7 +66,7 @@ const MODULE_IDS = MODULES.map((m) => m.id);
 export const COMMAND_SCHEMA = {
   type: 'OBJECT',
   properties: {
-    transcript: { type: 'STRING', description: 'Wörtliche Abschrift des Gesagten' },
+    transcript: { type: 'STRING', description: 'Verbatim transcript of what was said' },
     shopping: {
       type: 'ARRAY',
       items: {
@@ -123,9 +124,18 @@ export const COMMAND_SCHEMA = {
 const pad = (n: number) => String(n).padStart(2, '0');
 const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-export function buildPrompt(ctx: VoiceContext): string {
+/**
+ * Instructions for the model. The app language decides the language of the prompt, of the texts the model
+ * writes (to-dos, reply) and of the item names it is given; it still understands a request in the other language.
+ */
+export function buildPrompt(ctx: VoiceContext, lang: Language = getLanguage()): string {
+  return lang === 'de' ? germanPrompt(ctx) : englishPrompt(ctx);
+}
+
+const list = (xs: string[], none: string) => (xs.length ? xs.join(', ') : none);
+
+function germanPrompt(ctx: VoiceContext): string {
   const weekday = ctx.now.toLocaleDateString('de-DE', { weekday: 'long' });
-  const list = (xs: string[], none: string) => (xs.length ? xs.join(', ') : none);
   return [
     'Du bist die Sprachsteuerung einer Familien-App (Kalender, Einkaufsliste, To-dos, Wetter, Stundenplan, Fotos).',
     'Du bekommst eine kurze deutsche Sprachaufnahme (oder Text) und füllst daraus die Antwort-Struktur.',
@@ -150,6 +160,36 @@ export function buildPrompt(ctx: VoiceContext): string {
     '- Relative Angaben wie "morgen", "übermorgen", "nächsten Dienstag" in Daten (YYYY-MM-DD) umrechnen.',
     '- reply: nur wenn die Bitte nicht zu den Bereichen passt oder unklar ist – ein kurzer, freundlicher Satz.',
     '- Termine anlegen geht nicht (die Kalender sind nur abonniert): dann reply mit einem Hinweis.',
+  ].join('\n');
+}
+
+function englishPrompt(ctx: VoiceContext): string {
+  const weekday = ctx.now.toLocaleDateString('en-GB', { weekday: 'long' });
+  return [
+    'You are the voice control of a family app (calendar, shopping list, to-dos, weather, timetable, photos).',
+    'You get a short voice recording (or text), usually in English, and fill in the answer structure from it.',
+    'Write all texts you produce (to-do texts, new item names, reply) in English.',
+    '',
+    `Today is ${weekday}, ${ymd(ctx.now)}, ${pad(ctx.now.getHours())}:${pad(ctx.now.getMinutes())}.`,
+    `Family members: ${list(ctx.members, 'none')}.`,
+    `Weather places (the first one is home): ${list(ctx.places, 'none')}.`,
+    `Items in the shopping list pantry: ${list(ctx.pantry, 'none')}.`,
+    '',
+    'Rules:',
+    '- transcript: verbatim what was said. On silence or noise leave it empty and fill in nothing else.',
+    '- shopping: things for the shopping list. If an item from the pantry fits, use exactly its spelling',
+    '  (also for singular/plural or casual speech, e.g. "a milk" → "Milk", "an apple" → "Apples").',
+    '  qty is the number (1 if none is said). Set category only for new items.',
+    '- todos: tasks and reminders ("remind us …", "put … on the to-do list"). text short and phrased as a task.',
+    '  members only with names from the family, empty = everyone. due only if a day is mentioned.',
+    '- weather: questions about the weather, one entry per day. place only if a place is mentioned.',
+    '- events: questions about events ("what\'s on tomorrow?"). Periods as from/to, e.g. "this week" = today to Sunday.',
+    '- openModule: only if a section should explicitly be opened ("show me the shopping list"), otherwise "none".',
+    '  openFor: names from the family if the section should be shown for certain people',
+    '  ("show me Jan\'s timetable" → openModule "timetable", openFor ["Jan"]; "Lena\'s to-dos" → "todos", ["Lena"]).',
+    '- Convert relative dates like "tomorrow", "the day after tomorrow", "next Tuesday" into dates (YYYY-MM-DD).',
+    '- reply: only if the request does not fit the sections or is unclear – one short, friendly sentence.',
+    '- Creating events is not possible (the calendars are only subscribed): then reply with a hint.',
   ].join('\n');
 }
 

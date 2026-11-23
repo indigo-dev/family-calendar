@@ -1,21 +1,15 @@
 import type { ReactNode } from 'react';
 import { useTapOrLongPress } from '../lib/hooks';
 import type { Member, ViewMode } from '../types';
-import { fmt } from '../lib/dates';
+import { fmt, fmtTime } from '../lib/dates';
 import { useMinute } from '../lib/clock';
 import { useStore } from '../store';
 import { Avatar } from './Avatar';
 import { GlyphIcon } from './Icon';
 import { WeatherChip } from '../weather/WeatherChip';
+import { t } from '../i18n';
 
-const VIEWS: { id: ViewMode; label: string }[] = [
-  { id: 'day', label: 'Tag' },
-  { id: 'days', label: 'Tage' },
-  { id: 'week', label: 'Woche' },
-  { id: 'month', label: 'Monat' },
-  { id: 'year', label: 'Jahr' },
-  { id: 'agenda', label: 'Agenda' },
-];
+const VIEWS: ViewMode[] = ['day', 'days', 'week', 'month', 'year', 'agenda'];
 
 interface Props {
   title: string;
@@ -37,13 +31,13 @@ export function Header({ title, view, loading, multiDays, onMultiDays, onView, o
     <header className="topbar">
       <div className="topbar-left">
         <div className="nav">
-          <button className="icon-btn" onClick={() => onStep(-1)} aria-label="Zurück">
+          <button className="icon-btn" onClick={() => onStep(-1)} aria-label={t('common.back')}>
             <GlyphIcon glyph="‹" name="back" />
           </button>
           <button className="btn" onClick={onToday}>
-            Heute
+            {t('common.today')}
           </button>
-          <button className="icon-btn" onClick={() => onStep(1)} aria-label="Weiter">
+          <button className="icon-btn" onClick={() => onStep(1)} aria-label={t('common.forward')}>
             <GlyphIcon glyph="›" name="forward" />
           </button>
         </div>
@@ -51,26 +45,30 @@ export function Header({ title, view, loading, multiDays, onMultiDays, onView, o
       </div>
       <div className="segmented" role="tablist">
         {VIEWS.map((v) =>
-          v.id === 'days' && view === 'days' ? (
+          v === 'days' && view === 'days' ? (
             // active N-days tab: − / + change the number of days
-            <span key={v.id} role="tab" aria-selected className="active seg-days">
-              <button className="seg-step" onClick={() => onMultiDays(multiDays - 1)} disabled={multiDays <= 2} aria-label="Weniger Tage">
+            <span key={v} role="tab" aria-selected className="active seg-days">
+              <button
+                className="seg-step"
+                onClick={() => onMultiDays(multiDays - 1)}
+                disabled={multiDays <= 2}
+                aria-label={t('calendar.fewerDays')}
+              >
                 −
               </button>
-              <span>{multiDays} Tage</span>
-              <button className="seg-step" onClick={() => onMultiDays(multiDays + 1)} disabled={multiDays >= 6} aria-label="Mehr Tage">
+              <span>{t('calendar.nDays', { n: multiDays })}</span>
+              <button
+                className="seg-step"
+                onClick={() => onMultiDays(multiDays + 1)}
+                disabled={multiDays >= 6}
+                aria-label={t('calendar.moreDays')}
+              >
                 +
               </button>
             </span>
           ) : (
-            <button
-              key={v.id}
-              role="tab"
-              aria-selected={view === v.id}
-              className={view === v.id ? 'active' : ''}
-              onClick={() => onView(v.id)}
-            >
-              {v.id === 'days' ? `${multiDays} Tage` : v.label}
+            <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'active' : ''} onClick={() => onView(v)}>
+              {v === 'days' ? t('calendar.nDays', { n: multiDays }) : t(`calendar.views.${v}`)}
             </button>
           ),
         )}
@@ -78,10 +76,10 @@ export function Header({ title, view, loading, multiDays, onMultiDays, onView, o
       <div className="topbar-right">
         <WeatherChip onClick={onWeather} />
         <Clock />
-        <button className={`icon-btn ${loading ? 'spin' : ''}`} onClick={onRefresh} aria-label="Aktualisieren">
+        <button className={`icon-btn ${loading ? 'spin' : ''}`} onClick={onRefresh} aria-label={t('common.refresh')}>
           <GlyphIcon glyph="⟳" name="refresh" />
         </button>
-        <button className="icon-btn" onClick={onSettings} aria-label="Einstellungen">
+        <button className="icon-btn" onClick={onSettings} aria-label={t('common.settings')}>
           <GlyphIcon glyph="⚙" name="settings" />
         </button>
       </div>
@@ -110,7 +108,7 @@ function Clock() {
   const now = useMinute();
   return (
     <div className="clock">
-      <span className="clock-time">{fmt(now, { hour: '2-digit', minute: '2-digit' })}</span>
+      <span className="clock-time">{fmtTime(now)}</span>
       <span className="clock-date">{fmt(now, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
     </div>
   );
@@ -136,7 +134,7 @@ export function ModuleHeader({
       <div className="topbar-right">
         {clock && <Clock />}
         {actions}
-        <button className="icon-btn" onClick={onSettings} aria-label="Einstellungen">
+        <button className="icon-btn" onClick={onSettings} aria-label={t('common.settings')}>
           <GlyphIcon glyph="⚙" name="settings" />
         </button>
       </div>
@@ -184,9 +182,9 @@ export function MemberFilter({ issues, onIssue }: { issues: Record<string, strin
   if (members.length === 0) return null;
   const all = selectedIds.size === 0;
   return (
-    <nav className="filterbar" aria-label="Personenfilter">
+    <nav className="filterbar" aria-label={t('calendar.memberFilter')}>
       <button className={`chip all ${all ? 'on' : ''}`} aria-pressed={all} onClick={showAll}>
-        Alle
+        {t('common.all')}
       </button>
       {members.map((m) => {
         const active = selectedIds.has(m.id);
@@ -201,7 +199,7 @@ export function MemberFilter({ issues, onIssue }: { issues: Record<string, strin
               onLongPress={() => toggleSelected(m.id)}
             />
             {issue && (
-              <button className="warn-badge error" title={issue} onClick={() => onIssue(`Kalender von ${m.name} nicht geladen – ${issue}`)}>
+              <button className="warn-badge error" title={issue} onClick={() => onIssue(t('calendar.notLoaded', { name: m.name, issue }))}>
                 !
               </button>
             )}

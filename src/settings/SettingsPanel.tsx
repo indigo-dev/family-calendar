@@ -10,46 +10,47 @@ import { ViewTab } from './ViewTab';
 import { DeviceTab } from './DeviceTab';
 import { VoiceTab } from './VoiceTab';
 import { BackupTab } from './BackupTab';
+import { t } from '../i18n';
 
 export type SettingsTab = 'family' | 'calendars' | 'holidays' | 'school' | 'design' | 'view' | 'device' | 'voice' | 'backup';
 type Tab = SettingsTab;
 
 /** order: set up the family and its data first, then the look, the device and the backup */
-const TABS: { id: Tab; icon: string; label: string; note: string }[] = [
-  { id: 'family', icon: '👨‍👩‍👧', label: 'Familie', note: 'Personen, Farben und Avatare' },
-  { id: 'calendars', icon: '📅', label: 'Kalender', note: 'Abo-Links und Zuordnung zu Personen' },
-  { id: 'holidays', icon: '🏖️', label: 'Ferien & Feiertage', note: 'Bundesland, Feiertage, Schulferien' },
-  { id: 'school', icon: '🎒', label: 'Schule', note: 'Klingelzeiten und Fächer' },
-  { id: 'design', icon: '🎨', label: 'Design', note: 'Stil, Farben, Wetter- und Einkaufs-Symbole, Übergänge' },
-  { id: 'view', icon: '🗓️', label: 'Kalenderansicht', note: 'Startansicht, Wochenbeginn, Tageszeiten' },
-  { id: 'device', icon: '📱', label: 'Gerät', note: 'Aktualisierung, Ruhezustand' },
-  { id: 'voice', icon: '🎙️', label: 'Sprachsteuerung', note: 'Gemini-Key, Modell, Vorlesen' },
-  { id: 'backup', icon: '💾', label: 'Sicherung', note: 'Export, Import, Zurücksetzen' },
+const TABS: { id: Tab; icon: string }[] = [
+  { id: 'family', icon: '👨‍👩‍👧' },
+  { id: 'calendars', icon: '📅' },
+  { id: 'holidays', icon: '🏖️' },
+  { id: 'school', icon: '🎒' },
+  { id: 'design', icon: '🎨' },
+  { id: 'view', icon: '🗓️' },
+  { id: 'device', icon: '📱' },
+  { id: 'voice', icon: '🎙️' },
+  { id: 'backup', icon: '💾' },
 ];
 
 export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; initialTab?: Tab }) {
   const [tab, setTab] = useState<Tab>(initialTab ?? 'family');
-  const info = TABS.find((t) => t.id === tab)!;
+  const info = { label: t(`settings.tabs.${tab}`), note: t(`settings.notes.${tab}`) };
   // on phones the categories scroll sideways – keep the active one visible
   useEffect(() => {
     document.querySelector('.settings-nav-item.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [tab]);
   return (
-    <Modal onClose={onClose} label="Einstellungen" dismissible={false}>
+    <Modal onClose={onClose} label={t('settings.title')} dismissible={false}>
       <div className="modal settings">
-        <nav className="settings-nav" aria-label="Bereiche">
-          <h2>Einstellungen</h2>
-          {TABS.map((t) => (
+        <nav className="settings-nav" aria-label={t('app.sections')}>
+          <h2>{t('settings.title')}</h2>
+          {TABS.map((x) => (
             <button
-              key={t.id}
-              className={`settings-nav-item ${tab === t.id ? 'active' : ''}`}
-              onClick={() => setTab(t.id)}
-              aria-current={tab === t.id}
+              key={x.id}
+              className={`settings-nav-item ${tab === x.id ? 'active' : ''}`}
+              onClick={() => setTab(x.id)}
+              aria-current={tab === x.id}
             >
               <span className="settings-nav-icon" aria-hidden>
-                {t.icon}
+                {x.icon}
               </span>
-              <span className="settings-nav-label">{t.label}</span>
+              <span className="settings-nav-label">{t(`settings.tabs.${x.id}`)}</span>
             </button>
           ))}
         </nav>
@@ -60,7 +61,7 @@ export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; in
               <span className="muted">{info.note}</span>
             </div>
             <button className="btn primary" onClick={onClose}>
-              Fertig
+              {t('common.done')}
             </button>
           </div>
           <div className="settings-body" key={tab}>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getApps, isDefaultLauncher, launchApp, onAppsChanged, openAndroidSettings, type InstalledApp } from '../native/launcher';
 import './apps.css';
+import { t, locale } from '../i18n';
 
 /**
  * Module "Apps" (only in the Android app): all installed apps to start, e.g. Netflix or Disney+.
@@ -18,7 +19,7 @@ export function AppsModule() {
         setApps(list);
         setError('');
       })
-      .catch(() => setError('Die App-Liste ließ sich nicht laden.'));
+      .catch(() => setError(t('apps.loadFailed')));
     isDefaultLauncher()
       .then(setIsHome)
       .catch(() => {});
@@ -36,34 +37,40 @@ export function AppsModule() {
     };
   }, [load]);
 
-  const q = query.trim().toLocaleLowerCase('de');
-  const shown = (apps ?? []).filter((a) => !q || a.label.toLocaleLowerCase('de').includes(q));
+  const q = query.trim().toLocaleLowerCase(locale());
+  const shown = (apps ?? []).filter((a) => !q || a.label.toLocaleLowerCase(locale()).includes(q));
 
   return (
     <div className="view apps-view">
       {!isHome && (
         <div className="apps-banner">
-          <span>HomeWally ist noch nicht die Startbildschirm-App. Dann führt die Home-Taste immer hierher.</span>
+          <span>{t('apps.notHome')}</span>
           <button className="btn primary" onClick={() => openAndroidSettings('home')}>
-            Festlegen
+            {t('apps.setHome')}
           </button>
         </div>
       )}
       <div className="apps-bar">
-        <input type="search" value={query} placeholder="App suchen…" onChange={(e) => setQuery(e.target.value)} enterKeyHint="search" />
+        <input
+          type="search"
+          value={query}
+          placeholder={t('apps.search')}
+          onChange={(e) => setQuery(e.target.value)}
+          enterKeyHint="search"
+        />
         <button className="btn" onClick={() => openAndroidSettings()}>
-          Android-Einstellungen
+          {t('apps.systemSettings')}
         </button>
       </div>
       {error && <p className="empty">{error}</p>}
       {!error && apps === null && <div className="module-loading" aria-busy="true" />}
-      {!error && apps !== null && shown.length === 0 && <p className="empty">Keine App gefunden.</p>}
+      {!error && apps !== null && shown.length === 0 && <p className="empty">{t('apps.none')}</p>}
       <div className="apps-grid">
         {shown.map((app) => (
           <button
             key={`${app.packageName}/${app.activity}`}
             className="app-tile"
-            onClick={() => launchApp(app).catch(() => setError(`„${app.label}“ ließ sich nicht starten.`))}
+            onClick={() => launchApp(app).catch(() => setError(t('apps.startFailed', { name: app.label })))}
           >
             {app.icon ? (
               <img className="app-icon" src={app.icon} alt="" draggable={false} />

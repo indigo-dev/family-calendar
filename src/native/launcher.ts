@@ -1,4 +1,5 @@
 import { Capacitor, CapacitorHttp, registerPlugin, type PluginListenerHandle } from '@capacitor/core';
+import { locale } from '../i18n';
 
 /**
  * Bridge to the Android shell (HomeWally, see android/ and capacitor.config.ts).
@@ -29,7 +30,7 @@ const AppLauncher = registerPlugin<AppLauncherPlugin>('AppLauncher');
 export async function getApps(): Promise<InstalledApp[]> {
   if (!isNative) return [];
   const { apps } = await AppLauncher.getApps({ icons: true });
-  return apps.sort((a, b) => a.label.localeCompare(b.label, 'de', { sensitivity: 'base' }));
+  return apps.sort((a, b) => a.label.localeCompare(b.label, locale(), { sensitivity: 'base' }));
 }
 
 export const launchApp = (app: Pick<InstalledApp, 'packageName' | 'activity'>) =>

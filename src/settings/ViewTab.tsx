@@ -1,23 +1,25 @@
 import type { ViewMode } from '../types';
 import { useStore } from '../store';
 import { Group, Row } from './controls';
+import { fmtHour } from '../lib/dates';
+import { t } from '../i18n';
 
 export function ViewTab() {
   const { settings, updateSettings } = useStore();
   const hours = Array.from({ length: 25 }, (_, i) => i);
   const views: [ViewMode, string][] = [
-    ['day', 'Tag'],
-    ['days', `${settings.multiDays} Tage`],
-    ['week', 'Woche'],
-    ['month', 'Monat'],
-    ['year', 'Jahr'],
-    ['agenda', 'Agenda'],
+    ['day', t('calendar.views.day')],
+    ['days', t('calendar.nDays', { n: settings.multiDays })],
+    ['week', t('calendar.views.week')],
+    ['month', t('calendar.views.month')],
+    ['year', t('calendar.views.year')],
+    ['agenda', t('calendar.views.agenda')],
   ];
   return (
     <div className="form">
       <Group>
         <div className="set-card">
-          <Row label="Startansicht" hint="So öffnet sich der Kalender">
+          <Row label={t('settings.view.startView')} hint={t('settings.view.startViewHint')}>
             <select value={settings.defaultView} onChange={(e) => updateSettings({ defaultView: e.target.value as ViewMode })}>
               {views.map(([v, l]) => (
                 <option key={v} value={v}>
@@ -26,12 +28,12 @@ export function ViewTab() {
               ))}
             </select>
           </Row>
-          <Row label="Woche beginnt am">
+          <Row label={t('settings.view.weekStarts')}>
             <div className="segmented">
               {(
                 [
-                  [1, 'Montag'],
-                  [0, 'Sonntag'],
+                  [1, t('settings.view.monday')],
+                  [0, t('settings.view.sunday')],
                 ] as [0 | 1, string][]
               ).map(([v, l]) => (
                 <button key={v} className={settings.weekStartsOn === v ? 'active' : ''} onClick={() => updateSettings({ weekStartsOn: v })}>
@@ -42,22 +44,22 @@ export function ViewTab() {
           </Row>
         </div>
       </Group>
-      <Group title="Sichtbare Tageszeit" note="Im Tages- und Wochenraster sichtbarer Bereich.">
+      <Group title={t('settings.view.visibleTime')} note={t('settings.view.visibleTimeNote')}>
         <div className="set-card">
-          <Row label="Tag beginnt um">
+          <Row label={t('settings.view.dayStarts')}>
             <select value={settings.dayStartHour} onChange={(e) => updateSettings({ dayStartHour: Number(e.target.value) })}>
               {hours.slice(0, 23).map((h) => (
                 <option key={h} value={h}>
-                  {h}:00 Uhr
+                  {fmtHour(h)}
                 </option>
               ))}
             </select>
           </Row>
-          <Row label="Tag endet um">
+          <Row label={t('settings.view.dayEnds')}>
             <select value={settings.dayEndHour} onChange={(e) => updateSettings({ dayEndHour: Number(e.target.value) })}>
               {hours.slice(settings.dayStartHour + 1).map((h) => (
                 <option key={h} value={h}>
-                  {h}:00 Uhr
+                  {fmtHour(h)}
                 </option>
               ))}
             </select>

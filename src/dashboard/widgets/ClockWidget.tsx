@@ -3,6 +3,7 @@ import { dayKey, fmt, isoWeek } from '../../lib/dates';
 import { deg, describe, useHomeWeather } from '../../lib/weather';
 import { hhmm, useDash, type WidgetProps } from './shared';
 import { useMinute } from '../../lib/clock';
+import { t } from '../../i18n';
 
 export function ClockWidget({ size }: WidgetProps) {
   const { marks } = useDash();
@@ -17,7 +18,7 @@ export function ClockWidget({ size }: WidgetProps) {
       <div className="dw-clock-day">{fmt(now, { weekday: 'long' })}</div>
       <div className="dw-clock-date">
         {fmt(now, size === 's' ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'long', year: 'numeric' })}
-        {size !== 's' && <span className="dw-clock-kw"> · KW {isoWeek(now)}</span>}
+        {size !== 's' && <span className="dw-clock-kw"> · {t('dashboard.week', { n: isoWeek(now) })}</span>}
       </div>
       {size !== 's' && (special || cur) && (
         <div className="dw-clock-extra">

@@ -5,6 +5,8 @@ import { isAnalog, photoById, shuffle, useFrameSettings, type Photo } from '../l
 import { FrameWeather } from '../weather/WeatherChip';
 import { Clock, FrameEvents } from './Clocks';
 import './frame.css';
+import { t } from '../i18n';
+import { fmt } from '../lib/dates';
 
 const FADE_MS = 1600;
 const CONTROLS_MS = 4000;
@@ -164,7 +166,7 @@ export function PhotoFrame({
     else showControls();
   };
 
-  const date = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+  const date = fmt(now, { weekday: 'long', day: 'numeric', month: 'long' });
   const cornerClock = face !== 'none' && layout === 'corner';
   const meta = cfg.date || cfg.weather || cfg.events;
   // the solo clock wanders a little every minute, so nothing stands still on the screen for hours
@@ -180,7 +182,7 @@ export function PhotoFrame({
       onClick={onTap}
       {...swipe}
       role="dialog"
-      aria-label="Fotorahmen"
+      aria-label={t('frame.frame')}
     >
       {slides.map((s) => (
         <SlideView key={s.key} slide={s} fit={cfg.fit} motion={cfg.motion} clock={cornerClock} durationSec={cfg.intervalSec} size={size} />
@@ -205,14 +207,14 @@ export function PhotoFrame({
       {mode === 'manual' && (
         <div className="pf-ui" onClick={(e) => e.stopPropagation()}>
           <button className="pf-btn pf-close" onClick={onClose}>
-            ✕ Beenden
+            {t('frame.stop')}
           </button>
           {playlist.length > 1 && (
             <>
-              <button className="pf-btn pf-nav pf-prev" aria-label="Vorheriges Foto" onClick={() => (go(-1), showControls())}>
+              <button className="pf-btn pf-nav pf-prev" aria-label={t('frame.prev')} onClick={() => (go(-1), showControls())}>
                 ‹
               </button>
-              <button className="pf-btn pf-nav pf-next" aria-label="Nächstes Foto" onClick={() => (go(1), showControls())}>
+              <button className="pf-btn pf-nav pf-next" aria-label={t('frame.next')} onClick={() => (go(1), showControls())}>
                 ›
               </button>
               <div className="pf-count">

@@ -2,6 +2,7 @@ import { useMemo, useState, type CSSProperties } from 'react';
 import { useStore } from '../../store';
 import { BUILTIN, CATEGORIES, type ListEntry, type ShopItem } from '../../lib/shopping';
 import { Head, stop, useDash, useUndo, type WidgetProps } from './shared';
+import { t } from '../../i18n';
 
 const CAT_ORDER = new Map(CATEGORIES.map((c, i) => [c.id, i]));
 
@@ -33,9 +34,9 @@ export function ShoppingWidget({ size }: WidgetProps) {
   if (size === 's') {
     return (
       <div className="dw-count">
-        <Head icon="🛒" title="Einkauf" />
+        <Head icon="🛒" title={t('dashboard.shopping')} />
         <div className="dw-count-num">{list.length}</div>
-        <div className="dw-count-label">{list.length === 1 ? 'Artikel' : 'Artikel'} auf der Liste</div>
+        <div className="dw-count-label">{t('dashboard.onList', { n: list.length })}</div>
         <div className="dw-count-emoji">
           {list
             .slice(0, 6)
@@ -49,9 +50,9 @@ export function ShoppingWidget({ size }: WidgetProps) {
 
   return (
     <div className={`dw-shop ${size}`}>
-      <Head icon="🛒" title="Einkaufsliste" meta={list.length || undefined} />
+      <Head icon="🛒" title={t('dashboard.widgets.shopping.title')} meta={list.length || undefined} />
       <div className={`dw-body dw-scroll ${size === 'm' || size === 'l' ? 'tiles' : ''}`}>
-        {list.length === 0 && <div className="dw-none">Liste ist leer</div>}
+        {list.length === 0 && <div className="dw-none">{t('dashboard.listEmpty')}</div>}
         {list.map(({ e, item }) => {
           const color = paint(CATEGORIES.find((c) => c.id === item.cat)?.color);
           return (
@@ -63,7 +64,7 @@ export function ShoppingWidget({ size }: WidgetProps) {
                 stop(ev);
                 check(e, item);
               }}
-              aria-label={`${item.name} abhaken`}
+              aria-label={t('dashboard.check', { name: item.name })}
             >
               <span className="dw-shop-emoji">{item.emoji}</span>
               <span className="dw-shop-name">{item.name}</span>

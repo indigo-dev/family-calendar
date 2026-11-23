@@ -6,6 +6,7 @@ import { DEFAULT_WEATHER_ICONS, isWeatherIconSet } from './weatherIcons';
 import { DEFAULT_CORE_COLOR, PALETTE, PALETTES } from './colors';
 import { uid } from './id';
 import { persisted } from './persisted';
+import { isLanguageSetting, t } from '../i18n';
 
 const CONFIG_KEY = 'fc.config.v1';
 
@@ -46,63 +47,50 @@ export const EMOJIS = [
   '❤️',
 ];
 
-/** Where to find the ICS subscription link at the common providers (help text in the settings). */
-export const LINK_HELP: Record<string, { label: string; icon: string; help: string }> = {
-  microsoft: {
-    label: 'Microsoft privat (Outlook.com / Live / Hotmail)',
-    icon: '📧',
-    help:
-      'outlook.live.com → Einstellungen (Zahnrad) → Kalender → Freigegebene Kalender → „Kalender veröffentlichen“: Kalender wählen, ' +
-      '„Kann alle Details anzeigen“, Veröffentlichen. Den ICS-Link kopieren.',
-  },
-  'microsoft-work': {
-    label: 'Microsoft geschäftlich (Microsoft 365)',
-    icon: '🏢',
-    help:
-      'outlook.office.com → Einstellungen → Kalender → Freigegebene Kalender → „Kalender veröffentlichen“ → ICS-Link kopieren. ' +
-      'Fehlt die Option, hat die IT das Veröffentlichen gesperrt.',
-  },
-  google: {
-    label: 'Google (Gmail)',
-    icon: '📅',
-    help:
-      'calendar.google.com am Computer → Zahnrad → Einstellungen → links den Kalender wählen → „Kalender integrieren“ → ' +
-      '„Privatadresse im iCal-Format“ kopieren.',
-  },
-  icloud: {
-    label: 'Apple iCloud',
-    icon: '🍏',
-    help: 'Kalender-App → Info neben dem Kalender → „Öffentlicher Kalender“ aktivieren → Link teilen/kopieren.',
-  },
-  other: {
-    label: 'Anderer Kalender (ICS-Link)',
-    icon: '🔗',
-    help: 'Jeder Abo-Link, der mit https:// oder webcal:// beginnt und auf .ics endet bzw. einen iCal-Kalender liefert.',
-  },
-};
+const LINK_HELP_IDS = [
+  ['microsoft', '📧'],
+  ['microsoftWork', '🏢'],
+  ['google', '📅'],
+  ['icloud', '🍏'],
+  ['other', '🔗'],
+] as const;
 
-export const REGIONS: [code: string, name: string][] = [
-  ['DE-BW', 'Baden-Württemberg'],
-  ['DE-BY', 'Bayern'],
-  ['DE-BE', 'Berlin'],
-  ['DE-BB', 'Brandenburg'],
-  ['DE-HB', 'Bremen'],
-  ['DE-HH', 'Hamburg'],
-  ['DE-HE', 'Hessen'],
-  ['DE-MV', 'Mecklenburg-Vorpommern'],
-  ['DE-NI', 'Niedersachsen'],
-  ['DE-NW', 'Nordrhein-Westfalen'],
-  ['DE-RP', 'Rheinland-Pfalz'],
-  ['DE-SL', 'Saarland'],
-  ['DE-SN', 'Sachsen'],
-  ['DE-ST', 'Sachsen-Anhalt'],
-  ['DE-SH', 'Schleswig-Holstein'],
-  ['DE-TH', 'Thüringen'],
-];
+/** Where to find the ICS subscription link at the common providers (help text in the settings). */
+export const linkHelp = (): { label: string; icon: string; help: string }[] =>
+  LINK_HELP_IDS.map(([id, icon]) => ({
+    icon,
+    label: t(`settings.calendars.help.${id}.label`),
+    help: t(`settings.calendars.help.${id}.help`),
+  }));
+
+/** German federal states (OpenHolidays subdivision codes) */
+const REGION_CODES = [
+  'DE-BW',
+  'DE-BY',
+  'DE-BE',
+  'DE-BB',
+  'DE-HB',
+  'DE-HH',
+  'DE-HE',
+  'DE-MV',
+  'DE-NI',
+  'DE-NW',
+  'DE-RP',
+  'DE-SL',
+  'DE-SN',
+  'DE-ST',
+  'DE-SH',
+  'DE-TH',
+] as const;
+
+/** [code, name in the active language], sorted by name */
+export const regions = (): [code: string, name: string][] =>
+  REGION_CODES.map((code): [string, string] => [code, t(`regions.${code}`)]).sort((a, b) => a[1].localeCompare(b[1]));
 
 export const DEFAULT_HOLIDAYS: HolidaySettings = { region: '', showPublic: true, showSchool: true };
 
 export const DEFAULT_SETTINGS: Settings = {
+  language: 'auto',
   proxyUrl: '',
   proxyKey: '',
   holidays: { ...DEFAULT_HOLIDAYS },
@@ -123,16 +111,18 @@ export const DEFAULT_SETTINGS: Settings = {
   moduleTransition: 'fade',
 };
 
-export const UI_STYLES: { id: UiStyle; label: string }[] = [
-  { id: 'classic', label: 'Klassisch' },
-  { id: 'soft', label: 'Hell · Sanft' },
-  { id: 'clear', label: 'Glas · Klar' },
-  { id: 'flow', label: 'Glas · Flow' },
-  { id: 'aurora', label: 'Glas · Aurora' },
-  { id: 'nodes', label: 'Workflow · Knoten' },
-  { id: 'states', label: 'Diagramm · Zustände' },
-  { id: 'minimal', label: 'Minimal · Funktional' },
-];
+const STYLE_IDS: UiStyle[] = ['classic', 'soft', 'clear', 'flow', 'aurora', 'nodes', 'states', 'minimal'];
+
+/** The styles with name and short description in the active language. */
+export const UI_STYLES: { id: UiStyle; label: string; note: string }[] = STYLE_IDS.map((id) => ({
+  id,
+  get label() {
+    return t(`styles.${id}.label`);
+  },
+  get note() {
+    return t(`styles.${id}.note`);
+  },
+}));
 
 /** Style ids of earlier versions (named after products) → today's ids, so saved settings and backups keep their style. */
 const LEGACY_STYLES: Record<string, UiStyle> = {
@@ -161,11 +151,11 @@ export function defaultConfig(): AppConfig {
 export function newMember(existing: Member[]): Member {
   const used = new Set(existing.map((m) => m.color));
   const color = PALETTE.find((c) => !used.has(c)) ?? PALETTE[existing.length % PALETTE.length];
-  return { id: uid(), name: `Person ${existing.length + 1}`, color, avatar: { type: 'initials' } };
+  return { id: uid(), name: t('settings.family.newPerson', { n: existing.length + 1 }), color, avatar: { type: 'initials' } };
 }
 
 export function newCalendar(name: string, url: string, memberIds: string[] = []): CalendarSource {
-  return { id: uid(), name: name.trim() || 'Kalender', url: url.trim(), memberIds, enabled: true };
+  return { id: uid(), name: name.trim() || t('settings.calendars.defaultName'), url: url.trim(), memberIds, enabled: true };
 }
 
 /** Mo..Fr × lessons; null = free. Lena goes to the Gymnasium (one long day), Max to the Grundschule. */
@@ -197,8 +187,8 @@ const DEMO_TIMETABLES: Record<'Lena' | 'Max', Timetable> = {
 export function demoMembers(): Member[] {
   const timetable = (name: keyof typeof DEMO_TIMETABLES): Timetable => structuredClone(DEMO_TIMETABLES[name]);
   return [
-    { id: uid(), name: 'Papa', color: '#3b82f6', avatar: { type: 'emoji', value: '👨' }, demo: true },
-    { id: uid(), name: 'Mama', color: '#e8613c', avatar: { type: 'emoji', value: '👩' }, demo: true },
+    { id: uid(), name: t('demo.members.dad'), color: '#3b82f6', avatar: { type: 'emoji', value: '👨' }, demo: true },
+    { id: uid(), name: t('demo.members.mum'), color: '#e8613c', avatar: { type: 'emoji', value: '👩' }, demo: true },
     { id: uid(), name: 'Lena', color: '#a855f7', avatar: { type: 'emoji', value: '🦄' }, demo: true, timetable: timetable('Lena') },
     { id: uid(), name: 'Max', color: '#22a06b', avatar: { type: 'emoji', value: '🦖' }, demo: true, timetable: timetable('Max') },
   ];
@@ -223,10 +213,10 @@ function parseMember(raw: unknown): Member | null {
 
 /** Validates and normalises an unknown object (from localStorage or an imported file). Migrates version 1. */
 export function parseConfig(raw: unknown): AppConfig {
-  if (!raw || typeof raw !== 'object') throw new Error('Keine gültige Konfiguration.');
+  if (!raw || typeof raw !== 'object') throw new Error(t('config.invalid'));
   const o = raw as Record<string, unknown>;
-  if (o.schemaVersion !== 1 && o.schemaVersion !== 2 && o.schemaVersion !== 3) throw new Error('Unbekannte Konfigurationsversion.');
-  if (!Array.isArray(o.members)) throw new Error('Familienmitglieder fehlen.');
+  if (o.schemaVersion !== 1 && o.schemaVersion !== 2 && o.schemaVersion !== 3) throw new Error(t('config.unknownVersion'));
+  if (!Array.isArray(o.members)) throw new Error(t('config.noMembers'));
   const members = o.members.map(parseMember).filter((m): m is Member => !!m);
   const memberIds = new Set(members.map((m) => m.id));
 
@@ -236,7 +226,7 @@ export function parseConfig(raw: unknown): AppConfig {
     .filter((c) => typeof c.id === 'string')
     .map((c) => ({
       id: c.id as string,
-      name: str(c.name, 'Kalender'),
+      name: str(c.name, t('settings.calendars.defaultName')),
       url: str(c.url),
       memberIds: (Array.isArray(c.memberIds) ? c.memberIds : []).filter((id): id is string => typeof id === 'string' && memberIds.has(id)),
       enabled: c.enabled !== false,
@@ -250,7 +240,9 @@ export function parseConfig(raw: unknown): AppConfig {
   settings.holidays = { ...DEFAULT_HOLIDAYS, ...obj(s.holidays) } as HolidaySettings;
   settings.multiDays = clampDays(settings.multiDays);
   settings.style = (LEGACY_STYLES[settings.style] ?? settings.style) as UiStyle;
-  if (!UI_STYLES.some((x) => x.id === settings.style)) settings.style = DEFAULT_SETTINGS.style;
+  if (!STYLE_IDS.includes(settings.style)) settings.style = DEFAULT_SETTINGS.style;
+  // backups from before the language setting: 'auto' (= device language)
+  if (!isLanguageSetting(settings.language)) settings.language = DEFAULT_SETTINGS.language;
   if (!isSymbolSet(settings.symbols)) settings.symbols = DEFAULT_SETTINGS.symbols;
   if (!isWeatherIconSet(settings.weatherIcons)) settings.weatherIcons = DEFAULT_SETTINGS.weatherIcons;
   if (!PALETTES.some((x) => x.id === settings.palette)) settings.palette = DEFAULT_SETTINGS.palette;
@@ -271,7 +263,7 @@ export function exportConfig(cfg: AppConfig): void {
   const d = new Date();
   const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   a.href = url;
-  a.download = `familienkalender-${stamp}.json`;
+  a.download = `${t('settings.backup.fileName')}-${stamp}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -284,7 +276,7 @@ export async function readConfigFile(file: File): Promise<AppConfig> {
   try {
     json = JSON.parse(text);
   } catch {
-    throw new Error('Die Datei ist kein gültiges JSON.');
+    throw new Error(t('config.noJson'));
   }
   return parseConfig(json);
 }
@@ -306,7 +298,7 @@ export function imageFileToAvatar(file: File, size = 192): Promise<string> {
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
-      if (!ctx) return reject(new Error('Canvas nicht verfügbar'));
+      if (!ctx) return reject(new Error(t('config.noCanvas')));
       const s = Math.min(img.width, img.height);
       ctx.drawImage(img, (img.width - s) / 2, (img.height - s) / 2, s, s, 0, 0, size, size);
       URL.revokeObjectURL(url);
@@ -314,7 +306,7 @@ export function imageFileToAvatar(file: File, size = 192): Promise<string> {
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Bild konnte nicht gelesen werden'));
+      reject(new Error(t('config.badImage')));
     };
     img.src = url;
   });

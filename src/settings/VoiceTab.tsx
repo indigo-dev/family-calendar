@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Group, Row, Switch } from './controls';
 import { DEFAULT_MODEL, updateVoiceSettings, useVoiceSettings } from '../voice/settings';
 import { listModels, VoiceError, type ModelInfo } from '../voice/gemini';
+import { t } from '../i18n';
 
 type Test = { busy: true } | { busy: false; ok: boolean; text: string };
 
@@ -29,13 +30,14 @@ export function VoiceTab() {
       setTest({
         busy: false,
         ok: true,
-        text:
-          known || switched
-            ? `Verbindung klappt${switched ? ` – Modell auf „${DEFAULT_MODEL}“ umgestellt` : ''}. Der Mikrofon-Knopf ist jetzt unten rechts.`
-            : `Verbindung klappt, aber das Modell „${voice.model}“ gibt es für diesen Key nicht – bitte unten eins wählen.`,
+        text: switched
+          ? t('settings.voice.connectedSwitched', { model: DEFAULT_MODEL })
+          : known
+            ? t('settings.voice.connected')
+            : t('settings.voice.unknownModel', { model: voice.model }),
       });
     } catch (e) {
-      setTest({ busy: false, ok: false, text: e instanceof VoiceError ? e.message : 'Test fehlgeschlagen.' });
+      setTest({ busy: false, ok: false, text: e instanceof VoiceError ? e.message : t('settings.voice.testFailed') });
     }
   };
 
@@ -44,14 +46,14 @@ export function VoiceTab() {
   return (
     <div className="form">
       <div className="field">
-        <span>Gemini-API-Key</span>
+        <span>{t('settings.voice.apiKey')}</span>
         <div className="copy-row">
           <input
             style={inputStyle}
             type="password"
             value={key}
             placeholder="AIza…"
-            aria-label="Gemini-API-Key"
+            aria-label={t('settings.voice.apiKey')}
             onChange={(e) => setKey(e.target.value)}
             autoComplete="off"
             autoCapitalize="off"
@@ -59,27 +61,21 @@ export function VoiceTab() {
             spellCheck={false}
           />
           <button className="btn primary" onClick={save} disabled={test?.busy}>
-            {test?.busy ? 'Prüfe …' : 'Speichern & testen'}
+            {test?.busy ? t('common.checking') : t('settings.calendars.saveTest')}
           </button>
         </div>
         {test && !test.busy && <p className={test.ok ? 'success' : 'error'}>{test.text}</p>}
         <p className="help">
-          Den Key gibt es kostenlos im <strong>Google AI Studio</strong> (aistudio.google.com → „Get API key“). Ein Google-AI-Pro-Abo
-          enthält keinen API-Zugang. Im kostenlosen Tarif darf Google die Anfragen zur Verbesserung seiner Modelle verwenden; mit
-          hinterlegter Zahlungsart nicht – ein Befehl kostet dann Bruchteile eines Cents.
+          {t('settings.voice.keyHelp1')} <strong>Google AI Studio</strong> {t('settings.voice.keyHelp2')}
         </p>
       </div>
 
-      <Group
-        note={
-          <>
-            Der Key bleibt nur auf diesem Gerät und kommt nicht in die Sicherungsdatei. Beim Sprechen geht die Aufnahme zusammen mit
-            Familiennamen, Wetter-Orten und Vorratsliste an Google.
-          </>
-        }
-      >
+      <Group note={t('settings.voice.privacy')}>
         <div className="set-card">
-          <Row label="Modell" hint={models.length ? 'Modelle dieses Keys' : 'Nach dem Test stehen alle Modelle zur Wahl'}>
+          <Row
+            label={t('settings.voice.model')}
+            hint={models.length ? t('settings.voice.modelsOfKey') : t('settings.voice.modelsAfterTest')}
+          >
             <select value={voice.model} onChange={(e) => updateVoiceSettings({ model: e.target.value })}>
               {!options.some((m) => m.id === voice.model) && <option value={voice.model}>{voice.model}</option>}
               {options.map((m) => (
@@ -90,25 +86,25 @@ export function VoiceTab() {
             </select>
           </Row>
           {voice.model !== DEFAULT_MODEL && (
-            <Row label="Standardmodell" hint={DEFAULT_MODEL}>
+            <Row label={t('settings.voice.defaultModel')} hint={DEFAULT_MODEL}>
               <button className="btn" onClick={() => updateVoiceSettings({ model: DEFAULT_MODEL })}>
-                Zurücksetzen
+                {t('common.reset')}
               </button>
             </Row>
           )}
-          <Row label="Antworten vorlesen" hint="Ergebnis und Antworten werden gesprochen">
-            <Switch checked={voice.speak} onChange={(speak) => updateVoiceSettings({ speak })} label="Antworten vorlesen" />
+          <Row label={t('settings.voice.speak')} hint={t('settings.voice.speakHint')}>
+            <Switch checked={voice.speak} onChange={(speak) => updateVoiceSettings({ speak })} label={t('settings.voice.speak')} />
           </Row>
         </div>
       </Group>
 
-      <Group title="Was geht">
+      <Group title={t('settings.voice.examples')}>
         <ul className="help" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
-          <li>„Pack drei Äpfel und eine Milch auf die Einkaufsliste“</li>
-          <li>„Erinnere Anna morgen an die Turnsachen“</li>
-          <li>„Wie wird das Wetter morgen?“</li>
-          <li>„Was steht diese Woche an?“</li>
-          <li>„Zeig mir den Stundenplan“</li>
+          <li>{t('settings.voice.example1')}</li>
+          <li>{t('settings.voice.example2')}</li>
+          <li>{t('settings.voice.example3')}</li>
+          <li>{t('settings.voice.example4')}</li>
+          <li>{t('settings.voice.example5')}</li>
         </ul>
       </Group>
     </div>

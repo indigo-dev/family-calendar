@@ -13,6 +13,8 @@ import { MonthView } from './views/MonthView';
 import { YearView } from './views/YearView';
 import { AgendaView } from './views/AgendaView';
 import { onMinute, useMinute, useToday } from './lib/clock';
+import { fmtTime } from './lib/dates';
+import { t } from './i18n';
 
 interface Props {
   /** changes when the settings panel closes -> reload calendars */
@@ -149,7 +151,7 @@ export function CalendarModule({ reloadKey, settingsOpen, onSettings, onWeather 
       <MemberFilter issues={memberIssues} onIssue={setBanner} />
       {banner && (
         <div className="banner error" onClick={() => setBanner(undefined)}>
-          {banner} <span className="muted">(antippen zum Schließen)</span>
+          {banner} <span className="muted">{t('common.tapToClose')}</span>
         </div>
       )}
       <main className="view" {...swipe}>
@@ -161,9 +163,7 @@ export function CalendarModule({ reloadKey, settingsOpen, onSettings, onWeather 
         {view === 'year' && <YearView {...viewProps} />}
         {view === 'agenda' && <AgendaView {...viewProps} />}
       </main>
-      {lastUpdated && (
-        <div className="statusline muted">Stand {lastUpdated.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</div>
-      )}
+      {lastUpdated && <div className="statusline muted">{t('calendar.updated', { time: fmtTime(lastUpdated) })}</div>}
       {selected && <EventDetail event={selected} onClose={() => setSelected(null)} />}
     </>
   );

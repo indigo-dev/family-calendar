@@ -1,12 +1,13 @@
 import { useMemo, useRef, useState, type CSSProperties, type PointerEvent, type ReactElement } from 'react';
 import type { DayMarks, Member, Subject, Timetable } from '../types';
 import { useStore } from '../store';
-import { addDays, dayKey, fmt, startOfDay, startOfWeek } from '../lib/dates';
+import { addDays, dayKey, fmt, startOfDay, startOfWeek, fmtHHMM } from '../lib/dates';
 import { useHolidayMarks } from '../lib/holidays';
-import { minutes, newSubject, SCHOOL_DAYS, SCHOOL_TYPES, SUBJECT_COLORS, subjectMap, subjectsFor } from '../lib/school';
+import { minutes, newSubject, SCHOOL_DAYS, SCHOOL_TYPES, SUBJECT_COLORS, subjectMap, subjectsFor, schoolDayName } from '../lib/school';
 import { Avatar } from '../components/Avatar';
 import { MemberChip } from '../components/Header';
 import { useMinute } from '../lib/clock';
+import { t } from '../i18n';
 
 /** Breaks of at least this many minutes get their own row. */
 const BREAK_MIN = 10;
@@ -67,22 +68,22 @@ export function TimetableModule({ onSettings }: { onSettings: () => void }) {
   // works on the current state: a fast stroke paints several cells before the next render
   const paint = (member: Member, day: number, period: number, value: string | null) =>
     updateMember(member.id, (m) => {
-      const t = m.timetable;
-      if (!t || (t.cells[day][period] ?? null) === value) return {};
-      const cells = t.cells.map((row, d) => (d === day ? row.map((c, p) => (p === period ? value : c)) : row));
-      return { timetable: { ...t, cells } };
+      const tt = m.timetable;
+      if (!tt || (tt.cells[day][period] ?? null) === value) return {};
+      const cells = tt.cells.map((row, d) => (d === day ? row.map((c, p) => (p === period ? value : c)) : row));
+      return { timetable: { ...tt, cells } };
     });
 
   if (kids.length === 0) {
     return (
       <main className="view tt-view">
         <div className="tt-empty">
-          <p>Noch kein Stundenplan angelegt.</p>
+          <p>{t('timetable.none')}</p>
           <p className="muted">
-            In den Einstellungen unter <strong>Familie</strong> beim Kind „Hat Stundenplan“ einschalten.
+            {t('timetable.howTo1')} <strong>{t('settings.tabs.family')}</strong> {t('timetable.howTo2')}
           </p>
           <button className="btn primary" onClick={onSettings}>
-            Einstellungen öffnen
+            {t('timetable.openSettings')}
           </button>
         </div>
       </main>
@@ -93,9 +94,9 @@ export function TimetableModule({ onSettings }: { onSettings: () => void }) {
     <>
       <div className="board-toolbar">
         {kids.length > 1 && (
-          <nav className="filterbar" aria-label="Kinder">
+          <nav className="filterbar" aria-label={t('timetable.kids')}>
             <button className={`chip all ${all ? 'on' : ''}`} aria-pressed={all} onClick={() => setChosen([])} disabled={editing}>
-              Alle
+              {t('common.all')}
             </button>
             {kids.map((k) => {
               const on = chosen.includes(k.id);
@@ -117,7 +118,7 @@ export function TimetableModule({ onSettings }: { onSettings: () => void }) {
         {active &&
           (editing ? (
             <button className="btn primary" onClick={() => setEditing(false)}>
-              Fertig
+              {t('common.done')}
             </button>
           ) : (
             <button
@@ -127,7 +128,7 @@ export function TimetableModule({ onSettings }: { onSettings: () => void }) {
                 setEditing(true);
               }}
             >
-              ✎ Bearbeiten
+              {t('timetable.edit')}
             </button>
           ))}
       </div>
@@ -208,7 +209,7 @@ function TimetableGrid({
   for (let p = 0; p < count; p++) {
     const gap = p > 0 ? minutes(periods[p].start) - minutes(periods[p - 1].end) : 0;
     breakBefore[p] = gap >= BREAK_MIN;
-    if (breakBefore[p]) rows.push({ kind: 'break', label: gap >= 30 ? `Mittagspause · ${gap} min` : `Pause · ${gap} min` });
+    if (breakBefore[p]) rows.push({ kind: 'break', label: t(gap >= 30 ? 'timetable.lunch' : 'timetable.break', { n: gap }) });
     rows.push({ kind: 'period', p });
     rowOf[p] = rows.length + 1; // grid row (row 1 = day header)
   }
@@ -271,7 +272,7 @@ function TimetableGrid({
             <>
               <span className="tt-name">{s.name}</span>
               <span className="tt-short">{s.short}</span>
-              {q > p && <span className="tt-double">Doppelstunde</span>}
+              {q > p && <span className="tt-double">{t('timetable.double')}</span>}
             </>
           ) : id ? (
             <span className="tt-short">?</span>
@@ -296,7 +297,7 @@ function TimetableGrid({
         <div className="tt-corner" style={{ gridRow: 1, gridColumn: 1 }} />
         {days.map((day, d) => (
           <div key={d} className={`tt-day ${day.today ? 'today' : ''} ${day.off ? 'off' : ''}`} style={{ gridRow: 1, gridColumn: d + 2 }}>
-            <span className="tt-wd">{SCHOOL_DAYS[d]}</span>
+            <span className="tt-wd">{schoolDayName(d)}</span>
             <span className="tt-date">{fmt(day.date, { day: 'numeric', month: 'numeric' })}</span>
             {day.off && (
               <span className="tt-off" title={day.off}>
@@ -313,14 +314,14 @@ function TimetableGrid({
           ) : (
             <div key={`t${i}`} className="tt-time" style={{ gridRow: i + 2, gridColumn: 1 }}>
               <strong>{r.p + 1}.</strong>
-              <small>{periods[r.p].start}</small>
-              <small className="tt-time-end">{periods[r.p].end}</small>
+              <small>{fmtHHMM(periods[r.p].start)}</small>
+              <small className="tt-time-end">{fmtHHMM(periods[r.p].end)}</small>
             </div>
           ),
         )}
         {items}
       </div>
-      {empty && !editing && <p className="tt-hint muted">Noch leer – tippe oben auf „Bearbeiten“, um Fächer einzutragen.</p>}
+      {empty && !editing && <p className="tt-hint muted">{t('timetable.emptyHint')}</p>}
     </section>
   );
 }
@@ -344,9 +345,7 @@ function Palette({
 
   return (
     <div className="tt-palette">
-      <p className="tt-palette-hint muted">
-        Fach wählen, dann Stunden antippen oder darüberwischen. Nochmal tippen löscht. ({schoolLabel})
-      </p>
+      <p className="tt-palette-hint muted">{t('timetable.paletteHint', { school: schoolLabel })}</p>
       <div className="tt-palette-chips">
         {subjects.map((s) => (
           <button
@@ -360,15 +359,15 @@ function Palette({
           </button>
         ))}
         <button className={`tt-subject eraser ${brush === null ? 'on' : ''}`} aria-pressed={brush === null} onClick={() => onBrush(null)}>
-          ⌫ Radierer
+          {t('timetable.eraser')}
         </button>
         <button className="tt-subject add" onClick={() => setAdding((v) => !v)}>
-          + Fach
+          {t('timetable.addSubject')}
         </button>
       </div>
       {adding && (
         <div className="tt-add">
-          <input value={name} placeholder="Name des Fachs" onChange={(e) => setName(e.target.value)} autoFocus />
+          <input value={name} placeholder={t('timetable.subjectName')} onChange={(e) => setName(e.target.value)} autoFocus />
           <div className="swatches">
             {SUBJECT_COLORS.map((c) => (
               <button
@@ -389,7 +388,7 @@ function Palette({
               setAdding(false);
             }}
           >
-            Hinzufügen
+            {t('timetable.add')}
           </button>
         </div>
       )}

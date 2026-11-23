@@ -4,6 +4,7 @@ import type { Todo } from '../lib/todos';
 
 import { autoPlace, clampSize, NOTE_H, NOTE_W, PAD, type Gesture, type Live } from './layout';
 import { Note } from './Note';
+import { t as tr } from '../i18n';
 
 export function Canvas({
   all,
@@ -223,7 +224,7 @@ export function Canvas({
               style={{ left: p.x, top: p.y, zIndex: live?.id === t.id ? 100000 : p.z }}
               role="button"
               tabIndex={0}
-              aria-label={`Bearbeiten: ${t.text}`}
+              aria-label={tr('todos.editNote', { text: t.text })}
               onKeyDown={(e) => e.key === 'Enter' && onOpen(t)}
             >
               <Note todo={t} members={membersOf(t)} today={today} size={p.size} onToggle={() => onToggle(t)} resizable />
@@ -234,10 +235,10 @@ export function Canvas({
       {visible.length === 0 && (
         <div className="todo-empty">
           <div className="todo-empty-card">
-            <strong>Alles erledigt</strong>
-            <span className="muted">Keine offenen To-dos.</span>
+            <strong>{tr('todos.allDone')}</strong>
+            <span className="muted">{tr('todos.noneOpen')}</span>
             <button className="btn primary" onClick={onNew}>
-              + Neuer Zettel
+              {tr('todos.newNote')}
             </button>
           </div>
         </div>

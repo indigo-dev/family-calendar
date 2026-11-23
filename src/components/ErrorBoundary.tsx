@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { t } from '../i18n';
 
 interface Props {
   children: ReactNode;
@@ -65,7 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <span className="error-fallback-icon" aria-hidden>
             ⚠︎
           </span>
-          <p>{label} konnte nicht angezeigt werden.</p>
+          <p>{t('error.failed', { label })}</p>
           <button
             className="btn"
             onPointerDown={(e) => e.stopPropagation()}
@@ -74,7 +75,7 @@ export class ErrorBoundary extends Component<Props, State> {
               this.reset();
             }}
           >
-            Erneut versuchen
+            {t('common.retry')}
           </button>
         </div>
       );
@@ -85,14 +86,14 @@ export class ErrorBoundary extends Component<Props, State> {
         <span className="error-fallback-icon" aria-hidden>
           ⚠︎
         </span>
-        <h3>{label} konnte nicht angezeigt werden.</h3>
+        <h3>{t('error.failed', { label })}</h3>
         <p className="muted">{error.message}</p>
         <div className="error-fallback-actions">
           <button className="btn primary" onClick={this.reset}>
-            Erneut versuchen
+            {t('common.retry')}
           </button>
           <button className="btn" onClick={() => window.location.reload()}>
-            App neu laden
+            {t('error.reload')}
           </button>
         </div>
       </div>

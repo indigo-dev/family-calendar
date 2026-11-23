@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { uid } from './id';
 import { arrayOf, isRecord, isString, oneOf, persisted, usePersisted } from './persisted';
+import { t } from '../i18n';
 
 /**
  * Photo frame: photos live in IndexedDB on this device (localStorage is far too small for images),
@@ -61,23 +62,32 @@ export const SCREENSAVER = [0, 2, 5, 10, 15, 30, 60];
 export type ClockFace = 'none' | 'd-light' | 'd-bold' | 'd-flip' | 'd-words' | 'a-classic' | 'a-minimal' | 'a-dots' | 'a-roman';
 export type ClockLayout = 'corner' | 'center' | 'solo';
 
-export const CLOCK_FACES: { id: Exclude<ClockFace, 'none'>; label: string; kind: 'digital' | 'analog' }[] = [
-  { id: 'd-light', label: 'Schlicht', kind: 'digital' },
-  { id: 'd-bold', label: 'Kräftig', kind: 'digital' },
-  { id: 'd-flip', label: 'Klappzahlen', kind: 'digital' },
-  { id: 'd-words', label: 'Wortuhr', kind: 'digital' },
-  { id: 'a-classic', label: 'Klassisch', kind: 'analog' },
-  { id: 'a-minimal', label: 'Minimal', kind: 'analog' },
-  { id: 'a-dots', label: 'Punkte', kind: 'analog' },
-  { id: 'a-roman', label: 'Römisch', kind: 'analog' },
+const FACES: [Exclude<ClockFace, 'none'>, 'digital' | 'analog'][] = [
+  ['d-light', 'digital'],
+  ['d-bold', 'digital'],
+  ['d-flip', 'digital'],
+  ['d-words', 'digital'],
+  ['a-classic', 'analog'],
+  ['a-minimal', 'analog'],
+  ['a-dots', 'analog'],
+  ['a-roman', 'analog'],
 ];
+
+export const CLOCK_FACES: { id: Exclude<ClockFace, 'none'>; label: string; kind: 'digital' | 'analog' }[] = FACES.map(([id, kind]) => ({
+  id,
+  kind,
+  get label() {
+    return t(`frame.faces.${id}`);
+  },
+}));
 const FACE_IDS: ClockFace[] = ['none', ...CLOCK_FACES.map((f) => f.id)];
 
-export const CLOCK_LAYOUTS: { id: ClockLayout; label: string }[] = [
-  { id: 'corner', label: 'In der Ecke' },
-  { id: 'center', label: 'Groß in der Mitte' },
-  { id: 'solo', label: 'Nur die Uhr' },
-];
+export const CLOCK_LAYOUTS: { id: ClockLayout; label: string }[] = (['corner', 'center', 'solo'] as const).map((id) => ({
+  id,
+  get label() {
+    return t(`frame.layouts.${id}`);
+  },
+}));
 
 export const isAnalog = (f: ClockFace) => f.startsWith('a-');
 
@@ -255,7 +265,7 @@ async function scale(blob: Blob, edge: number, quality: number): Promise<{ blob:
   ctx.drawImage(bmp, 0, 0, width, height);
   bmp.close();
   const out = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', quality));
-  if (!out) throw new Error('Bild konnte nicht umgewandelt werden');
+  if (!out) throw new Error(t('frame.convertFailed'));
   return { blob: out, width, height };
 }
 

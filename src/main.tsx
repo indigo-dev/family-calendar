@@ -4,6 +4,7 @@ import { App } from './App';
 import { StoreProvider } from './store';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { configStore } from './lib/config';
+import { t } from './i18n';
 import { isNative } from './native/launcher';
 import './styles.css';
 // self-hosted fonts for the Flow and Aurora styles (only downloaded when a style uses them)
@@ -24,7 +25,7 @@ document.documentElement.setAttribute('data-style', configStore.get().settings.s
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ErrorBoundary label="Die App">
+    <ErrorBoundary label={t('app.wholeApp')}>
       <StoreProvider>
         <App />
       </StoreProvider>

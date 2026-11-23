@@ -3,6 +3,7 @@ import type { Todo } from '../lib/todos';
 import { AvatarStack } from '../components/Avatar';
 
 import { dueInfo, noteStyle } from './layout';
+import { t } from '../i18n';
 
 export function Note({
   todo,
@@ -39,7 +40,7 @@ export function Note({
             e.stopPropagation();
             onToggle();
           }}
-          aria-label={todo.done ? 'Wieder offen' : 'Erledigt'}
+          aria-label={todo.done ? t('todos.reopen') : t('todos.markDone')}
           aria-pressed={todo.done}
         >
           <svg viewBox="0 0 24 24" aria-hidden>

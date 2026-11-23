@@ -1,6 +1,7 @@
 import type { ModuleTransition } from './lib/transition';
 import type { SymbolSet } from './lib/symbols';
 import type { WeatherIconSet } from './lib/weatherIcons';
+import type { LanguageSetting } from './i18n';
 
 export type ViewMode = 'day' | 'days' | 'week' | 'month' | 'year' | 'agenda';
 
@@ -65,6 +66,8 @@ export interface HolidaySettings {
 }
 
 export interface Settings {
+  /** UI language; 'auto' = the device language */
+  language: LanguageSetting;
   /** Cloudflare worker that fetches ICS links (CORS) */
   proxyUrl: string;
   /** access key of the worker (its ACCESS_KEY secret); empty = none */

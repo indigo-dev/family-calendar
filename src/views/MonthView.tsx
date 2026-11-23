@@ -4,6 +4,7 @@ import { useSize } from '../lib/hooks';
 import type { CalEvent } from '../types';
 import { markClass, membersOf, type ViewProps } from './common';
 import { AllDayChip } from './AllDayChip';
+import { t } from '../i18n';
 
 const CHIP_H = 22;
 
@@ -82,7 +83,7 @@ export function MonthView({ date, now, events, onEvent, onOpen, marks }: ViewPro
                       })}
                       {list.length > shown.length && (
                         <button className="more" onClick={() => onOpen('day', d)}>
-                          +{list.length - shown.length} weitere
+                          {t('calendar.moreEvents', { n: list.length - shown.length })}
                         </button>
                       )}
                     </div>

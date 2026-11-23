@@ -26,6 +26,7 @@ import type { SettingsTab } from '../settings/SettingsPanel';
 import { DashCtx, WIDGET_COMPONENTS, type DashData } from './widgets';
 import './dashboard.css';
 import { useToday } from '../lib/clock';
+import { t } from '../i18n';
 
 const GAP = 12;
 const LONG_PRESS_MS = 550;
@@ -260,16 +261,16 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
     <DashCtx.Provider value={data}>
       {editing && (
         <div className="dash-toolbar">
-          <span className="dash-hint muted">Ziehen zum Verschieben · Größe über den Knopf unten rechts</span>
+          <span className="dash-hint muted">{t('dashboard.hint')}</span>
           <span className="board-spacer" />
-          <button className="btn ghost" onClick={() => confirm('Standard-Anordnung wiederherstellen?') && resetLayout()}>
-            Zurücksetzen
+          <button className="btn ghost" onClick={() => confirm(t('dashboard.confirmReset')) && resetLayout()}>
+            {t('common.reset')}
           </button>
           <button className="btn" onClick={() => setGallery(true)}>
-            ＋ Widget
+            {t('dashboard.addWidget')}
           </button>
           <button className="btn primary" onClick={() => onEditing(false)}>
-            Fertig
+            {t('common.done')}
           </button>
         </div>
       )}
@@ -307,7 +308,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
                   <>
                     <button
                       className="dw-edit-btn dw-remove"
-                      aria-label={`${widgetDef(w.type).title} entfernen`}
+                      aria-label={t('dashboard.removeWidget', { title: widgetDef(w.type).title })}
                       onClick={(e) => {
                         e.stopPropagation();
                         removeWidget(w.id);
@@ -318,7 +319,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
                     {widgetDef(w.type).sizes.length > 1 && (
                       <button
                         className="dw-edit-btn dw-resize"
-                        aria-label={`Größe ändern, jetzt ${SIZES[w.size].label} ${s.w} mal ${s.h}`}
+                        aria-label={t('dashboard.resize', { size: SIZES[w.size].label, w: s.w, h: s.h })}
                         aria-haspopup="menu"
                         aria-expanded={sizeMenu?.id === w.id}
                         onClick={(e) => {
@@ -338,7 +339,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
           })}
         {size.width > 0 && layout.length === 0 && (
           <div className="dash-empty">
-            <p>Das Dashboard ist leer.</p>
+            <p>{t('dashboard.empty')}</p>
             <button
               className="btn primary"
               onClick={() => {
@@ -346,7 +347,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
                 setGallery(true);
               }}
             >
-              ＋ Widget hinzufügen
+              {t('dashboard.addWidgetLong')}
             </button>
           </div>
         )}
@@ -424,10 +425,10 @@ function SizeMenu({
       <div
         className="size-menu"
         role="menu"
-        aria-label={`Größe: ${def.title}`}
+        aria-label={t('dashboard.sizeOf', { title: def.title })}
         style={{ top, left, '--origin': below ? 'top right' : 'bottom right' } as CSSProperties}
       >
-        <div className="size-menu-title">Größe · {def.title}</div>
+        <div className="size-menu-title">{t('dashboard.sizeTitle', { title: def.title })}</div>
         {def.sizes.map((s) => (
           <button
             key={s}
@@ -452,12 +453,12 @@ function SizeMenu({
 
 function Gallery({ onClose }: { onClose: () => void }) {
   return (
-    <Modal onClose={onClose} layerClass="dash-gallery-backdrop" label="Widget hinzufügen">
+    <Modal onClose={onClose} layerClass="dash-gallery-backdrop" label={t('dashboard.gallery')}>
       <div className="dash-gallery">
         <div className="dash-gallery-head">
-          <h2>Widget hinzufügen</h2>
+          <h2>{t('dashboard.gallery')}</h2>
           <button className="btn" onClick={onClose}>
-            Schließen
+            {t('common.close')}
           </button>
         </div>
         <div className="dash-gallery-list">

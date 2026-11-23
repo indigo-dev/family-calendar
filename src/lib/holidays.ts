@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { DateRange, DayMarks, HolidaySettings } from '../types';
 import { addDays, dayKey } from './dates';
 import { isRecord, storage } from './persisted';
+import { getLanguage, t, useLanguage } from '../i18n';
 
 /**
  * Public and school holidays of the German federal states from the OpenHolidays API
@@ -32,37 +33,44 @@ interface ApiHoliday {
   subdivisions?: { code?: string }[];
 }
 
-function toHoliday(h: ApiHoliday, type: Holiday['type'], region: string): Holiday | null {
+function toHoliday(h: ApiHoliday, type: Holiday['type'], region: string, lang: string): Holiday | null {
   if (!h.startDate || !h.endDate) return null;
-  const name = h.name?.find((n) => n.language === 'DE')?.text ?? h.name?.[0]?.text ?? (type === 'school' ? 'Ferien' : 'Feiertag');
+  const name =
+    h.name?.find((n) => n.language === lang)?.text ?? h.name?.[0]?.text ?? t(type === 'school' ? 'holidays.school' : 'holidays.public');
   // holidays only valid in parts of the state (e.g. Friedensfest in Augsburg)
   const partial = !h.nationwide && !!h.subdivisions?.length && !h.subdivisions.some((s) => s.code === region);
   return {
     id: h.id ?? `${type}-${h.startDate}-${name}`,
     start: h.startDate.slice(0, 10),
     end: h.endDate.slice(0, 10),
-    name: partial ? `${name} (regional)` : name,
+    name: partial ? t('holidays.regional', { name }) : name,
     type,
   };
 }
 
+/** API language of the holiday names: German, or English for every other app language */
+const apiLanguage = () => (getLanguage() === 'de' ? 'DE' : 'EN');
+
 async function loadYear(region: string, year: number): Promise<Holiday[]> {
-  const key = `${CACHE_PREFIX}${region}.${year}`;
+  const lang = apiLanguage();
+  // German names keep the cache key of earlier versions; other languages get their own
+  const key = lang === 'DE' ? `${CACHE_PREFIX}${region}.${year}` : `${CACHE_PREFIX}${lang.toLowerCase()}.${region}.${year}`;
   const raw = storage.read(key);
   const cached = isRecord(raw) && typeof raw.at === 'number' && Array.isArray(raw.list) ? (raw as { at: number; list: Holiday[] }) : null;
   if (cached && Date.now() - cached.at < MAX_AGE_MS) return cached.list;
 
   try {
-    const q = `countryIsoCode=DE&subdivisionCode=${encodeURIComponent(region)}&languageIsoCode=DE&validFrom=${year}-01-01&validTo=${year}-12-31`;
+    const q = `countryIsoCode=DE&subdivisionCode=${encodeURIComponent(region)}&languageIsoCode=${lang}&validFrom=${year}-01-01&validTo=${year}-12-31`;
     const get = async (path: string): Promise<ApiHoliday[]> => {
       const res = await fetch(`${API}/${path}?${q}`, { headers: { Accept: 'application/json' } });
       if (!res.ok) throw new Error(`OpenHolidays ${res.status}`);
       return res.json();
     };
     const [pub, school] = await Promise.all([get('PublicHolidays'), get('SchoolHolidays')]);
-    const list = [...pub.map((h) => toHoliday(h, 'public', region)), ...school.map((h) => toHoliday(h, 'school', region))].filter(
-      (h): h is Holiday => !!h,
-    );
+    const list = [
+      ...pub.map((h) => toHoliday(h, 'public', region, lang)),
+      ...school.map((h) => toHoliday(h, 'school', region, lang)),
+    ].filter((h): h is Holiday => !!h);
     storage.write(key, { at: Date.now(), list }); // best effort
     return list;
   } catch (e) {
@@ -92,6 +100,7 @@ export function useHolidayMarks(range: DateRange, settings: HolidaySettings): { 
   const y0 = range.start.getFullYear();
   const y1 = new Date(range.end.getTime() - 1).getFullYear();
   const [state, setState] = useState<{ list: Holiday[]; error?: string }>({ list: [] });
+  const lang = useLanguage();
 
   useEffect(() => {
     if (!enabled) return;
@@ -103,7 +112,7 @@ export function useHolidayMarks(range: DateRange, settings: HolidaySettings): { 
     return () => {
       alive = false;
     };
-  }, [enabled, region, y0, y1]);
+  }, [enabled, region, y0, y1, lang]);
 
   const list = enabled ? state.list : NO_HOLIDAYS;
   const marks = useMemo(() => {

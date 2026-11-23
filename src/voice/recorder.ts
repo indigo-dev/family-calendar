@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 /*
  * Microphone recording with a simple voice activity detection: the recording stops by itself
  * shortly after the speaker pauses, so nobody has to tap twice and no silence is sent (and billed).
@@ -32,8 +33,8 @@ export function micSupported(): boolean {
 
 /** Starts recording. `onLevel` gets the loudness (0..1) for the animation. */
 export async function startRecording(onLevel?: (level: number) => void): Promise<Recording> {
-  if (!micSupported()) throw new MicError('Dieser Browser kann kein Mikrofon aufnehmen.');
-  if (!window.isSecureContext) throw new MicError('Das Mikrofon geht nur über https (oder localhost).');
+  if (!micSupported()) throw new MicError(t('voice.errors.noMic'));
+  if (!window.isSecureContext) throw new MicError(t('voice.errors.https'));
   let stream: MediaStream;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
@@ -41,9 +42,9 @@ export async function startRecording(onLevel?: (level: number) => void): Promise
     });
   } catch (e) {
     const name = (e as Error).name;
-    if (name === 'NotAllowedError' || name === 'SecurityError') throw new MicError('Der Zugriff auf das Mikrofon wurde nicht erlaubt.');
-    if (name === 'NotFoundError') throw new MicError('Es wurde kein Mikrofon gefunden.');
-    throw new MicError('Das Mikrofon konnte nicht gestartet werden.');
+    if (name === 'NotAllowedError' || name === 'SecurityError') throw new MicError(t('voice.errors.micDenied'));
+    if (name === 'NotFoundError') throw new MicError(t('voice.errors.micMissing'));
+    throw new MicError(t('voice.micFailed'));
   }
 
   const mime = pickMime();

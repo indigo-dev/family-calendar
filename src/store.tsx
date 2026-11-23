@@ -3,6 +3,19 @@ import type { AppConfig, CalendarSource, Member, SchoolConfig, Settings } from '
 import { configStore } from './lib/config';
 import { colorScheme, painter, type Paint } from './lib/colors';
 import { arrayOf, isString, persisted, usePersisted } from './lib/persisted';
+import { resolveLanguage, setLanguage, t } from './i18n';
+
+/* ---------------------------------------------------------------- language */
+
+// The active language follows the setting (and the device language for 'auto'). It is switched in the
+// store listener – before React re-renders – so every text of the next render is in the new language.
+const syncLanguage = () => {
+  setLanguage(resolveLanguage(configStore.get().settings.language));
+  if (typeof document !== 'undefined') document.title = t('app.title');
+};
+syncLanguage();
+configStore.subscribe(syncLanguage);
+if (typeof window !== 'undefined') window.addEventListener('languagechange', syncLanguage);
 
 /** person filter: empty = all members, otherwise only these members (per device) */
 const selectedStore = persisted('fc.selectedMembers', (raw) => arrayOf(raw, isString));
@@ -157,6 +170,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
 export function useStore(): Store {
   const s = useContext(Ctx);
-  if (!s) throw new Error('StoreProvider fehlt');
+  if (!s) throw new Error('StoreProvider missing');
   return s;
 }

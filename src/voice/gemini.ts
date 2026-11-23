@@ -1,4 +1,5 @@
 import { buildPrompt, COMMAND_SCHEMA, parseCommand, type Command, type VoiceContext } from './command';
+import { t } from '../i18n';
 
 /*
  * Gemini as the "understanding" step: one request with the recording (or text), the app context
@@ -42,13 +43,12 @@ async function errorOf(res: Response): Promise<VoiceError> {
   } catch {
     /* no JSON body */
   }
-  if (res.status === 400 && /api key/i.test(message)) return new VoiceError('Der API-Key ist ungültig.', true);
-  if (res.status === 403) return new VoiceError('Der API-Key hat keinen Zugriff auf Gemini.', true);
-  if (res.status === 404)
-    return new VoiceError('Dieses Gemini-Modell gibt es nicht (mehr) – bitte in den Einstellungen ein anderes wählen.', true);
-  if (res.status === 429) return new VoiceError('Das Anfrage-Limit ist erreicht. Bitte später noch einmal versuchen.');
-  if (res.status >= 500) return new VoiceError('Gemini ist gerade nicht erreichbar.');
-  return new VoiceError(message || `Gemini-Fehler ${res.status}`);
+  if (res.status === 400 && /api key/i.test(message)) return new VoiceError(t('voice.errors.badKey'), true);
+  if (res.status === 403) return new VoiceError(t('voice.errors.noAccess'), true);
+  if (res.status === 404) return new VoiceError(t('voice.errors.noModel'), true);
+  if (res.status === 429) return new VoiceError(t('voice.errors.limit'));
+  if (res.status >= 500) return new VoiceError(t('voice.errors.down'));
+  return new VoiceError(message || t('voice.errors.error', { status: res.status }));
 }
 
 async function call(url: string, init: RequestInit): Promise<Response> {
@@ -56,7 +56,7 @@ async function call(url: string, init: RequestInit): Promise<Response> {
     return await fetch(url, init);
   } catch (e) {
     if ((e as Error).name === 'AbortError') throw e;
-    throw new VoiceError(navigator.onLine ? 'Gemini ist nicht erreichbar.' : 'Keine Internetverbindung.');
+    throw new VoiceError(navigator.onLine ? t('voice.errors.unreachable') : t('voice.errors.offline'));
   }
 }
 
@@ -70,7 +70,7 @@ export async function understand(
   cfg: GeminiConfig & { fallbackModel?: string },
   signal?: AbortSignal,
 ): Promise<{ cmd: Command; model: string }> {
-  if (!cfg.apiKey) throw new VoiceError('Es ist noch kein Gemini-API-Key hinterlegt.', true);
+  if (!cfg.apiKey) throw new VoiceError(t('voice.errors.noKey'), true);
   const part = input.kind === 'audio' ? { inlineData: { mimeType: input.mime, data: input.base64 } } : { text: input.text };
   const request = (model: string, thinking: boolean) => ({
     systemInstruction: { parts: [{ text: buildPrompt(ctx) }] },
@@ -112,11 +112,11 @@ export async function understand(
     promptFeedback?: { blockReason?: string };
   };
   const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
-  if (!text) throw new VoiceError(body.promptFeedback?.blockReason ? 'Gemini hat die Anfrage abgelehnt.' : 'Gemini hat nicht geantwortet.');
+  if (!text) throw new VoiceError(body.promptFeedback?.blockReason ? t('voice.errors.refused') : t('voice.errors.noAnswer'));
   try {
     return { cmd: parseCommand(JSON.parse(text)), model };
   } catch {
-    throw new VoiceError('Die Antwort von Gemini war unverständlich.');
+    throw new VoiceError(t('voice.errors.garbled'));
   }
 }
 

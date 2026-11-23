@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { dayKey, fmt } from '../lib/dates';
+import { dateFormat, dayKey, fmt, hourLabel } from '../lib/dates';
+import { locale, t } from '../i18n';
 
 import {
-  POLLEN_LABELS,
+  pollenLabel,
   POLLEN_TYPES,
   SEVERITY_LABEL,
   activeAlerts,
@@ -21,16 +22,15 @@ import { WxIcon } from './WxIcon';
 
 const ALERTS_SHOWN = 2;
 const SEVERITY_ORDER = ['minor', 'moderate', 'severe', 'extreme'];
-const DIRS = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'];
-const compass = (deg: number) => DIRS[Math.round(deg / 45) % 8];
-const mm = (v: number) => `${v.toFixed(1).replace('.', ',')} mm`;
+const compass = (deg: number) => t('weather.dirs').split(',')[Math.round(deg / 45) % 8];
+const mm = (v: number) => `${v.toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} mm`;
 
 const dayLabel = (date: string, today: string, long = false) => {
-  if (date === today) return 'Heute';
+  if (date === today) return t('common.today');
   const d = new Date(`${date}T12:00`);
   const tomorrow = new Date(`${today}T12:00`);
   tomorrow.setDate(tomorrow.getDate() + 1);
-  if (dayKey(tomorrow) === date) return 'Morgen';
+  if (dayKey(tomorrow) === date) return t('common.tomorrow');
   return fmt(d, long ? { weekday: 'long', day: 'numeric', month: 'long' } : { weekday: 'short', day: 'numeric' });
 };
 
@@ -109,9 +109,7 @@ export function Forecast({ data, now }: { data: WeatherData; now: Date }) {
           ))}
           {alerts.length > ALERTS_SHOWN && (
             <button className="wx-more-alerts" onClick={() => setShowAll((s) => !s)}>
-              {showAll
-                ? 'Weniger anzeigen'
-                : `+ ${alerts.length - ALERTS_SHOWN} weitere Warnung${alerts.length - ALERTS_SHOWN > 1 ? 'en' : ''}`}
+              {showAll ? t('weather.fewerAlerts') : t('weather.moreAlerts', { n: alerts.length - ALERTS_SHOWN })}
             </button>
           )}
         </div>
@@ -124,23 +122,26 @@ export function Forecast({ data, now }: { data: WeatherData; now: Date }) {
           <div className="wx-hero-text">{curText}</div>
           {todayData && (
             <div className="wx-hero-sub">
-              ↑ {deg(todayData.max)} ↓ {deg(todayData.min)} · gefühlt {deg(cur.feels)}
+              ↑ {deg(todayData.max)} ↓ {deg(todayData.min)} · {t('weather.feels', { temp: deg(cur.feels) })}
             </div>
           )}
         </div>
         {todayData && (
           <dl className="wx-hero-facts">
-            <Fact k="Regen heute" v={todayData.rainProb > 0 ? `${todayData.rainProb} % · ${mm(todayData.rainSum)}` : 'kein Regen'} />
-            <Fact k="Wind" v={`${compass(cur.windDir)} ${Math.round(cur.wind)} km/h`} />
-            <Fact k="Luftfeuchte" v={`${Math.round(cur.humidity)} %`} />
+            <Fact
+              k={t('weather.rainToday')}
+              v={todayData.rainProb > 0 ? `${todayData.rainProb} % · ${mm(todayData.rainSum)}` : t('weather.noRain')}
+            />
+            <Fact k={t('weather.wind')} v={`${compass(cur.windDir)} ${Math.round(cur.wind)} km/h`} />
+            <Fact k={t('weather.humidity')} v={`${Math.round(cur.humidity)} %`} />
           </dl>
         )}
       </section>
 
       <section className="wx-section">
         <div className="wx-sec-head">
-          <h3 className="wx-h">Stunden</h3>
-          <div className="wx-daytabs" role="tablist" aria-label="Tag">
+          <h3 className="wx-h">{t('weather.hours')}</h3>
+          <div className="wx-daytabs" role="tablist" aria-label={t('weather.day')}>
             {days.map((d, i) => (
               <button key={d.date} role="tab" aria-selected={i === dayIdx} className={i === dayIdx ? 'on' : ''} onClick={() => pickDay(i)}>
                 {dayLabel(d.date, today)}
@@ -156,7 +157,9 @@ export function Forecast({ data, now }: { data: WeatherData; now: Date }) {
               aria-pressed={h.time === selected?.time}
               onClick={() => setHourSel(h.time)}
             >
-              <span className="wx-hour-t">{dayIdx === 0 && i === 0 ? 'Jetzt' : `${Number(h.time.slice(11, 13))} Uhr`}</span>
+              <span className="wx-hour-t">
+                {dayIdx === 0 && i === 0 ? t('weather.now') : t('weather.hourLabel', { h: hourLabel(Number(h.time.slice(11, 13))) })}
+              </span>
               <WxIcon code={h.code} isDay={h.isDay} className="wx-hour-i" />
               <span className="wx-hour-temp">{deg(h.temp)}</span>
               <span className="wx-hour-rain">{h.rainProb >= 20 ? `${h.rainProb} %` : ''}</span>
@@ -166,7 +169,10 @@ export function Forecast({ data, now }: { data: WeatherData; now: Date }) {
         {selected && (
           <HourDetail
             hour={selected}
-            label={`${dayLabel(selected.time.slice(0, 10), today)}, ${Number(selected.time.slice(11, 13))}:00 Uhr`}
+            label={t('weather.hourDetail', {
+              day: dayLabel(selected.time.slice(0, 10), today),
+              time: fmtTime(selected.time),
+            })}
           />
         )}
       </section>
@@ -178,7 +184,7 @@ export function Forecast({ data, now }: { data: WeatherData; now: Date }) {
       </section>
 
       <section className="wx-section">
-        <h3 className="wx-h">7 Tage</h3>
+        <h3 className="wx-h">{t('weather.sevenDays')}</h3>
         <WeekList days={days} today={today} active={dayIdx} onPick={(i) => pickDay(i, true)} />
       </section>
     </>
@@ -209,10 +215,10 @@ function HourDetail({ hour, label }: { hour: Hour; label: string }) {
         </div>
       </div>
       <dl className="wx-facts">
-        <Fact k="Gefühlt" v={deg(hour.feels)} />
-        <Fact k="Regen" v={`${hour.rainProb} % · ${mm(hour.rain)}`} />
+        <Fact k={t('weather.feelsLike')} v={deg(hour.feels)} />
+        <Fact k={t('weather.rain')} v={`${hour.rainProb} % · ${mm(hour.rain)}`} />
         <div>
-          <dt>Wind</dt>
+          <dt>{t('weather.wind')}</dt>
           <dd>
             <span className="wx-arrow" style={{ transform: `rotate(${hour.windDir + 180}deg)` }} aria-hidden>
               ↑
@@ -220,18 +226,18 @@ function HourDetail({ hour, label }: { hour: Hour; label: string }) {
             {compass(hour.windDir)} {Math.round(hour.wind)} km/h
           </dd>
         </div>
-        <Fact k="Böen" v={`${Math.round(hour.gusts)} km/h`} />
-        <Fact k="Luftfeuchte" v={`${Math.round(hour.humidity)} %`} />
-        <Fact k="UV-Index" v={`${Math.round(hour.uv)} · ${uv.label}`} />
-        <Fact k="Bewölkung" v={`${Math.round(hour.cloud)} %`} />
+        <Fact k={t('weather.gusts')} v={`${Math.round(hour.gusts)} km/h`} />
+        <Fact k={t('weather.humidity')} v={`${Math.round(hour.humidity)} %`} />
+        <Fact k={t('weather.uvIndex')} v={`${Math.round(hour.uv)} · ${uv.label}`} />
+        <Fact k={t('weather.clouds')} v={`${Math.round(hour.cloud)} %`} />
       </dl>
     </div>
   );
 }
 
 function alertTime(onset: string, expires: string | null) {
-  const f = (s: string) => new Date(s).toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
-  return expires ? `${f(onset)} bis ${f(expires)}` : `ab ${f(onset)}`;
+  const f = (s: string) => dateFormat({ weekday: 'short', hour: 'numeric', minute: '2-digit' }).format(new Date(s));
+  return expires ? t('weather.alertFromTo', { from: f(onset), to: f(expires) }) : t('weather.alertFrom', { from: f(onset) });
 }
 
 function WeekList({ days, today, active, onPick }: { days: Day[]; today: string; active: number; onPick: (i: number) => void }) {
@@ -263,7 +269,7 @@ function UvCard({ data, day, today, label }: { data: WeatherData; day: Day; toda
   const pos = Math.min(100, (day.uvMax / 11) * 100);
   return (
     <div className="wx-card">
-      <span className="wx-h">UV-Index {day.date === today ? 'heute' : label}</span>
+      <span className="wx-h">{day.date === today ? t('weather.uvToday') : t('weather.uvDay', { day: label })}</span>
       <div className="wx-card-big">
         {Math.round(day.uvMax)} <span className={`wx-lvl lvl-${lvl.level}`}>{lvl.label}</span>
       </div>
@@ -273,9 +279,9 @@ function UvCard({ data, day, today, label }: { data: WeatherData; day: Day; toda
       <p className="wx-card-text">
         {protect
           ? lvl.level >= 3
-            ? `Sonnenschutz wichtig von ${protect}.`
-            : `Sonnenschutz sinnvoll von ${protect}.`
-          : 'Kein Sonnenschutz nötig.'}
+            ? t('weather.protectImportant', { time: protect })
+            : t('weather.protectUseful', { time: protect })
+          : t('weather.noProtect')}
       </p>
     </div>
   );
@@ -286,30 +292,30 @@ function SunCard({ day, now, today }: { day: Day; now: Date; today: string }) {
   const set = new Date(day.sunset).getTime();
   const len = Math.max(0, set - rise);
   const isToday = day.date === today;
-  const t = isToday ? Math.min(1, Math.max(0, (now.getTime() - rise) / (len || 1))) : 0;
-  const hm = (ms: number) => `${Math.floor(ms / 3_600_000)} Std. ${Math.round((ms % 3_600_000) / 60_000)} Min.`;
+  const p = isToday ? Math.min(1, Math.max(0, (now.getTime() - rise) / (len || 1))) : 0;
+  const hm = (ms: number) => t('weather.duration', { h: Math.floor(ms / 3_600_000), m: Math.round((ms % 3_600_000) / 60_000) });
   // point on the quadratic curve (14,80) (110,-20) (206,80)
-  const x = (1 - t) ** 2 * 14 + 2 * (1 - t) * t * 110 + t ** 2 * 206;
-  const y = (1 - t) ** 2 * 80 + 2 * (1 - t) * t * -20 + t ** 2 * 80;
+  const x = (1 - p) ** 2 * 14 + 2 * (1 - p) * p * 110 + p ** 2 * 206;
+  const y = (1 - p) ** 2 * 80 + 2 * (1 - p) * p * -20 + p ** 2 * 80;
   const up = isToday && now.getTime() > rise && now.getTime() < set;
   return (
     <div className="wx-card">
-      <span className="wx-h">Sonne</span>
+      <span className="wx-h">{t('weather.sun')}</span>
       <svg
         className="wx-sun"
         viewBox="0 0 220 96"
         role="img"
-        aria-label={`Sonnenaufgang ${fmtTime(day.sunrise)}, Sonnenuntergang ${fmtTime(day.sunset)}`}
+        aria-label={t('weather.sunLabel', { rise: fmtTime(day.sunrise), set: fmtTime(day.sunset) })}
       >
         <path d="M14 80 Q110 -20 206 80" fill="none" className="wx-sun-track" strokeWidth="3" strokeDasharray="4 6" />
-        {isToday && t > 0 && (
+        {isToday && p > 0 && (
           <path
             d="M14 80 Q110 -20 206 80"
             fill="none"
             className="wx-sun-done"
             strokeWidth="3"
             pathLength={100}
-            strokeDasharray={`${t * 100} 200`}
+            strokeDasharray={`${p * 100} 200`}
           />
         )}
         <line x1="4" y1="80" x2="216" y2="80" className="wx-sun-track" strokeWidth="2" />
@@ -321,7 +327,9 @@ function SunCard({ day, now, today }: { day: Day; now: Date; today: string }) {
           {fmtTime(day.sunset)}
         </text>
       </svg>
-      <p className="wx-card-text">{up ? `Noch ${hm(set - now.getTime())} hell` : `Tageslänge ${hm(len)}`}</p>
+      <p className="wx-card-text">
+        {up ? t('weather.lightLeft', { time: hm(set - now.getTime()) }) : t('weather.dayLength', { time: hm(len) })}
+      </p>
     </div>
   );
 }
@@ -329,28 +337,31 @@ function SunCard({ day, now, today }: { day: Day; now: Date; today: string }) {
 function PollenCard({ data, today, active }: { data: WeatherData; today: string; active: string }) {
   const days = (data.pollen ?? []).filter((d) => d.date >= today).slice(0, 4);
   const day = days.find((d) => d.date === active) ?? days[0];
-  const flying = day ? POLLEN_TYPES.map((t) => ({ ...t, level: pollenLevel(t.id, day.values[t.id]) })).filter((t) => t.level > 0) : [];
+  const flying = day ? POLLEN_TYPES.map((x) => ({ ...x, level: pollenLevel(x.id, day.values[x.id]) })).filter((x) => x.level > 0) : [];
   return (
     <div className="wx-card">
-      <span className="wx-h">Pollen{day && day.date !== today ? ` · ${dayLabel(day.date, today)}` : ''}</span>
+      <span className="wx-h">
+        {t('weather.pollen')}
+        {day && day.date !== today ? ` · ${dayLabel(day.date, today)}` : ''}
+      </span>
       {!data.pollen ? (
-        <p className="wx-card-text">Pollendaten sind gerade nicht verfügbar.</p>
+        <p className="wx-card-text">{t('weather.pollenUnavailable')}</p>
       ) : flying.length === 0 ? (
         <>
           <div className="wx-card-big">–</div>
-          <p className="wx-card-text">Kein nennenswerter Pollenflug.</p>
+          <p className="wx-card-text">{t('weather.noPollen')}</p>
         </>
       ) : (
         <div className="wx-pollen">
-          {flying.map((t) => (
-            <div key={t.id}>
-              <span>{t.label}</span>
-              <span className={`wx-lvl pl-${t.level}`}>{POLLEN_LABELS[t.level]}</span>
+          {flying.map((x) => (
+            <div key={x.id}>
+              <span>{x.label}</span>
+              <span className={`wx-lvl pl-${x.level}`}>{pollenLabel(x.level)}</span>
             </div>
           ))}
         </div>
       )}
-      <p className="wx-card-hint">Modellwerte (CAMS, ca. 10 km), bis 4 Tage voraus</p>
+      <p className="wx-card-hint">{t('weather.pollenHint')}</p>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import type { Member, Period, Subject } from '../types';
 import { useStore } from '../store';
 import { catalogColor, catalogGroups, DEFAULT_PERIODS, minutes, newSubject, SUBJECT_COLORS } from '../lib/school';
 import { Avatar } from '../components/Avatar';
+import { t } from '../i18n';
 
 const hhmm = (min: number) => `${String(Math.floor(min / 60) % 24).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 
@@ -15,9 +16,9 @@ export function SchoolTab() {
   return (
     <div className="form">
       <div className="field">
-        <span>Klingelzeiten</span>
+        <span>{t('settings.school.bellTimes')}</span>
         {kids.length === 0 ? (
-          <p className="hint muted">Noch kein Kind mit Stundenplan. Unter „Familie“ bei der Person „Hat Stundenplan“ einschalten.</p>
+          <p className="hint muted">{t('settings.school.noKid')}</p>
         ) : (
           <>
             {kids.length > 1 && (
@@ -40,67 +41,70 @@ export function SchoolTab() {
 
 function PeriodEditor({ kid, others }: { kid: Member; others: Member[] }) {
   const { patchMember } = useStore();
-  const t = kid.timetable!;
+  const tt = kid.timetable!;
   const setPeriods = (periods: Period[]) => {
     const n = periods.length;
-    const cells = t.cells.map((row) => Array.from({ length: n }, (_, p) => row[p] ?? null));
-    patchMember(kid.id, { timetable: { ...t, periods, cells } });
+    const cells = tt.cells.map((row) => Array.from({ length: n }, (_, p) => row[p] ?? null));
+    patchMember(kid.id, { timetable: { ...tt, periods, cells } });
   };
   const change = (i: number, key: keyof Period, value: string) => {
     if (!value) return;
-    setPeriods(t.periods.map((p, j) => (j === i ? { ...p, [key]: value } : p)));
+    setPeriods(tt.periods.map((p, j) => (j === i ? { ...p, [key]: value } : p)));
   };
   const add = () => {
-    const last = t.periods[t.periods.length - 1];
+    const last = tt.periods[tt.periods.length - 1];
     const start = last ? minutes(last.end) + 5 : 8 * 60;
-    setPeriods([...t.periods, { start: hhmm(start), end: hhmm(start + 45) }]);
+    setPeriods([...tt.periods, { start: hhmm(start), end: hhmm(start + 45) }]);
   };
   const removeLast = () => {
-    const i = t.periods.length - 1;
-    const used = t.cells.some((row) => row[i]);
-    if (used && !confirm(`In der ${i + 1}. Stunde sind Fächer eingetragen. Trotzdem entfernen?`)) return;
-    setPeriods(t.periods.slice(0, -1));
+    const i = tt.periods.length - 1;
+    const used = tt.cells.some((row) => row[i]);
+    if (used && !confirm(t('settings.school.confirmRemovePeriod', { n: i + 1 }))) return;
+    setPeriods(tt.periods.slice(0, -1));
   };
 
   return (
     <div className="periods">
       <div className="period-list">
-        {t.periods.map((p, i) => {
-          const gap = i > 0 ? minutes(p.start) - minutes(t.periods[i - 1].end) : 0;
+        {tt.periods.map((p, i) => {
+          const gap = i > 0 ? minutes(p.start) - minutes(tt.periods[i - 1].end) : 0;
           return (
             <div key={i} className="period-row">
-              {gap >= 10 && <span className="period-gap muted">{gap} min Pause</span>}
+              {gap >= 10 && <span className="period-gap muted">{t('settings.school.breakMin', { n: gap })}</span>}
               <strong>{i + 1}.</strong>
               <input
                 type="time"
                 value={p.start}
                 onChange={(e) => change(i, 'start', e.target.value)}
-                aria-label={`${i + 1}. Stunde Beginn`}
+                aria-label={t('settings.school.periodStart', { n: i + 1 })}
               />
               <span className="muted">–</span>
-              <input type="time" value={p.end} onChange={(e) => change(i, 'end', e.target.value)} aria-label={`${i + 1}. Stunde Ende`} />
+              <input
+                type="time"
+                value={p.end}
+                onChange={(e) => change(i, 'end', e.target.value)}
+                aria-label={t('settings.school.periodEnd', { n: i + 1 })}
+              />
             </div>
           );
         })}
       </div>
       <div className="row-actions">
-        <button className="btn" onClick={add} disabled={t.periods.length >= 12}>
-          + Stunde
+        <button className="btn" onClick={add} disabled={tt.periods.length >= 12}>
+          {t('settings.school.addPeriod')}
         </button>
-        <button className="btn" onClick={removeLast} disabled={t.periods.length <= 1}>
-          − Letzte Stunde
+        <button className="btn" onClick={removeLast} disabled={tt.periods.length <= 1}>
+          {t('settings.school.removePeriod')}
         </button>
         <button
           className="btn ghost"
-          onClick={() =>
-            confirm('Standardzeiten (8:00 Uhr, 45 Minuten) wiederherstellen?') && setPeriods(DEFAULT_PERIODS.map((p) => ({ ...p })))
-          }
+          onClick={() => confirm(t('settings.school.confirmDefaults')) && setPeriods(DEFAULT_PERIODS.map((p) => ({ ...p })))}
         >
-          Standardzeiten
+          {t('settings.school.defaults')}
         </button>
         {others.map((o) => (
           <button key={o.id} className="btn ghost" onClick={() => setPeriods(o.timetable!.periods.map((p) => ({ ...p })))}>
-            <Avatar member={o} size={22} ring={false} /> Zeiten wie {o.name}
+            <Avatar member={o} size={22} ring={false} /> {t('settings.school.sameAs', { name: o.name })}
           </button>
         ))}
       </div>
@@ -125,19 +129,19 @@ function SubjectEditor() {
   };
 
   const removeCustom = (s: Subject) => {
-    if (!confirm(`Fach „${s.name}“ löschen? Es wird auch aus den Stundenplänen entfernt.`)) return;
+    if (!confirm(t('settings.school.confirmDeleteSubject', { name: s.name }))) return;
     updateSchool({ custom: school.custom.filter((x) => x.id !== s.id) });
     for (const m of members) {
-      const t = m.timetable;
-      if (!t || !t.cells.some((row) => row.includes(s.id))) continue;
-      patchMember(m.id, { timetable: { ...t, cells: t.cells.map((row) => row.map((c) => (c === s.id ? null : c))) } });
+      const tt = m.timetable;
+      if (!tt || !tt.cells.some((row) => row.includes(s.id))) continue;
+      patchMember(m.id, { timetable: { ...tt, cells: tt.cells.map((row) => row.map((c) => (c === s.id ? null : c))) } });
     }
   };
 
   return (
     <div className="field">
-      <span>Fächer und Farben</span>
-      <p className="hint muted">Die Farben gelten für alle Kinder. Antippen ändert die Farbe.</p>
+      <span>{t('settings.school.subjects')}</span>
+      <p className="hint muted">{t('settings.school.subjectsHint')}</p>
       {catalogGroups(school).map((g) => (
         <div key={g.label} className="subject-group">
           <small className="muted">{g.label}</small>
@@ -149,7 +153,7 @@ function SubjectEditor() {
         </div>
       ))}
       <div className="subject-group">
-        <small className="muted">Eigene Fächer</small>
+        <small className="muted">{t('settings.school.ownSubjects')}</small>
         {school.custom.length > 0 && (
           <div className="subject-list">
             {school.custom.map((s) => (
@@ -167,9 +171,9 @@ function SubjectEditor() {
         )}
         <div className="subject-add">
           <label className="swatch custom" style={{ background: color }}>
-            <input type="color" value={color} onChange={(e) => setColor(e.target.value)} aria-label="Farbe" />
+            <input type="color" value={color} onChange={(e) => setColor(e.target.value)} aria-label={t('common.color')} />
           </label>
-          <input value={name} placeholder="Neues Fach, z. B. Chor" onChange={(e) => setName(e.target.value)} />
+          <input value={name} placeholder={t('settings.school.newSubject')} onChange={(e) => setName(e.target.value)} />
           <button
             className="btn"
             disabled={!name.trim()}
@@ -179,7 +183,7 @@ function SubjectEditor() {
               setColor(SUBJECT_COLORS[(school.custom.length + 3) % SUBJECT_COLORS.length]);
             }}
           >
-            + Hinzufügen
+            {t('common.add')}
           </button>
         </div>
       </div>
@@ -202,21 +206,26 @@ function SubjectRow({
 }) {
   return (
     <div className="subject-row" style={{ ['--c' as string]: subject.color }}>
-      <label className="swatch custom" style={{ background: subject.color }} title="Farbe ändern">
-        <input type="color" value={subject.color} onChange={(e) => onColor(e.target.value)} aria-label={`Farbe für ${subject.name}`} />
+      <label className="swatch custom" style={{ background: subject.color }} title={t('settings.school.changeColor')}>
+        <input
+          type="color"
+          value={subject.color}
+          onChange={(e) => onColor(e.target.value)}
+          aria-label={t('settings.school.colorFor', { name: subject.name })}
+        />
       </label>
       {onRename ? (
-        <input className="subject-name" value={subject.name} onChange={(e) => onRename(e.target.value)} aria-label="Name" />
+        <input className="subject-name" value={subject.name} onChange={(e) => onRename(e.target.value)} aria-label={t('common.name')} />
       ) : (
         <span className="subject-name">{subject.name}</span>
       )}
       {changed && (
-        <button className="link" onClick={() => onColor(catalogColor(subject.id)!)} title="Standardfarbe">
+        <button className="link" onClick={() => onColor(catalogColor(subject.id)!)} title={t('settings.school.defaultColor')}>
           ↺
         </button>
       )}
       {onRemove && (
-        <button className="icon-btn" onClick={onRemove} aria-label={`${subject.name} löschen`}>
+        <button className="icon-btn" onClick={onRemove} aria-label={t('settings.school.deleteSubject', { name: subject.name })}>
           ✕
         </button>
       )}

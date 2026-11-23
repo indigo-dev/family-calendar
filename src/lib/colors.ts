@@ -1,4 +1,5 @@
 import type { ColorPalette } from '../types';
+import { t } from '../i18n';
 
 /**
  * Colour palettes. Stored colours (people, subjects, shopping departments) stay unchanged in the config;
@@ -38,11 +39,15 @@ const MUTED = [
   '#7b8590', // Schiefer
 ];
 
-export const PALETTES: { id: ColorPalette; label: string; note: string }[] = [
-  { id: 'vivid', label: 'Kräftig', note: 'Klare, leuchtende Farben' },
-  { id: 'muted', label: 'Edel', note: 'Gedeckte Töne wie auf einer Farbkarte' },
-  { id: 'core', label: 'Kernfarbe', note: 'Variationen einer Farbe deiner Wahl' },
-];
+export const PALETTES: { id: ColorPalette; label: string; note: string }[] = (['vivid', 'muted', 'core'] as const).map((id) => ({
+  id,
+  get label() {
+    return t(`palettes.${id}.label`);
+  },
+  get note() {
+    return t(`palettes.${id}.note`);
+  },
+}));
 
 export const DEFAULT_CORE_COLOR = '#4f6d9a';
 

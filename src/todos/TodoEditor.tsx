@@ -6,6 +6,7 @@ import { Avatar } from '../components/Avatar';
 
 import { noteStyle } from './layout';
 import { Modal } from '../components/Modal';
+import { t } from '../i18n';
 
 type DueChoice = 'none' | 'today' | 'tomorrow' | 'date';
 
@@ -40,7 +41,7 @@ export function TodoEditor({
   const preview = members.filter((m) => memberIds.includes(m.id));
 
   return (
-    <Modal onClose={onClose} label={isNew ? 'Neuer Zettel' : 'Zettel bearbeiten'}>
+    <Modal onClose={onClose} label={isNew ? t('todos.newTitle') : t('todos.editTitle')}>
       <div className="modal todo-editor">
         <div className="todo-editor-paper" style={noteStyle(preview)}>
           <textarea
@@ -48,7 +49,7 @@ export function TodoEditor({
             value={text}
             maxLength={200}
             rows={3}
-            placeholder="Was ist zu tun?"
+            placeholder={t('todos.placeholder')}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -59,7 +60,7 @@ export function TodoEditor({
           />
         </div>
         <div className="todo-editor-section">
-          <div className="muted small">Für wen?</div>
+          <div className="muted small">{t('todos.forWhom')}</div>
           <div className="todo-editor-members">
             {members.map((m) => {
               const on = memberIds.includes(m.id);
@@ -82,14 +83,14 @@ export function TodoEditor({
           </div>
         </div>
         <div className="todo-editor-section">
-          <div className="muted small">Bis wann?</div>
+          <div className="muted small">{t('todos.byWhen')}</div>
           <div className="todo-editor-due">
             <div className="segmented small">
               {(
                 [
-                  ['none', 'Offen'],
-                  ['today', 'Heute'],
-                  ['tomorrow', 'Morgen'],
+                  ['none', t('todos.noDue')],
+                  ['today', t('common.today')],
+                  ['tomorrow', t('common.tomorrow')],
                 ] as const
               ).map(([id, label]) => (
                 <button
@@ -106,22 +107,22 @@ export function TodoEditor({
               className={`todo-date ${choice === 'date' ? 'active' : ''}`}
               value={due}
               onChange={(e) => setDue(e.target.value)}
-              aria-label="Datum"
+              aria-label={t('todos.date')}
             />
           </div>
         </div>
         <div className="modal-actions todo-editor-actions">
           {!isNew && (
             <button className="btn danger" onClick={onDelete}>
-              Löschen
+              {t('common.delete')}
             </button>
           )}
           <span className="board-spacer" />
           <button className="btn" onClick={onClose}>
-            Abbrechen
+            {t('common.cancel')}
           </button>
           <button className="btn primary" onClick={save} disabled={!valid}>
-            {isNew ? 'Hinzufügen' : 'Speichern'}
+            {isNew ? t('todos.add') : t('common.save')}
           </button>
         </div>
       </div>

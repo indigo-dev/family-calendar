@@ -1,5 +1,6 @@
 import { uid } from './id';
 import { arrayOf, isRecord, persisted, usePersisted } from './persisted';
+import { t } from '../i18n';
 
 /**
  * Dashboard layout: an ordered list of widgets, each with a size step. The grid packs them densely
@@ -11,12 +12,20 @@ export type WidgetType = 'clock' | 'weather' | 'events' | 'timetable' | 'todos' 
 /** Klein 1×1, Mittel 2×1, Hoch 1×2, Groß 2×2, Breit 3×2 */
 export type WidgetSize = 's' | 'm' | 't' | 'l' | 'xl';
 
+const size = (id: WidgetSize, w: number, h: number) => ({
+  w,
+  h,
+  get label() {
+    return t(`dashboard.sizes.${id}`);
+  },
+});
+
 export const SIZES: Record<WidgetSize, { w: number; h: number; label: string }> = {
-  s: { w: 1, h: 1, label: 'Klein' },
-  m: { w: 2, h: 1, label: 'Mittel' },
-  t: { w: 1, h: 2, label: 'Hoch' },
-  l: { w: 2, h: 2, label: 'Groß' },
-  xl: { w: 3, h: 2, label: 'Breit' },
+  s: size('s', 1, 1),
+  m: size('m', 2, 1),
+  t: size('t', 1, 2),
+  l: size('l', 2, 2),
+  xl: size('xl', 3, 2),
 };
 
 export interface WidgetDef {
@@ -29,73 +38,29 @@ export interface WidgetDef {
   module?: 'calendar' | 'timetable' | 'todos' | 'shopping' | 'weather' | 'frame';
 }
 
-export const WIDGETS: WidgetDef[] = [
-  { type: 'clock', title: 'Uhr & Datum', icon: '🕰️', description: 'Uhrzeit, Datum, Kalenderwoche', sizes: ['s', 'm'] },
-  {
-    type: 'events',
-    title: 'Termine',
-    icon: '📅',
-    description: 'Was heute und morgen ansteht',
-    sizes: ['m', 't', 'l', 'xl'],
-    module: 'calendar',
-  },
-  {
-    type: 'family',
-    title: 'Familie heute',
-    icon: '👨‍👩‍👧',
-    description: 'Wer hat heute was: Termin, Schule, To-dos',
-    sizes: ['m', 't', 'l', 'xl'],
-    module: 'calendar',
-  },
-  {
-    type: 'weather',
-    title: 'Wetter',
-    icon: '⛅',
-    description: 'Jetzt, nächste Stunden, Vorhersage, Warnungen',
-    sizes: ['s', 'm', 'l', 'xl'],
-    module: 'weather',
-  },
-  { type: 'pollen', title: 'Pollen & UV', icon: '🌼', description: 'Pollenflug und UV-Index heute', sizes: ['s', 'm'], module: 'weather' },
-  {
-    type: 'timetable',
-    title: 'Stundenplan',
-    icon: '🎒',
-    description: 'Fächer des (nächsten) Schultags und Schulschluss',
-    sizes: ['s', 'm', 't', 'l', 'xl'],
-    module: 'timetable',
-  },
-  {
-    type: 'todos',
-    title: 'To-dos',
-    icon: '📌',
-    description: 'Offene Aufgaben – direkt abhaken',
-    sizes: ['s', 'm', 't', 'l'],
-    module: 'todos',
-  },
-  {
-    type: 'shopping',
-    title: 'Einkaufsliste',
-    icon: '🛒',
-    description: 'Was fehlt – direkt abhaken',
-    sizes: ['s', 'm', 't', 'l'],
-    module: 'shopping',
-  },
-  {
-    type: 'photos',
-    title: 'Fotos',
-    icon: '🖼️',
-    description: 'Wechselnde Fotos, Antippen startet die Diashow',
-    sizes: ['s', 'm', 't', 'l', 'xl'],
-    module: 'frame',
-  },
-  {
-    type: 'holidays',
-    title: 'Ferien-Countdown',
-    icon: '🏖️',
-    description: 'Tage bis zu den nächsten Ferien und Feiertagen',
-    sizes: ['s', 'm'],
-  },
+const DEFS: Omit<WidgetDef, 'title' | 'description'>[] = [
+  { type: 'clock', icon: '🕰️', sizes: ['s', 'm'] },
+  { type: 'events', icon: '📅', sizes: ['m', 't', 'l', 'xl'], module: 'calendar' },
+  { type: 'family', icon: '👨‍👩‍👧', sizes: ['m', 't', 'l', 'xl'], module: 'calendar' },
+  { type: 'weather', icon: '⛅', sizes: ['s', 'm', 'l', 'xl'], module: 'weather' },
+  { type: 'pollen', icon: '🌼', sizes: ['s', 'm'], module: 'weather' },
+  { type: 'timetable', icon: '🎒', sizes: ['s', 'm', 't', 'l', 'xl'], module: 'timetable' },
+  { type: 'todos', icon: '📌', sizes: ['s', 'm', 't', 'l'], module: 'todos' },
+  { type: 'shopping', icon: '🛒', sizes: ['s', 'm', 't', 'l'], module: 'shopping' },
+  { type: 'photos', icon: '🖼️', sizes: ['s', 'm', 't', 'l', 'xl'], module: 'frame' },
+  { type: 'holidays', icon: '🏖️', sizes: ['s', 'm'] },
 ];
+
+/** the widgets with title and description in the active language */
+export const WIDGETS: WidgetDef[] = DEFS.map((d) => ({
+  ...d,
+  get title() {
+    return t(`dashboard.widgets.${d.type}.title`);
+  },
+  get description() {
+    return t(`dashboard.widgets.${d.type}.description`);
+  },
+}));
 
 export const widgetDef = (type: WidgetType) => WIDGETS.find((w) => w.type === type)!;
 

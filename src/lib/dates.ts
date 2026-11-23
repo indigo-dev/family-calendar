@@ -1,6 +1,5 @@
 import type { DateRange, ViewMode } from '../types';
-
-export const LOCALE = 'de-DE';
+import { getLanguage, locale, t } from '../i18n';
 
 export function startOfDay(d: Date): Date {
   const x = new Date(d);
@@ -61,17 +60,45 @@ export function isoWeek(d: Date): number {
 }
 
 const fmtCache = new Map<string, Intl.DateTimeFormat>();
-export function fmt(d: Date, opts: Intl.DateTimeFormatOptions): string {
-  const k = JSON.stringify(opts);
+/** Date formatter of the active language (cached per locale and options). */
+export function dateFormat(opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
+  const k = locale() + JSON.stringify(opts);
   let f = fmtCache.get(k);
   if (!f) {
-    f = new Intl.DateTimeFormat(LOCALE, opts);
+    f = new Intl.DateTimeFormat(locale(), opts);
     fmtCache.set(k, f);
   }
-  return f.format(d);
+  return f;
 }
 
-export const fmtTime = (d: Date) => fmt(d, { hour: '2-digit', minute: '2-digit' });
+export function fmt(d: Date, opts: Intl.DateTimeFormatOptions): string {
+  return dateFormat(opts).format(d);
+}
+
+/** true if the active locale uses a 12-hour clock (en-US) */
+export const uses12h = (): boolean => !!dateFormat({ hour: 'numeric' }).resolvedOptions().hour12;
+
+/** '14:05', or '2:05 PM' on a 12-hour clock */
+export const fmtTime = (d: Date) => fmt(d, uses12h() ? { hour: 'numeric', minute: '2-digit' } : { hour: '2-digit', minute: '2-digit' });
+
+/** Short label for a time of day without a date: '08:00' / '14:30', on a 12-hour clock '8 AM' / '2:30 PM'. */
+export function fmtClock(h: number, m = 0): string {
+  const d = new Date(2000, 0, 1, h, m);
+  if (!uses12h()) return `${String(h % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  return fmt(d, m ? { hour: 'numeric', minute: '2-digit' } : { hour: 'numeric' });
+}
+
+/** A stored 'HH:MM' time (bell times, ...) in the active clock format */
+export function fmtHHMM(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  return uses12h() ? fmtClock(h || 0, m || 0) : hhmm;
+}
+
+/** Hour label of an hourly forecast: '14', on a 12-hour clock '2 PM' */
+export const hourLabel = (h: number): string => (uses12h() ? fmtClock(h) : String(h).padStart(2, '0'));
+
+/** Full hour for a setting: '7:00 Uhr', '7:00', '7 AM' */
+export const fmtHour = (h: number): string => (uses12h() ? fmtClock(h) : t('common.oClock', { time: `${h}:00` }));
 
 /** Weekday names starting at weekStartsOn, e.g. ['Mo','Di',...] */
 export function weekdayNames(weekStartsOn: 0 | 1, style: 'short' | 'narrow' | 'long' = 'short'): string[] {
@@ -133,6 +160,8 @@ export function stepDate(view: ViewMode, date: Date, dir: 1 | -1, nDays = 3): Da
 }
 
 function spanTitle(s: Date, e: Date): string {
+  // English: the locale's own range format ("23–29 Nov 2026", "Nov 23 – 29, 2026")
+  if (getLanguage() !== 'de') return dateFormat({ day: 'numeric', month: 'short', year: 'numeric' }).formatRange(s, e);
   const sameMonth = s.getMonth() === e.getMonth();
   const left = sameMonth ? fmt(s, { day: 'numeric' }) + '.' : fmt(s, { day: 'numeric', month: 'short' });
   return `${left} – ${fmt(e, { day: 'numeric', month: 'short', year: 'numeric' })}`;
@@ -146,7 +175,7 @@ export function titleFor(view: ViewMode, date: Date, weekStartsOn: 0 | 1, nDays 
       return spanTitle(date, addDays(date, nDays - 1));
     case 'week': {
       const s = startOfWeek(date, weekStartsOn);
-      return `KW ${isoWeek(s)} · ${spanTitle(s, addDays(s, 6))}`;
+      return t('calendar.weekTitle', { week: isoWeek(s), span: spanTitle(s, addDays(s, 6)) });
     }
     case 'month':
       return fmt(date, { month: 'long', year: 'numeric' });
@@ -154,6 +183,7 @@ export function titleFor(view: ViewMode, date: Date, weekStartsOn: 0 | 1, nDays 
       return String(date.getFullYear());
     case 'agenda': {
       const e = addDays(startOfDay(date), AGENDA_DAYS - 1);
+      if (getLanguage() !== 'de') return dateFormat({ day: 'numeric', month: 'short', year: 'numeric' }).formatRange(date, e);
       return `${fmt(date, { day: 'numeric', month: 'short' })} – ${fmt(e, { day: 'numeric', month: 'short', year: 'numeric' })}`;
     }
   }

@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { Member } from '../types';
 import { fmt } from '../lib/dates';
 import type { Todo } from '../lib/todos';
+import { t } from '../i18n';
 
 /* Geometry of the to-do board: note size, placement and the shapes of the touch gestures. */
 
@@ -31,9 +32,13 @@ export function dueInfo(due: string | undefined, today: Date): { label: string; 
   const [y, m, d] = due.split('-').map(Number);
   const date = new Date(y, m - 1, d);
   const diff = Math.round((date.getTime() - today.getTime()) / 86_400_000);
-  if (diff < 0) return { label: diff === -1 ? 'seit gestern' : `seit ${fmt(date, { day: 'numeric', month: 'numeric' })}`, tone: 'late' };
-  if (diff === 0) return { label: 'Heute', tone: 'today' };
-  if (diff === 1) return { label: 'Morgen', tone: 'soon' };
+  if (diff < 0)
+    return {
+      label: diff === -1 ? t('todos.sinceYesterday') : t('todos.since', { date: fmt(date, { day: 'numeric', month: 'numeric' }) }),
+      tone: 'late',
+    };
+  if (diff === 0) return { label: t('common.today'), tone: 'today' };
+  if (diff === 1) return { label: t('common.tomorrow'), tone: 'soon' };
   if (diff < 7) return { label: fmt(date, { weekday: 'long' }), tone: '' };
   return { label: fmt(date, { weekday: 'short', day: 'numeric', month: 'numeric' }), tone: '' };
 }

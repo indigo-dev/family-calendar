@@ -7,6 +7,7 @@ import type { Paint } from '../lib/colors';
 import { useStore } from '../store';
 import { arrayOf, persisted, usePersisted } from '../lib/persisted';
 import './shopping.css';
+import { t, locale } from '../i18n';
 
 type Pane = 'list' | 'pantry';
 
@@ -115,7 +116,7 @@ export function ShoppingModule() {
     if (q || editMode) return [];
     return items
       .filter((i) => (shop.bought[i.id] ?? 0) >= 2 && catOk(i.cat))
-      .sort((a, b) => shop.bought[b.id] - shop.bought[a.id] || a.name.localeCompare(b.name, 'de'))
+      .sort((a, b) => shop.bought[b.id] - shop.bought[a.id] || a.name.localeCompare(b.name, locale()))
       .slice(0, FREQUENT_MAX);
   }, [items, shop.bought, q, editMode, catOk]);
   const exact = q && items.some((i) => norm(i.name) === q);
@@ -140,8 +141,7 @@ export function ShoppingModule() {
 
   const tapPantry = (item: ShopItem) => {
     if (editMode) {
-      const what = item.custom ? 'löschen' : 'aus dem Vorrat ausblenden';
-      if (confirm(`„${item.name}“ ${what}?`)) shop.removeItem(item);
+      if (confirm(t(item.custom ? 'shopping.confirmDelete' : 'shopping.confirmHide', { name: item.name }))) shop.removeItem(item);
       return;
     }
     shop.add(item.id);
@@ -151,7 +151,7 @@ export function ShoppingModule() {
     <>
       <div className="shop-switch segmented" role="tablist">
         <button role="tab" aria-selected={pane === 'list'} className={pane === 'list' ? 'active' : ''} onClick={() => setPane('list')}>
-          🛒 Liste{listCount > 0 ? ` · ${listCount}` : ''}
+          {listCount > 0 ? t('shopping.listCount', { n: listCount }) : t('shopping.list')}
         </button>
         <button
           role="tab"
@@ -159,29 +159,29 @@ export function ShoppingModule() {
           className={pane === 'pantry' ? 'active' : ''}
           onClick={() => setPane('pantry')}
         >
-          🧺 Vorrat
+          {t('shopping.pantryTab')}
         </button>
       </div>
       <div className={`shop shop-show-${pane}`}>
         {/* ---------------------------------------------------- current list */}
-        <section className="view shop-list" aria-label="Einkaufsliste">
+        <section className="view shop-list" aria-label={t('shopping.title')}>
           <div className="shop-pane-head">
-            <h2>Einkaufsliste</h2>
+            <h2>{t('shopping.title')}</h2>
             {listCount > 0 && <span className="shop-count">{listCount}</span>}
           </div>
           <div className="shop-scroll">
             {listCount === 0 ? (
               <div className="shop-empty">
                 <span className="shop-empty-icon">🛒</span>
-                <strong>Die Liste ist leer.</strong>
-                <span className="muted">Tippe im Vorrat auf das, was fehlt.</span>
+                <strong>{t('shopping.empty')}</strong>
+                <span className="muted">{t('shopping.emptyHint')}</span>
                 <button className="btn primary shop-to-pantry" onClick={() => setPane('pantry')}>
-                  Zum Vorrat
+                  {t('shopping.toPantry')}
                 </button>
               </div>
             ) : (
               <>
-                <div className="shop-group-head shop-list-hint">Antippen zum Abhaken</div>
+                <div className="shop-group-head shop-list-hint">{t('shopping.tapToCheck')}</div>
                 <div className="shop-grid big">
                   {listed.map(({ entry, item }) => (
                     <button
@@ -189,7 +189,9 @@ export function ShoppingModule() {
                       className={`shop-tile on-list ${leaving.has(item.id) ? 'leaving' : ''}`}
                       style={tileStyle(item, paint)}
                       onClick={() => checkOff(entry, item)}
-                      aria-label={`${item.name}${entry.qty > 1 ? `, ${entry.qty} Stück` : ''} abhaken`}
+                      aria-label={
+                        entry.qty > 1 ? t('shopping.checkQty', { name: item.name, n: entry.qty }) : t('shopping.check', { name: item.name })
+                      }
                     >
                       <ItemSym item={item} />
                       <span className="shop-name">{item.name}</span>
@@ -206,7 +208,7 @@ export function ShoppingModule() {
           {undo && (
             <div className="shop-toast" role="status">
               <span>
-                <strong>{undo.name}</strong> abgehakt
+                <strong>{undo.name}</strong> {t('shopping.checked')}
               </span>
               <button
                 className="btn"
@@ -216,32 +218,38 @@ export function ShoppingModule() {
                   setUndo(null);
                 }}
               >
-                Rückgängig
+                {t('dashboard.undo')}
               </button>
             </div>
           )}
         </section>
 
         {/* ---------------------------------------------------- pantry */}
-        <section className={`view shop-pantry ${editMode ? 'editing' : ''}`} aria-label="Vorrat">
+        <section className={`view shop-pantry ${editMode ? 'editing' : ''}`} aria-label={t('shopping.pantry')}>
           <div className="shop-pane-head">
-            <h2>Vorrat</h2>
+            <h2>{t('shopping.pantry')}</h2>
             <div className="shop-search">
               <span aria-hidden>🔍</span>
-              <input type="search" value={query} placeholder="Suchen…" onChange={(e) => setQuery(e.target.value)} enterKeyHint="search" />
+              <input
+                type="search"
+                value={query}
+                placeholder={t('shopping.search')}
+                onChange={(e) => setQuery(e.target.value)}
+                enterKeyHint="search"
+              />
               {query && (
-                <button className="shop-search-clear" onClick={() => setQuery('')} aria-label="Suche leeren">
+                <button className="shop-search-clear" onClick={() => setQuery('')} aria-label={t('shopping.clearSearch')}>
                   ×
                 </button>
               )}
             </div>
             <button className={`btn ${editMode ? 'primary' : ''}`} onClick={() => setEditMode((v) => !v)}>
-              {editMode ? 'Fertig' : 'Bearbeiten'}
+              {editMode ? t('common.done') : t('common.edit')}
             </button>
           </div>
-          <nav className="filterbar shop-cats" aria-label="Kategorien">
+          <nav className="filterbar shop-cats" aria-label={t('shopping.categories_')}>
             <button className={`chip all ${allCats ? 'on' : ''}`} aria-pressed={allCats} onClick={() => setCats([])}>
-              Alle
+              {t('common.all')}
             </button>
             {filterCats.map((c) => (
               <CategoryChip
@@ -256,10 +264,10 @@ export function ShoppingModule() {
           </nav>
           {editMode && (
             <div className="shop-edit-hint">
-              Antippen entfernt einen Artikel aus dem Vorrat.
+              {t('shopping.editHint')}
               {shop.hidden.length > 0 && (
                 <button className="link" onClick={() => shop.unhideAll()}>
-                  {shop.hidden.length} ausgeblendete zurückholen
+                  {t('shopping.unhide', { n: shop.hidden.length })}
                 </button>
               )}
             </div>
@@ -268,7 +276,7 @@ export function ShoppingModule() {
             {frequent.length > 0 && (
               <div className="shop-group">
                 <div className="shop-group-head">
-                  <span aria-hidden>⭐</span> Häufig gekauft
+                  <span aria-hidden>⭐</span> {t('shopping.frequent')}
                 </div>
                 <div className="shop-grid">
                   {frequent.map((item) => (
@@ -289,7 +297,7 @@ export function ShoppingModule() {
                 <span className="shop-emoji" aria-hidden>
                   ＋
                 </span>
-                „{query.trim()}“ als neuen Artikel anlegen
+                {t('shopping.createFromQuery', { query: query.trim() })}
               </button>
             )}
             {pantryGroups.map(({ cat, items: catItems }) => (
@@ -312,12 +320,12 @@ export function ShoppingModule() {
                     <button
                       className="shop-tile add"
                       onClick={() => setCreating({ name: '', cat: cat.id })}
-                      aria-label={`Neuer Artikel in ${cat.label}`}
+                      aria-label={t('shopping.newIn', { cat: cat.label })}
                     >
                       <span className="shop-emoji" aria-hidden>
                         ＋
                       </span>
-                      <span className="shop-name">Neu</span>
+                      <span className="shop-name">{t('shopping.new')}</span>
                     </button>
                   )}
                 </div>
@@ -328,7 +336,7 @@ export function ShoppingModule() {
                 <span className="shop-emoji" aria-hidden>
                   ＋
                 </span>
-                Eigenen Artikel anlegen
+                {t('shopping.createOwn')}
               </button>
             )}
           </div>
@@ -372,7 +380,11 @@ function PantryTile({
         style={tileStyle(item, paint)}
         onClick={() => onTap(item)}
         aria-label={
-          editMode ? `${item.name} entfernen` : qty > 0 ? `${item.name}: noch eins mehr (jetzt ${qty})` : `${item.name} auf die Liste`
+          editMode
+            ? t('shopping.removeItem', { name: item.name })
+            : qty > 0
+              ? t('shopping.oneMore', { name: item.name, n: qty })
+              : t('shopping.addToList', { name: item.name })
         }
       >
         <ItemSym item={item} />
@@ -385,7 +397,7 @@ function PantryTile({
         )}
       </button>
       {!editMode && qty > 0 && (
-        <button className="shop-less" onClick={() => onLess(item.id, qty - 1)} aria-label={`${item.name}: eins weniger`}>
+        <button className="shop-less" onClick={() => onLess(item.id, qty - 1)} aria-label={t('shopping.oneLess', { name: item.name })}>
           −
         </button>
       )}
@@ -412,7 +424,7 @@ function ItemEditor({
   const save = () => valid && onSave(name.trim(), emoji, cat);
 
   return (
-    <Modal onClose={onClose} label="Neuer Artikel">
+    <Modal onClose={onClose} label={t('shopping.newItem')}>
       <div className="modal shop-editor" style={{ ['--cat' as string]: paint(catColor.get(cat)) }}>
         <div className="shop-editor-preview" style={{ ['--cat' as string]: paint(catColor.get(cat)) }}>
           <span className="shop-emoji">
@@ -422,13 +434,13 @@ function ItemEditor({
             ref={ref}
             value={name}
             maxLength={40}
-            placeholder="Name des Artikels"
+            placeholder={t('shopping.itemName')}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()}
           />
         </div>
         <div className="todo-editor-section">
-          <div className="muted small">Bild</div>
+          <div className="muted small">{t('shopping.picture')}</div>
           <div className="shop-emoji-grid">
             {EMOJI_CHOICES.map((e) => (
               <button key={e} className={emoji === e ? 'on' : ''} onClick={() => setEmoji(e)} aria-pressed={emoji === e} aria-label={e}>
@@ -438,7 +450,7 @@ function ItemEditor({
           </div>
         </div>
         <div className="todo-editor-section">
-          <div className="muted small">Wo im Laden?</div>
+          <div className="muted small">{t('shopping.where')}</div>
           <div className="todo-editor-members">
             {CATEGORIES.map((c) => (
               <button
@@ -456,10 +468,10 @@ function ItemEditor({
         <div className="modal-actions todo-editor-actions">
           <span className="board-spacer" />
           <button className="btn" onClick={onClose}>
-            Abbrechen
+            {t('common.cancel')}
           </button>
           <button className="btn primary" onClick={save} disabled={!valid}>
-            Auf die Liste
+            {t('shopping.onList')}
           </button>
         </div>
       </div>

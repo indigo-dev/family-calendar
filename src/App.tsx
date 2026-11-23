@@ -15,6 +15,7 @@ import { GlyphIcon } from './components/Icon';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { VoiceButton } from './voice/VoiceButton';
 import { isNative, onAndroidBack } from './native/launcher';
+import { t, useLanguage } from './i18n';
 
 /** the open module, per device */
 const moduleStore = persisted<ModuleId>(
@@ -54,6 +55,8 @@ const LAZY = [
 
 export function App() {
   const { settings, members } = useStore();
+  // re-render everything when the language changes (also with the 'auto' setting and a new device language)
+  useLanguage();
   const module = usePersisted(moduleStore);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(members.length === 0);
   const [settingsTab, setSettingsTab] = useState<SettingsTab | undefined>();
@@ -165,7 +168,7 @@ export function App() {
         }}
       />
       <div className="app">
-        <ErrorBoundary label={MODULES.find((m) => m.id === module)?.label ?? 'Modul'} resetKey={module}>
+        <ErrorBoundary label={MODULES.find((m) => m.id === module)?.label ?? t('app.module')} resetKey={module}>
           <Suspense fallback={<div className="module-loading" aria-busy="true" />}>
             {module === 'dashboard' && (
               <>
@@ -178,8 +181,8 @@ export function App() {
                       <button
                         className="icon-btn"
                         onClick={() => setDashEditing(true)}
-                        aria-label="Dashboard bearbeiten"
-                        title="Bearbeiten"
+                        aria-label={t('app.editDashboard')}
+                        title={t('common.edit')}
                       >
                         <GlyphIcon glyph="✎" name="edit" />
                       </button>
@@ -206,45 +209,45 @@ export function App() {
             )}
             {module === 'weather' && (
               <>
-                <ModuleHeader title="Wetter" onSettings={() => openSettings()} />
+                <ModuleHeader title={t('titles.weather')} onSettings={() => openSettings()} />
                 <WeatherModule />
               </>
             )}
             {module === 'timetable' && (
               <>
-                <ModuleHeader title="Stundenplan" onSettings={() => openSettings('school')} />
+                <ModuleHeader title={t('titles.timetable')} onSettings={() => openSettings('school')} />
                 <TimetableModule onSettings={() => openSettings('family')} />
               </>
             )}
             {module === 'todos' && (
               <>
-                <ModuleHeader title="To-dos" onSettings={() => openSettings()} />
+                <ModuleHeader title={t('titles.todos')} onSettings={() => openSettings()} />
                 <MemberFilter issues={{}} onIssue={() => {}} />
                 <TodoBoard />
               </>
             )}
             {module === 'frame' && (
               <>
-                <ModuleHeader title="Fotorahmen" onSettings={() => openSettings()} />
+                <ModuleHeader title={t('titles.frame')} onSettings={() => openSettings()} />
                 <FrameModule onStart={(startId) => setFrame({ mode: 'manual', startId })} />
               </>
             )}
             {module === 'shopping' && (
               <>
-                <ModuleHeader title="Einkaufsliste" onSettings={() => openSettings()} />
+                <ModuleHeader title={t('titles.shopping')} onSettings={() => openSettings()} />
                 <ShoppingModule />
               </>
             )}
             {module === 'apps' && isNative && (
               <>
-                <ModuleHeader title="Apps" onSettings={() => openSettings()} />
+                <ModuleHeader title={t('titles.apps')} onSettings={() => openSettings()} />
                 <AppsModule />
               </>
             )}
           </Suspense>
         </ErrorBoundary>
       </div>
-      <ErrorBoundary label="Sprachsteuerung" fallback={null} retrySec={0}>
+      <ErrorBoundary label={t('titles.voice')} fallback={null} retrySec={0}>
         <VoiceButton
           onOpenModule={(id) => {
             setModule(id);
@@ -254,7 +257,7 @@ export function App() {
         />
       </ErrorBoundary>
       {frame && canFrame && (
-        <ErrorBoundary label="Fotorahmen" fallback={null} retrySec={0} onError={() => setFrame(null)}>
+        <ErrorBoundary label={t('titles.frame')} fallback={null} retrySec={0} onError={() => setFrame(null)}>
           <Suspense fallback={null}>
             <PhotoFrame
               ids={frameIds}
@@ -289,9 +292,9 @@ function Greeting() {
 }
 
 function greeting(h: number): string {
-  if (h < 5) return 'Gute Nacht';
-  if (h < 11) return 'Guten Morgen';
-  if (h < 18) return 'Hallo zusammen';
-  if (h < 22) return 'Guten Abend';
-  return 'Gute Nacht';
+  if (h < 5) return t('app.greeting.night');
+  if (h < 11) return t('app.greeting.morning');
+  if (h < 18) return t('app.greeting.day');
+  if (h < 22) return t('app.greeting.evening');
+  return t('app.greeting.night');
 }

@@ -11,6 +11,7 @@ import { applyCommand, findMembers, joinAnd, type Applied } from './apply';
 import { EventsAnswer, WeatherAnswer } from './answers';
 import { DEFAULT_MODEL, updateVoiceSettings, useVoiceSettings } from './settings';
 import './voice.css';
+import { t, locale, getLanguage } from '../i18n';
 
 type Phase =
   | { s: 'idle' }
@@ -26,8 +27,10 @@ const RESULT_MS = 15_000;
 function speakText(text: string, enabled: boolean) {
   if (!enabled || typeof speechSynthesis === 'undefined' || !text) return;
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'de-DE';
-  const voice = speechSynthesis.getVoices().find((v) => v.lang.startsWith('de'));
+  // read aloud in the app language (a German voice would mangle English answers and vice versa)
+  u.lang = locale();
+  const voices = speechSynthesis.getVoices();
+  const voice = voices.find((v) => v.lang === u.lang) ?? voices.find((v) => v.lang.startsWith(getLanguage()));
   if (voice) u.voice = voice;
   speechSynthesis.speak(u);
 }
@@ -100,7 +103,7 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
       if (model !== voice.model) updateVoiceSettings({ model });
       if (ctrl.signal.aborted) return;
       if (!cmd.transcript && isEmpty(cmd)) {
-        setPhase({ s: 'error', message: 'Ich habe nichts verstanden. Bitte noch einmal versuchen.', canType: true });
+        setPhase({ s: 'error', message: t('voice.nothingUnderstood'), canType: true });
         return;
       }
       const applied = applyCommand(cmd, {
@@ -121,13 +124,13 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
       setPhase({ s: 'result', cmd, applied, openFor: openFor.map((m) => m.name) });
       const said = [...applied.speech];
       if (cmd.reply) said.push(cmd.reply);
-      else if (isEmpty(cmd)) said.push('Das habe ich leider nicht verstanden.');
+      else if (isEmpty(cmd)) said.push(t('voice.notUnderstood'));
       if (said.length) speak(said.join(' '));
     } catch (e) {
       if ((e as Error).name === 'AbortError') return;
       setPhase({
         s: 'error',
-        message: e instanceof VoiceError ? e.message : 'Da ist etwas schiefgegangen.',
+        message: e instanceof VoiceError ? e.message : t('voice.wentWrong'),
         canType: true,
         settings: e instanceof VoiceError && e.settings,
       });
@@ -151,13 +154,13 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
       if (rec.current !== r) return; // cancelled
       rec.current = null;
       if (!blob) {
-        setPhase({ s: 'error', message: 'Ich habe nichts gehört. Bitte noch einmal versuchen.', canType: true });
+        setPhase({ s: 'error', message: t('voice.nothingHeard'), canType: true });
         return;
       }
       setPhase({ s: 'thinking' });
       await run({ kind: 'audio', ...(await toModelAudio(blob)) });
     } catch (e) {
-      setPhase({ s: 'error', message: e instanceof MicError ? e.message : 'Das Mikrofon konnte nicht gestartet werden.', canType: true });
+      setPhase({ s: 'error', message: e instanceof MicError ? e.message : t('voice.micFailed'), canType: true });
     }
   };
 
@@ -177,18 +180,18 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
         <div
           className="voice-card"
           role="dialog"
-          aria-label="Sprachsteuerung"
+          aria-label={t('voice.title')}
           aria-live="polite"
           onPointerDown={() => setTouched((n) => n + 1)}
         >
-          <button className="voice-close" onClick={close} aria-label="Schließen">
+          <button className="voice-close" onClick={close} aria-label={t('common.close')}>
             ×
           </button>
 
           {phase.s === 'listening' && (
             <div className="voice-status">
-              <strong>Ich höre zu …</strong>
-              <span className="muted">Zum Beispiel: „Pack drei Äpfel und eine Milch auf die Einkaufsliste“</span>
+              <strong>{t('voice.listening')}</strong>
+              <span className="muted">{t('voice.example')}</span>
               <button
                 className="voice-link"
                 onClick={() => {
@@ -197,7 +200,7 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
                   setPhase({ s: 'typing' });
                 }}
               >
-                Lieber tippen
+                {t('voice.rather')}
               </button>
             </div>
           )}
@@ -209,7 +212,7 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
                 <i />
                 <i />
               </span>
-              <strong>Moment …</strong>
+              <strong>{t('voice.moment')}</strong>
             </div>
           )}
 
@@ -225,12 +228,12 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
                 autoFocus
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
-                placeholder="z. B. Milch und Brot auf die Liste"
-                aria-label="Befehl eintippen"
+                placeholder={t('voice.typePlaceholder')}
+                aria-label={t('voice.typeLabel')}
                 enterKeyHint="send"
               />
               <button className="btn primary" type="submit" disabled={!typed.trim()}>
-                Los
+                {t('voice.go')}
               </button>
             </form>
           )}
@@ -240,11 +243,11 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
               <strong>{phase.message}</strong>
               <div className="voice-actions">
                 <button className="btn primary" onClick={() => void listen()}>
-                  Nochmal sprechen
+                  {t('voice.again')}
                 </button>
                 {phase.canType && (
                   <button className="btn" onClick={() => setPhase({ s: 'typing' })}>
-                    Tippen
+                    {t('voice.type')}
                   </button>
                 )}
                 {phase.settings && (
@@ -255,7 +258,7 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
                       onSettings();
                     }}
                   >
-                    Einstellungen
+                    {t('common.settings')}
                   </button>
                 )}
               </div>
@@ -285,13 +288,14 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
                     {MODULES.find((m) => m.id === phase.cmd.openModule)?.icon}
                   </span>
                   <span>
-                    {moduleLabel(phase.cmd.openModule)}
-                    {phase.openFor?.length ? ` von ${joinAnd(phase.openFor)}` : ''} geöffnet
+                    {phase.openFor?.length
+                      ? t('voice.openedFor', { module: moduleLabel(phase.cmd.openModule), names: joinAnd(phase.openFor) })
+                      : t('voice.opened', { module: moduleLabel(phase.cmd.openModule) })}
                   </span>
                 </div>
               )}
               {phase.cmd.reply && <p className="voice-reply">{phase.cmd.reply}</p>}
-              {isEmpty(phase.cmd) && <p className="voice-reply">Das habe ich leider nicht verstanden.</p>}
+              {isEmpty(phase.cmd) && <p className="voice-reply">{t('voice.notUnderstood')}</p>}
               <div className="voice-actions">
                 {phase.applied.undo && !phase.undone && (
                   <button
@@ -301,12 +305,12 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
                       setPhase({ ...phase, undone: true });
                     }}
                   >
-                    Rückgängig
+                    {t('dashboard.undo')}
                   </button>
                 )}
-                {phase.undone && <span className="muted">Rückgängig gemacht</span>}
+                {phase.undone && <span className="muted">{t('voice.undone')}</span>}
                 <button className="btn primary" onClick={() => void listen()}>
-                  Weiter sprechen
+                  {t('voice.more')}
                 </button>
               </div>
             </div>
@@ -318,8 +322,8 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
         className={`voice-fab ${phase.s === 'listening' ? 'listening' : ''} ${phase.s === 'thinking' ? 'thinking' : ''}`}
         style={{ ['--lvl' as string]: level }}
         onClick={onFab}
-        aria-label={phase.s === 'listening' ? 'Aufnahme beenden' : 'Sprachbefehl'}
-        title="Sprachbefehl"
+        aria-label={phase.s === 'listening' ? t('voice.stop') : t('voice.command')}
+        title={t('voice.command')}
       >
         <MicIcon />
       </button>

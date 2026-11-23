@@ -8,6 +8,7 @@ import { Canvas } from './Canvas';
 import { Note } from './Note';
 import { TodoEditor } from './TodoEditor';
 import { useToday } from '../lib/clock';
+import { t } from '../i18n';
 
 type Tab = 'open' | 'done';
 
@@ -40,34 +41,34 @@ export function TodoBoard() {
       <div className="board-toolbar">
         <div className="segmented small" role="tablist">
           <button role="tab" aria-selected={tab === 'open'} className={tab === 'open' ? 'active' : ''} onClick={() => setTab('open')}>
-            Offen · {openVisible.length}
+            {t('todos.open', { n: openVisible.length })}
           </button>
           <button role="tab" aria-selected={tab === 'done'} className={tab === 'done' ? 'active' : ''} onClick={() => setTab('done')}>
-            Erledigt · {done.length}
+            {t('todos.done', { n: done.length })}
           </button>
         </div>
         <span className="board-spacer" />
         {tab === 'open' && openVisible.length > 1 && (
           <button
             className="btn"
-            title="Alle Zettel wieder ordentlich nebeneinander legen"
-            onClick={() => patchMany(Object.fromEntries(open.map((t) => [t.id, { x: undefined, y: undefined }])))}
+            title={t('todos.tidyHint')}
+            onClick={() => patchMany(Object.fromEntries(open.map((x) => [x.id, { x: undefined, y: undefined }])))}
           >
-            Aufräumen
+            {t('todos.tidy')}
           </button>
         )}
         {tab === 'done' && done.length > 0 && (
-          <button className="btn danger" onClick={() => confirm('Alle erledigten Zettel entfernen?') && clearDone()}>
-            Alle entfernen
+          <button className="btn danger" onClick={() => confirm(t('todos.confirmClear')) && clearDone()}>
+            {t('todos.clear')}
           </button>
         )}
         <button className="btn primary" onClick={startNew} disabled={members.length === 0}>
-          + Neuer Zettel
+          {t('todos.newNote')}
         </button>
       </div>
       <main className="view todo-view">
         {members.length === 0 ? (
-          <div className="todo-empty">Lege zuerst in den Einstellungen die Familie an.</div>
+          <div className="todo-empty">{t('todos.noFamily')}</div>
         ) : tab === 'open' ? (
           <Canvas
             all={open}
@@ -75,22 +76,22 @@ export function TodoBoard() {
             membersOf={membersOf}
             today={today}
             onOpen={setEditing}
-            onToggle={(t) => toggleDone(t.id)}
+            onToggle={(x) => toggleDone(x.id)}
             onNew={startNew}
             patchMany={patchMany}
           />
         ) : done.length === 0 ? (
-          <div className="todo-empty">Noch nichts erledigt.</div>
+          <div className="todo-empty">{t('todos.nothingDone')}</div>
         ) : (
           <div className="todo-done-grid">
-            {done.map((t) => (
+            {done.map((x) => (
               <Note
-                key={t.id}
-                todo={t}
-                members={membersOf(t)}
+                key={x.id}
+                todo={x}
+                members={membersOf(x)}
                 today={today}
-                onToggle={() => toggleDone(t.id)}
-                onOpen={() => setEditing(t)}
+                onToggle={() => toggleDone(x.id)}
+                onOpen={() => setEditing(x)}
               />
             ))}
           </div>
@@ -99,10 +100,10 @@ export function TodoBoard() {
       {editing && (
         <TodoEditor
           todo={editing}
-          isNew={!todos.some((t) => t.id === editing.id)}
+          isNew={!todos.some((x) => x.id === editing.id)}
           today={today}
-          onSave={(t) => {
-            upsert(t);
+          onSave={(x) => {
+            upsert(x);
             setEditing(null);
           }}
           onDelete={() => {

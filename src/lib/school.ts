@@ -1,47 +1,74 @@
 import type { Period, SchoolConfig, SchoolType, Subject, Timetable } from '../types';
 import { uid } from './id';
 import type { Paint } from './colors';
+import { weekdayNames } from './dates';
+import { t, type Messages } from '../i18n';
 
+/** school type → name in the active language */
 export const SCHOOL_TYPES: Record<SchoolType, string> = {
-  grundschule: 'Grundschule',
-  gymnasium: 'Gymnasium',
+  get grundschule() {
+    return t('school.types.grundschule');
+  },
+  get gymnasium() {
+    return t('school.types.gymnasium');
+  },
 };
 
-/** Mo..Fr */
-export const SCHOOL_DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr'];
+/** Mo..Fr (index 0..4) */
+export const SCHOOL_DAYS = [0, 1, 2, 3, 4];
+
+/** short weekday name of a school day (0 = Monday) */
+export const schoolDayName = (day: number): string => weekdayNames(1)[day];
+
+type CatalogId = keyof Messages['school']['subjects'];
 
 /**
  * Predefined subjects. Ids are stable (saved in timetables); subjects that exist at both school types share
  * one id and therefore one colour for siblings.
  */
-const CATALOG: (Subject & { schools: SchoolType[] })[] = [
-  { id: 'de', name: 'Deutsch', short: 'D', color: '#ef4444', schools: ['grundschule', 'gymnasium'] },
-  { id: 'ma', name: 'Mathe', short: 'M', color: '#3b82f6', schools: ['grundschule', 'gymnasium'] },
-  { id: 'en', name: 'Englisch', short: 'E', color: '#eab308', schools: ['grundschule', 'gymnasium'] },
-  { id: 'su', name: 'Sachunterricht', short: 'SU', color: '#14b8a6', schools: ['grundschule'] },
-  { id: 'lz', name: 'Lernzeit', short: 'LZ', color: '#94a3b8', schools: ['grundschule'] },
-  { id: 'foe', name: 'Förderunterricht', short: 'Fö', color: '#f59e0b', schools: ['grundschule'] },
-  { id: 'kr', name: 'Klassenrat', short: 'KR', color: '#c084fc', schools: ['grundschule'] },
-  { id: 'fr', name: 'Französisch', short: 'F', color: '#ec4899', schools: ['gymnasium'] },
-  { id: 'la', name: 'Latein', short: 'L', color: '#a16207', schools: ['gymnasium'] },
-  { id: 'es', name: 'Spanisch', short: 'S', color: '#f97316', schools: ['gymnasium'] },
-  { id: 'bi', name: 'Biologie', short: 'Bio', color: '#22c55e', schools: ['gymnasium'] },
-  { id: 'ch', name: 'Chemie', short: 'Ch', color: '#84cc16', schools: ['gymnasium'] },
-  { id: 'ph', name: 'Physik', short: 'Ph', color: '#6366f1', schools: ['gymnasium'] },
-  { id: 'nw', name: 'Naturwissenschaften', short: 'NW', color: '#65a30d', schools: ['gymnasium'] },
-  { id: 'ek', name: 'Erdkunde', short: 'Ek', color: '#0ea5e9', schools: ['gymnasium'] },
-  { id: 'ge', name: 'Geschichte', short: 'G', color: '#b45309', schools: ['gymnasium'] },
-  { id: 'pw', name: 'Politik/Wirtschaft', short: 'PW', color: '#64748b', schools: ['gymnasium'] },
-  { id: 'if', name: 'Informatik', short: 'If', color: '#0f766e', schools: ['gymnasium'] },
-  { id: 'kl', name: 'Klassenleitung', short: 'KL', color: '#c084fc', schools: ['gymnasium'] },
-  { id: 'ku', name: 'Kunst', short: 'Ku', color: '#a855f7', schools: ['grundschule', 'gymnasium'] },
-  { id: 'mu', name: 'Musik', short: 'Mu', color: '#d946ef', schools: ['grundschule', 'gymnasium'] },
-  { id: 'sp', name: 'Sport', short: 'Sp', color: '#16a34a', schools: ['grundschule', 'gymnasium'] },
-  { id: 'sw', name: 'Schwimmen', short: 'Sw', color: '#06b6d4', schools: ['grundschule', 'gymnasium'] },
-  { id: 're', name: 'Religion', short: 'Rel', color: '#92400e', schools: ['grundschule', 'gymnasium'] },
-  { id: 'et', name: 'Ethik / Philosophie', short: 'Eth', color: '#78716c', schools: ['grundschule', 'gymnasium'] },
-  { id: 'ag', name: 'AG', short: 'AG', color: '#fb7185', schools: ['grundschule', 'gymnasium'] },
+const G: SchoolType[] = ['grundschule'];
+const Y: SchoolType[] = ['gymnasium'];
+const B: SchoolType[] = ['grundschule', 'gymnasium'];
+const CATALOG_DATA: [CatalogId, string, SchoolType[]][] = [
+  ['de', '#ef4444', B],
+  ['ma', '#3b82f6', B],
+  ['en', '#eab308', B],
+  ['su', '#14b8a6', G],
+  ['lz', '#94a3b8', G],
+  ['foe', '#f59e0b', G],
+  ['kr', '#c084fc', G],
+  ['fr', '#ec4899', Y],
+  ['la', '#a16207', Y],
+  ['es', '#f97316', Y],
+  ['bi', '#22c55e', Y],
+  ['ch', '#84cc16', Y],
+  ['ph', '#6366f1', Y],
+  ['nw', '#65a30d', Y],
+  ['ek', '#0ea5e9', Y],
+  ['ge', '#b45309', Y],
+  ['pw', '#64748b', Y],
+  ['if', '#0f766e', Y],
+  ['kl', '#c084fc', Y],
+  ['ku', '#a855f7', B],
+  ['mu', '#d946ef', B],
+  ['sp', '#16a34a', B],
+  ['sw', '#06b6d4', B],
+  ['re', '#92400e', B],
+  ['et', '#78716c', B],
+  ['ag', '#fb7185', B],
 ];
+// name and short name in the active language
+const CATALOG: (Subject & { schools: SchoolType[] })[] = CATALOG_DATA.map(([id, color, schools]) => ({
+  id,
+  color,
+  schools,
+  get name() {
+    return t(`school.subjects.${id}.name`);
+  },
+  get short() {
+    return t(`school.subjects.${id}.short`);
+  },
+}));
 
 export const SUBJECT_COLORS = [
   '#ef4444',
@@ -120,9 +147,9 @@ export function catalogGroups(school: SchoolConfig): { label: string; subjects: 
   const both = CATALOG.filter((s) => s.schools.length > 1);
   const only = (t: SchoolType) => CATALOG.filter((s) => s.schools.length === 1 && s.schools[0] === t);
   return [
-    { label: 'Beide Schularten', subjects: both.map((s) => map.get(s.id)!) },
-    { label: 'Nur Grundschule', subjects: only('grundschule').map((s) => map.get(s.id)!) },
-    { label: 'Nur Gymnasium', subjects: only('gymnasium').map((s) => map.get(s.id)!) },
+    { label: t('school.groups.both'), subjects: both.map((s) => map.get(s.id)!) },
+    { label: t('school.groups.grundschule'), subjects: only('grundschule').map((s) => map.get(s.id)!) },
+    { label: t('school.groups.gymnasium'), subjects: only('gymnasium').map((s) => map.get(s.id)!) },
   ];
 }
 

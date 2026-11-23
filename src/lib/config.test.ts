@@ -33,6 +33,12 @@ describe('parseConfig', () => {
     expect(style('aurora')).toBe('aurora');
   });
 
+  it('accepts backups without a language and keeps a valid one', () => {
+    expect(parseConfig(base).settings.language).toBe('auto');
+    expect(parseConfig({ ...base, settings: { language: 'en' } }).settings.language).toBe('en');
+    expect(parseConfig({ ...base, settings: { language: 'es' } }).settings.language).toBe('auto');
+  });
+
   it('drops calendar assignments to people that do not exist', () => {
     const cfg = parseConfig({
       ...base,

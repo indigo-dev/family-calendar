@@ -1,9 +1,10 @@
-import { dayKey, fmt } from '../../lib/dates';
+import { dayKey, fmt, hourLabel } from '../../lib/dates';
 
 import { activeAlerts, deg, describe, SEVERITY_LABEL, useHomeWeather } from '../../lib/weather';
 import { WxIcon } from '../../weather/WxIcon';
 import { Empty, useDash, type WidgetProps } from './shared';
 import { useMinute } from '../../lib/clock';
+import { t } from '../../i18n';
 
 export function WeatherWidget({ size }: WidgetProps) {
   const { openModule } = useDash();
@@ -11,11 +12,11 @@ export function WeatherWidget({ size }: WidgetProps) {
   const { place, data, error } = useHomeWeather();
   if (!place)
     return (
-      <Empty action="Ort festlegen" onAction={() => openModule('weather')}>
-        Kein Ort für das Wetter
+      <Empty action={t('dashboard.setPlace')} onAction={() => openModule('weather')}>
+        {t('dashboard.noWeatherPlace')}
       </Empty>
     );
-  if (!data) return <Empty>{error ?? 'Wetter wird geladen …'}</Empty>;
+  if (!data) return <Empty>{error ?? t('dashboard.weatherLoading')}</Empty>;
 
   const cur = describe(data.current.code, data.current.isDay);
   const today = data.days.find((d) => d.date === dayKey(now)) ?? data.days[0];
@@ -57,7 +58,7 @@ export function WeatherWidget({ size }: WidgetProps) {
         <div className="dw-hours">
           {hours.map((h) => (
             <div key={h.time} className="dw-hour">
-              <span className="dw-hour-t">{h.time.slice(11, 13)}</span>
+              <span className="dw-hour-t">{hourLabel(Number(h.time.slice(11, 13)))}</span>
               <WxIcon code={h.code} isDay={h.isDay} className="dw-hour-i" />
               <span className="dw-hour-v">{deg(h.temp)}</span>
             </div>

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { t } from '../i18n';
 
 /* Building blocks shared by the settings tabs. */
 export function Group({ title, note, children }: { title?: string; note?: ReactNode; children: ReactNode }) {
@@ -47,7 +48,7 @@ export function Stepper({
 }) {
   return (
     <div className="stepper">
-      <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label="weniger">
+      <button onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min} aria-label={t('common.less')}>
         −
       </button>
       <input
@@ -58,7 +59,7 @@ export function Stepper({
         onChange={(e) => onChange(Math.min(max, Math.max(min, Number(e.target.value) || min)))}
       />
       <span className="stepper-unit">{unit}</span>
-      <button onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label="mehr">
+      <button onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max} aria-label={t('common.more')}>
         +
       </button>
     </div>

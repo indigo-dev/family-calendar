@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPoi
 import { Icon } from './Icon';
 import { arrayOf, persisted, usePersisted } from '../lib/persisted';
 import { isNative } from '../native/launcher';
+import { t } from '../i18n';
 
 export type ModuleId = 'dashboard' | 'calendar' | 'timetable' | 'todos' | 'shopping' | 'weather' | 'frame' | 'apps';
 
@@ -9,16 +10,24 @@ export type ModuleId = 'dashboard' | 'calendar' | 'timetable' | 'todos' | 'shopp
  * The dashboard always comes first; the others can be reordered by drag & drop.
  * "Apps" (start other Android apps) only exists in the Android app.
  */
-export const MODULES: { id: ModuleId; label: string; icon: string }[] = [
-  { id: 'dashboard', label: 'Übersicht', icon: '🏠' },
-  { id: 'calendar', label: 'Kalender', icon: '📅' },
-  { id: 'timetable', label: 'Stundenplan', icon: '🎒' },
-  { id: 'todos', label: 'To-dos', icon: '📌' },
-  { id: 'shopping', label: 'Einkauf', icon: '🛒' },
-  { id: 'weather', label: 'Wetter', icon: '⛅' },
-  { id: 'frame', label: 'Fotos', icon: '🖼️' },
-  ...(isNative ? [{ id: 'apps' as const, label: 'Apps', icon: '📱' }] : []),
+const MODULE_ICONS: [ModuleId, string][] = [
+  ['dashboard', '🏠'],
+  ['calendar', '📅'],
+  ['timetable', '🎒'],
+  ['todos', '📌'],
+  ['shopping', '🛒'],
+  ['weather', '⛅'],
+  ['frame', '🖼️'],
+  ...(isNative ? [['apps', '📱'] as [ModuleId, string]] : []),
 ];
+
+export const MODULES: { id: ModuleId; label: string; icon: string }[] = MODULE_ICONS.map(([id, icon]) => ({
+  id,
+  icon,
+  get label() {
+    return t(`nav.${id}`);
+  },
+}));
 
 const ORDER_KEY = 'fc.moduleOrder';
 const SORTABLE = MODULES.filter((m) => m.id !== 'dashboard').map((m) => m.id);
@@ -150,8 +159,8 @@ export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (i
   const list = [MODULES[0], ...order.map((id) => MODULES.find((m) => m.id === id)!)];
 
   return (
-    <nav ref={navRef} className={`module-nav ${dragging ? 'sorting' : ''}`} aria-label="Bereiche">
-      <span className="module-nav-label">Familie</span>
+    <nav ref={navRef} className={`module-nav ${dragging ? 'sorting' : ''}`} aria-label={t('app.sections')}>
+      <span className="module-nav-label">{t('app.family')}</span>
       {list.map((m) => (
         <button
           key={m.id}
@@ -163,7 +172,7 @@ export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (i
             m.id === 'dashboard' ? 'pinned' : ''
           }`}
           aria-current={active === m.id ? 'page' : undefined}
-          title={m.id === 'dashboard' ? undefined : 'Gedrückt halten und ziehen zum Sortieren'}
+          title={m.id === 'dashboard' ? undefined : t('nav.sortHint')}
           onPointerDown={onPointerDown(m.id)}
           onPointerMove={onPointerMove}
           onPointerUp={finish}

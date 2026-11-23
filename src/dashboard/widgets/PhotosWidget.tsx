@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { thumbUrl, useFrameSettings, usePhotos, type Photo } from '../../lib/frame';
 import { Empty, stop, useDash, type WidgetProps } from './shared';
+import { t } from '../../i18n';
 
 function useFullUrl(photo: Photo | undefined, enabled: boolean): string | undefined {
   const [url, setUrl] = useState<string>();
@@ -29,11 +30,11 @@ export function PhotosWidget({ size }: WidgetProps) {
   const photo = pool.length ? pool[i % pool.length] : undefined;
   const full = useFullUrl(photo, size === 'l' || size === 'xl');
 
-  if (photos === null) return <Empty>Lädt …</Empty>;
+  if (photos === null) return <Empty>{t('dashboard.loading')}</Empty>;
   if (!photo)
     return (
-      <Empty action="Fotos hinzufügen" onAction={() => openModule('frame')}>
-        Noch keine Fotos
+      <Empty action={t('dashboard.addPhotos')} onAction={() => openModule('frame')}>
+        {t('dashboard.noPhotos')}
       </Empty>
     );
   return (
@@ -46,7 +47,7 @@ export function PhotosWidget({ size }: WidgetProps) {
       }}
     >
       <img key={photo.id} src={full ?? thumbUrl(photo)} alt="" draggable={false} />
-      {selected.length > 0 && <span className="dw-photo-play">▶ Diashow</span>}
+      {selected.length > 0 && <span className="dw-photo-play">{t('dashboard.slideshow')}</span>}
     </div>
   );
 }

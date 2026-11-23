@@ -1,6 +1,8 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import { uid } from './id';
 import { arrayOf, isRecord, persisted, storage, usePersisted } from './persisted';
+import { getLanguage, t, type Messages } from '../i18n';
+import { fmtClock, fmtHHMM, uses12h } from './dates';
 
 /**
  * Weather: forecast + pollen + UV from Open-Meteo, official warnings of the DWD via Bright Sky.
@@ -83,6 +85,8 @@ export interface Alert {
   headline: string;
   description: string;
   instruction: string;
+  /** English texts of the warning (if the DWD published them) */
+  en?: { event: string; headline: string; description: string; instruction: string };
   onset: string;
   expires: string | null;
 }
@@ -181,7 +185,7 @@ export interface SearchHit {
 
 /** Place search (Open-Meteo geocoding, Germany only). */
 export async function searchPlaces(query: string, signal?: AbortSignal): Promise<SearchHit[]> {
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=8&language=de&countryCode=DE`;
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=8&language=${getLanguage()}&countryCode=DE`;
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const json = (await res.json()) as {
@@ -217,9 +221,9 @@ function position(options: PositionOptions): Promise<GeolocationPosition> {
  */
 export async function locate(): Promise<{ lat: number; lon: number }> {
   if (!window.isSecureContext) {
-    throw new LocateError('Der Standort ist nur über eine sichere Verbindung (https) verfügbar. Bitte den Ort suchen.');
+    throw new LocateError(t('weather.locate.https'));
   }
-  if (!('geolocation' in navigator)) throw new LocateError('Dieses Gerät kann seinen Standort nicht ermitteln. Bitte den Ort suchen.');
+  if (!('geolocation' in navigator)) throw new LocateError(t('weather.locate.unsupported'));
   let pos: GeolocationPosition;
   try {
     pos = await position({ enableHighAccuracy: false, timeout: 12_000, maximumAge: 60 * 60_000 });
@@ -231,10 +235,7 @@ export async function locate(): Promise<{ lat: number; lon: number }> {
     } catch (e2) {
       const err2 = e2 as GeolocationPositionError;
       if (err2.code === err2.PERMISSION_DENIED) throw denied();
-      throw new LocateError(
-        'Das Gerät konnte seinen Standort gerade nicht bestimmen. Ist WLAN eingeschaltet? Sonst den Ort einfach suchen.',
-        isApple() ? ['Einstellungen → Datenschutz & Sicherheit → Ortungsdienste muss eingeschaltet sein.'] : undefined,
-      );
+      throw new LocateError(t('weather.locate.failed'), isApple() ? [t('weather.locate.failedHelpApple')] : undefined);
     }
   }
   return { lat: pos.coords.latitude, lon: pos.coords.longitude };
@@ -242,15 +243,15 @@ export async function locate(): Promise<{ lat: number; lon: number }> {
 
 function denied() {
   return new LocateError(
-    'Der Zugriff auf den Standort ist nicht erlaubt.',
+    t('weather.locate.denied'),
     isApple()
       ? [
-          'Einstellungen → Datenschutz & Sicherheit → Ortungsdienste: einschalten.',
-          'Darunter „Safari-Websites“ (bzw. den Browser) auf „Beim Verwenden der App“ stellen.',
-          'In Safari: „aA“ bzw. Seiteneinstellungen → Standort → „Erlauben“ oder „Fragen“.',
-          'Danach die Seite neu laden und es noch einmal versuchen – oder den Ort einfach suchen.',
+          t('weather.locate.deniedApple1'),
+          t('weather.locate.deniedApple2'),
+          t('weather.locate.deniedApple3'),
+          t('weather.locate.deniedApple4'),
         ]
-      : ['Im Browser beim Schloss-Symbol neben der Adresse den Standort erlauben, dann erneut versuchen – oder den Ort suchen.'],
+      : [t('weather.locate.deniedOther')],
   );
 }
 
@@ -382,6 +383,10 @@ interface AlertsJson {
     headline_de: string;
     description_de: string;
     instruction_de: string | null;
+    event_en?: string | null;
+    headline_en?: string | null;
+    description_en?: string | null;
+    instruction_en?: string | null;
     onset: string;
     expires: string | null;
   }[];
@@ -399,6 +404,15 @@ async function fetchAlerts(p: Place): Promise<{ alerts: Alert[]; warnCell?: stri
       headline: a.headline_de,
       description: a.description_de,
       instruction: a.instruction_de ?? '',
+      // the DWD also publishes the warnings in English
+      en: a.headline_en
+        ? {
+            event: a.event_en ?? a.event_de,
+            headline: a.headline_en,
+            description: a.description_en ?? a.description_de,
+            instruction: a.instruction_en ?? '',
+          }
+        : undefined,
       onset: a.onset,
       expires: a.expires,
     })),
@@ -452,7 +466,7 @@ export async function refresh(place: Place, force = false) {
   if (forecast.status === 'rejected') {
     put(place.id, {
       loading: false,
-      error: navigator.onLine ? 'Das Wetter konnte nicht geladen werden.' : 'Keine Internetverbindung.',
+      error: navigator.onLine ? t('weather.loadError') : t('weather.offline'),
     });
     return;
   }
@@ -511,62 +525,68 @@ export function useHomeDays(): Map<string, Day> {
 
 /* ------------------------------------------------------------------ presentation helpers */
 
-/** WMO weather code -> German text + emoji (night variant for clear/partly cloudy). */
-export function describe(code: number, isDay = true): { text: string; icon: string } {
-  const night = !isDay;
+type CodeKey = keyof Messages['weather']['codes'];
+
+function condition(code: number, night: boolean): { key: CodeKey; icon: string } | null {
   switch (code) {
     case 0:
-      return { text: 'Klar', icon: night ? '🌙' : '☀️' };
+      return { key: 'clear', icon: night ? '🌙' : '☀️' };
     case 1:
-      return { text: 'Überwiegend klar', icon: night ? '🌙' : '🌤️' };
+      return { key: 'mainlyClear', icon: night ? '🌙' : '🌤️' };
     case 2:
-      return { text: 'Teilweise bewölkt', icon: night ? '☁️' : '⛅' };
+      return { key: 'partlyCloudy', icon: night ? '☁️' : '⛅' };
     case 3:
-      return { text: 'Bedeckt', icon: '☁️' };
+      return { key: 'overcast', icon: '☁️' };
     case 45:
     case 48:
-      return { text: 'Nebel', icon: '🌫️' };
+      return { key: 'fog', icon: '🌫️' };
     case 51:
     case 53:
     case 55:
-      return { text: 'Nieselregen', icon: '🌦️' };
+      return { key: 'drizzle', icon: '🌦️' };
     case 56:
     case 57:
-      return { text: 'Gefrierender Niesel', icon: '🌧️' };
+      return { key: 'freezingDrizzle', icon: '🌧️' };
     case 61:
-      return { text: 'Leichter Regen', icon: '🌦️' };
+      return { key: 'lightRain', icon: '🌦️' };
     case 63:
-      return { text: 'Regen', icon: '🌧️' };
+      return { key: 'rain', icon: '🌧️' };
     case 65:
-      return { text: 'Starker Regen', icon: '🌧️' };
+      return { key: 'heavyRain', icon: '🌧️' };
     case 66:
     case 67:
-      return { text: 'Gefrierender Regen', icon: '🌧️' };
+      return { key: 'freezingRain', icon: '🌧️' };
     case 71:
-      return { text: 'Leichter Schneefall', icon: '🌨️' };
+      return { key: 'lightSnow', icon: '🌨️' };
     case 73:
-      return { text: 'Schneefall', icon: '🌨️' };
+      return { key: 'snow', icon: '🌨️' };
     case 75:
-      return { text: 'Starker Schneefall', icon: '❄️' };
+      return { key: 'heavySnow', icon: '❄️' };
     case 77:
-      return { text: 'Schneegriesel', icon: '🌨️' };
+      return { key: 'snowGrains', icon: '🌨️' };
     case 80:
-      return { text: 'Regenschauer', icon: '🌦️' };
+      return { key: 'showers', icon: '🌦️' };
     case 81:
-      return { text: 'Kräftige Schauer', icon: '🌧️' };
+      return { key: 'heavyShowers', icon: '🌧️' };
     case 82:
-      return { text: 'Heftige Schauer', icon: '⛈️' };
+      return { key: 'violentShowers', icon: '⛈️' };
     case 85:
     case 86:
-      return { text: 'Schneeschauer', icon: '🌨️' };
+      return { key: 'snowShowers', icon: '🌨️' };
     case 95:
-      return { text: 'Gewitter', icon: '⛈️' };
+      return { key: 'thunder', icon: '⛈️' };
     case 96:
     case 99:
-      return { text: 'Gewitter mit Hagel', icon: '⛈️' };
+      return { key: 'thunderHail', icon: '⛈️' };
     default:
-      return { text: '–', icon: '🌡️' };
+      return null;
   }
+}
+
+/** WMO weather code -> text in the active language + emoji (night variant for clear/partly cloudy). */
+export function describe(code: number, isDay = true): { text: string; icon: string } {
+  const c = condition(code, !isDay);
+  return c ? { text: t(`weather.codes.${c.key}`), icon: c.icon } : { text: '–', icon: '🌡️' };
 }
 
 export const deg = (t: number) => `${Math.round(t)}°`;
@@ -575,30 +595,43 @@ export type Level = 0 | 1 | 2 | 3 | 4;
 
 /** UV index -> WHO level 0 (none) … 4 (very high / extreme). */
 export function uvLevel(uv: number): { level: Level; label: string } {
-  if (uv < 0.5) return { level: 0, label: 'keine' };
-  if (uv < 3) return { level: 1, label: 'niedrig' };
-  if (uv < 6) return { level: 2, label: 'mittel' };
-  if (uv < 8) return { level: 3, label: 'hoch' };
-  return { level: 4, label: uv < 11 ? 'sehr hoch' : 'extrem' };
+  if (uv < 0.5) return { level: 0, label: t('weather.uv.none') };
+  if (uv < 3) return { level: 1, label: t('weather.uv.low') };
+  if (uv < 6) return { level: 2, label: t('weather.uv.moderate') };
+  if (uv < 8) return { level: 3, label: t('weather.uv.high') };
+  return { level: 4, label: uv < 11 ? t('weather.uv.veryHigh') : t('weather.uv.extreme') };
 }
 
 /** Hours of a day with UV ≥ 3 ("Sonnenschutz nötig"), e.g. "11–16 Uhr". */
 export function protectionWindow(hours: Hour[], date: string): string | null {
   const hs = hours.filter((h) => h.time.startsWith(date) && h.uv >= 3).map((h) => Number(h.time.slice(11, 13)));
   if (!hs.length) return null;
-  return `${Math.min(...hs)}–${Math.max(...hs) + 1} Uhr`;
+  const from = Math.min(...hs);
+  const to = Math.max(...hs) + 1;
+  return uses12h() ? `${fmtClock(from)}–${fmtClock(to % 24)}` : t('weather.hoursRange', { from, to });
 }
 
-export const POLLEN_TYPES: { id: PollenType; label: string; limits: [number, number, number] }[] = [
-  // grains/m³ for gering / mittel / hoch (rough thresholds used by European pollen services)
-  { id: 'alder', label: 'Erle', limits: [1, 10, 100] },
-  { id: 'birch', label: 'Birke', limits: [1, 10, 100] },
-  { id: 'grass', label: 'Gräser', limits: [1, 10, 50] },
-  { id: 'mugwort', label: 'Beifuß', limits: [1, 10, 50] },
-  { id: 'ragweed', label: 'Ambrosia', limits: [1, 5, 20] },
+// grains/m³ for low / moderate / high (rough thresholds used by European pollen services)
+const POLLEN_LIMITS: [PollenType, [number, number, number]][] = [
+  ['alder', [1, 10, 100]],
+  ['birch', [1, 10, 100]],
+  ['grass', [1, 10, 50]],
+  ['mugwort', [1, 10, 50]],
+  ['ragweed', [1, 5, 20]],
 ];
 
-export const POLLEN_LABELS = ['keine', 'gering', 'mittel', 'hoch'] as const;
+export const POLLEN_TYPES: { id: PollenType; label: string; limits: [number, number, number] }[] = POLLEN_LIMITS.map(([id, limits]) => ({
+  id,
+  limits,
+  get label() {
+    return t(`weather.pollenTypes.${id}`);
+  },
+}));
+
+const POLLEN_LEVEL_KEYS = ['none', 'low', 'moderate', 'high'] as const;
+
+/** pollen level 0..3 → name in the active language */
+export const pollenLabel = (level: number): string => t(`weather.pollenLevels.${POLLEN_LEVEL_KEYS[level] ?? 'none'}`);
 
 export function pollenLevel(type: PollenType, value: number): 0 | 1 | 2 | 3 {
   const l = POLLEN_TYPES.find((t) => t.id === type)!.limits;
@@ -609,15 +642,25 @@ export function pollenLevel(type: PollenType, value: number): 0 | 1 | 2 | 3 {
 }
 
 export const SEVERITY_LABEL: Record<Alert['severity'], string> = {
-  minor: 'Wetterwarnung',
-  moderate: 'Markante Wetterwarnung',
-  severe: 'Unwetterwarnung',
-  extreme: 'Extreme Unwetterwarnung',
+  get minor() {
+    return t('weather.severity.minor');
+  },
+  get moderate() {
+    return t('weather.severity.moderate');
+  },
+  get severe() {
+    return t('weather.severity.severe');
+  },
+  get extreme() {
+    return t('weather.severity.extreme');
+  },
 };
 
-/** Alerts that are still valid at `now`. */
+/** Alerts that are still valid at `now`, in English where the DWD has an English version and the app speaks English. */
 export function activeAlerts(data: WeatherData | null, now: Date): Alert[] {
-  return (data?.alerts ?? []).filter((a) => !a.expires || new Date(a.expires) > now);
+  const english = getLanguage() !== 'de';
+  return (data?.alerts ?? []).filter((a) => !a.expires || new Date(a.expires) > now).map((a) => (english && a.en ? { ...a, ...a.en } : a));
 }
 
-export const fmtTime = (iso: string) => iso.slice(11, 16);
+/** time of an ISO timestamp ('…T06:42') in the active clock format */
+export const fmtTime = (iso: string) => fmtHHMM(iso.slice(11, 16));

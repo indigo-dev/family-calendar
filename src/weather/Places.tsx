@@ -13,16 +13,17 @@ import {
   type Place,
   type SearchHit,
 } from '../lib/weather';
+import { t } from '../i18n';
 
 export function PlacesSheet({ onClose }: { onClose: () => void }) {
   const { places, activeId } = useWeatherSettings();
   return (
-    <Modal onClose={onClose} layerClass="wx-sheet-backdrop" label="Orte">
+    <Modal onClose={onClose} layerClass="wx-sheet-backdrop" label={t('weather.places')}>
       <div className="wx-sheet">
         <div className="wx-sheet-head">
-          <h2>Orte</h2>
+          <h2>{t('weather.places')}</h2>
           <button className="btn primary" onClick={onClose}>
-            Fertig
+            {t('common.done')}
           </button>
         </div>
         <ul className="wx-places">
@@ -30,10 +31,8 @@ export function PlacesSheet({ onClose }: { onClose: () => void }) {
             <PlaceRow key={p.id} place={p} home={i === 0} active={p.id === (activeId ?? places[0]?.id)} />
           ))}
         </ul>
-        <p className="wx-hint">
-          Der erste Ort ist „Zuhause“: Sein Wetter erscheint in der Übersicht, im Kalender und im Bildschirmschoner.
-        </p>
-        <h3 className="wx-h">Ort hinzufügen</h3>
+        <p className="wx-hint">{t('weather.homeHint')}</p>
+        <h3 className="wx-h">{t('weather.addPlace')}</h3>
         <AddPlace onAdded={onClose} />
       </div>
     </Modal>
@@ -60,11 +59,11 @@ function PlaceRow({ place, home, active }: { place: Place; home: boolean; active
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && save()}
             onBlur={save}
-            aria-label="Name des Orts"
+            aria-label={t('weather.placeName')}
           />
         ) : (
           <button className="wx-place-name" onClick={() => setActivePlace(place.id)}>
-            {home && <span aria-label="Zuhause">🏠 </span>}
+            {home && <span aria-label={t('weather.home')}>🏠 </span>}
             {place.name}
             {place.region && <small>{place.region}</small>}
           </button>
@@ -73,18 +72,18 @@ function PlaceRow({ place, home, active }: { place: Place; home: boolean; active
       <div className="wx-place-tools">
         {!home && (
           <button className="btn" onClick={() => makeHome(place.id)}>
-            Als Zuhause
+            {t('weather.makeHome')}
           </button>
         )}
         <button className="btn" onClick={() => (editing ? save() : setEditing(true))}>
-          {editing ? 'Speichern' : 'Umbenennen'}
+          {editing ? t('common.save') : t('weather.rename')}
         </button>
         <button
           className={`btn danger ${confirmDel ? 'primary' : ''}`}
           onClick={() => (confirmDel ? removePlace(place.id) : setConfirmDel(true))}
           onBlur={() => setConfirmDel(false)}
         >
-          {confirmDel ? 'Wirklich entfernen?' : 'Entfernen'}
+          {confirmDel ? t('weather.reallyRemove') : t('common.remove')}
         </button>
       </div>
     </li>
@@ -102,13 +101,13 @@ export function AddPlace({ first = false, onAdded }: { first?: boolean; onAdded?
     const q = query.trim();
     if (q.length < 2) return;
     const ctrl = new AbortController();
-    const t = window.setTimeout(() => {
+    const timer = window.setTimeout(() => {
       searchPlaces(q, ctrl.signal)
         .then((h) => setHits(h))
         .catch((e) => e.name !== 'AbortError' && setHits([]));
     }, 300);
     return () => {
-      window.clearTimeout(t);
+      window.clearTimeout(timer);
       ctrl.abort();
     };
   }, [query]);
@@ -118,7 +117,7 @@ export function AddPlace({ first = false, onAdded }: { first?: boolean; onAdded?
     setError(null);
     try {
       const pos = await locate();
-      addPlace({ name: first ? 'Zuhause' : 'Mein Standort', ...pos });
+      addPlace({ name: first ? t('weather.home') : t('weather.myLocation'), ...pos });
       onAdded?.();
     } catch (e) {
       setError({ message: (e as Error).message, help: e instanceof LocateError ? e.help : undefined });
@@ -137,7 +136,7 @@ export function AddPlace({ first = false, onAdded }: { first?: boolean; onAdded?
   return (
     <div className="wx-add">
       <button className={`btn ${first ? 'primary' : ''} wx-locate`} onClick={useLocation} disabled={busy}>
-        📍 {busy ? 'Standort wird ermittelt …' : 'Meinen Standort verwenden'}
+        📍 {busy ? t('weather.locating') : t('weather.useLocation')}
       </button>
       {error && (
         <div className="wx-error">
@@ -154,19 +153,17 @@ export function AddPlace({ first = false, onAdded }: { first?: boolean; onAdded?
       <input
         className="wx-input"
         type="search"
-        placeholder="Ort suchen, z. B. Garmisch"
+        placeholder={t('weather.search')}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         enterKeyHint="search"
         autoComplete="off"
-        aria-label="Ort suchen"
+        aria-label={t('weather.searchLabel')}
       />
       {hits && query.trim().length >= 2 && (
         <ul className="wx-hits">
           {hits.length === 0 && (
-            <li className="muted wx-nohit">
-              {/^\d+$/.test(query.trim()) ? 'Bitte den Ortsnamen statt der Postleitzahl eingeben.' : 'Kein Ort gefunden.'}
-            </li>
+            <li className="muted wx-nohit">{/^\d+$/.test(query.trim()) ? t('weather.postcode') : t('weather.noHit')}</li>
           )}
           {hits.map((h) => (
             <li key={`${h.lat},${h.lon}`}>

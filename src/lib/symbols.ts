@@ -1,4 +1,5 @@
 import manifest from './symbol-manifest.json';
+import { t } from '../i18n';
 
 /**
  * Symbol styles for emoji (shopping catalogue, departments, ...). The files live in
@@ -25,35 +26,40 @@ type Mode = 'native' | 'image' | 'mask';
 
 export interface SymbolSetInfo {
   id: SymbolSet;
+  /** name and note in the active language */
   label: string;
-  group: 'Farbig' | 'Einfarbig' | 'Strich-Icons';
+  group: 'color' | 'mono' | 'line';
   mode: Mode;
   ext?: 'svg' | 'png';
   note?: string;
 }
 
-export const SYMBOL_SETS: SymbolSetInfo[] = [
-  {
-    id: 'system',
-    label: 'Gerät (Standard)',
-    group: 'Farbig',
-    mode: 'native',
-    note: 'Emoji des Geräts – sieht auf iPad, Windows und Android verschieden aus',
-  },
-  { id: 'fluent-3d', label: 'Fluent 3D', group: 'Farbig', mode: 'image', ext: 'png', note: 'Plastisch, 3D' },
-  { id: 'fluent-color', label: 'Fluent Farbig', group: 'Farbig', mode: 'image', ext: 'svg', note: 'Mit Farbverläufen' },
-  { id: 'fluent-flat', label: 'Fluent Flach', group: 'Farbig', mode: 'image', ext: 'svg', note: 'Flache Farben' },
-  { id: 'noto-3d', label: 'Noto 3D', group: 'Farbig', mode: 'image', ext: 'png', note: 'Plastisch, weich' },
-  { id: 'noto', label: 'Noto', group: 'Farbig', mode: 'image', ext: 'svg', note: 'Rund und freundlich' },
-  { id: 'twemoji', label: 'Twemoji', group: 'Farbig', mode: 'image', ext: 'svg', note: 'Flach und kräftig' },
-  { id: 'openmoji', label: 'OpenMoji', group: 'Farbig', mode: 'image', ext: 'svg', note: 'Gezeichnet, mit Umriss' },
-  { id: 'fluent-mono', label: 'Fluent Einfarbig', group: 'Einfarbig', mode: 'mask', ext: 'svg', note: 'In der Farbe der Abteilung' },
-  { id: 'openmoji-line', label: 'OpenMoji Umriss', group: 'Einfarbig', mode: 'mask', ext: 'svg', note: 'In der Farbe der Abteilung' },
-  { id: 'tabler', label: 'Tabler', group: 'Strich-Icons', mode: 'mask', ext: 'svg', note: 'Gleichmäßige Linien' },
-  { id: 'phosphor', label: 'Phosphor', group: 'Strich-Icons', mode: 'mask', ext: 'svg', note: 'Weiche Linien' },
-  { id: 'phosphor-duotone', label: 'Phosphor Duoton', group: 'Strich-Icons', mode: 'mask', ext: 'svg', note: 'Linien mit Flächen' },
-  { id: 'lucide', label: 'Lucide', group: 'Strich-Icons', mode: 'mask', ext: 'svg', note: 'Schlicht, viele Lebensmittel' },
+const SETS: Omit<SymbolSetInfo, 'label' | 'note'>[] = [
+  { id: 'system', group: 'color', mode: 'native' },
+  { id: 'fluent-3d', group: 'color', mode: 'image', ext: 'png' },
+  { id: 'fluent-color', group: 'color', mode: 'image', ext: 'svg' },
+  { id: 'fluent-flat', group: 'color', mode: 'image', ext: 'svg' },
+  { id: 'noto-3d', group: 'color', mode: 'image', ext: 'png' },
+  { id: 'noto', group: 'color', mode: 'image', ext: 'svg' },
+  { id: 'twemoji', group: 'color', mode: 'image', ext: 'svg' },
+  { id: 'openmoji', group: 'color', mode: 'image', ext: 'svg' },
+  { id: 'fluent-mono', group: 'mono', mode: 'mask', ext: 'svg' },
+  { id: 'openmoji-line', group: 'mono', mode: 'mask', ext: 'svg' },
+  { id: 'tabler', group: 'line', mode: 'mask', ext: 'svg' },
+  { id: 'phosphor', group: 'line', mode: 'mask', ext: 'svg' },
+  { id: 'phosphor-duotone', group: 'line', mode: 'mask', ext: 'svg' },
+  { id: 'lucide', group: 'line', mode: 'mask', ext: 'svg' },
 ];
+
+export const SYMBOL_SETS: SymbolSetInfo[] = SETS.map((s) => ({
+  ...s,
+  get label() {
+    return t(`symbolSets.${s.id}.label`);
+  },
+  get note() {
+    return t(`symbolSets.${s.id}.note`);
+  },
+}));
 
 export const DEFAULT_SYMBOL_SET: SymbolSet = 'system';
 

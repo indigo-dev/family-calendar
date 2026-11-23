@@ -2,7 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { persisted } from '../lib/persisted';
 import type { CalEvent } from '../types';
 import { useStore } from '../store';
-import { addDays, dayKey, fmt, fmtTime, isSameDay, overlaps, startOfDay, startOfWeek } from '../lib/dates';
+import { addDays, dayKey, fmt, fmtClock, fmtTime, isSameDay, overlaps, startOfDay, startOfWeek } from '../lib/dates';
+import { t } from '../i18n';
 import { useSize } from '../lib/hooks';
 import { AvatarStack } from '../components/Avatar';
 import { markClass, membersOf, stripe, tint, type ViewProps } from './common';
@@ -15,7 +16,7 @@ function DayWeather({ day }: { day?: Day }) {
   if (!day) return null;
   const w = describe(day.code);
   return (
-    <span className="tg-wx" title={`${w.text}, ${deg(day.max)} / ${deg(day.min)}, Regen ${day.rainProb} %`}>
+    <span className="tg-wx" title={t('calendar.rainTitle', { text: w.text, max: deg(day.max), min: deg(day.min), rain: day.rainProb })}>
       <WxIcon code={day.code} title="" /> <b>{deg(day.max)}</b> {deg(day.min)}
     </span>
   );
@@ -253,7 +254,7 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days, 
   const lines = Array.from({ length: (hours * 60) / lStep }, (_, i) => i * lStep);
   const tStep = labelStep(hourHeight);
   const labels = Array.from({ length: Math.ceil((hours * 60) / tStep) }, (_, i) => i * tStep).filter((m) => m > 0);
-  const hm = (min: number) => `${String(h0 + Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+  const hm = (min: number) => fmtClock(h0 + Math.floor(min / 60), min % 60);
 
   const allDay = events.filter((e) => e.allDay);
   const timed = events.filter((e) => !e.allDay);
@@ -289,7 +290,7 @@ export function TimeGridView({ date, now, events, onEvent, onOpen, marks, days, 
 
       {hasAllDay && (
         <div className="tg-allday">
-          <div className="tg-gutter small muted">ganztägig</div>
+          <div className="tg-gutter small muted">{t('common.allDay')}</div>
           {dayList.map((d) => {
             const list = allDay.filter((e) => overlaps(e.start, e.end, d, addDays(d, 1)));
             return (

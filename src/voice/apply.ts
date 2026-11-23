@@ -2,6 +2,8 @@ import { CATEGORIES, norm, type CategoryId, type ListEntry, type ShopItem } from
 import { newTodo, type Todo } from '../lib/todos';
 import type { Member } from '../types';
 import type { ShopRequest, TodoRequest } from './command';
+import { t, locale } from '../i18n';
+import { fmt } from '../lib/dates';
 
 /* Carries out the changing parts of a command (shopping list, to-dos) and returns how to undo them. */
 
@@ -30,8 +32,9 @@ export interface Applied {
   undo?: () => void;
 }
 
-const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase('de') + s.slice(1);
-const numberWord = (n: number) => ['', 'ein', 'zwei', 'drei', 'vier', 'fünf', 'sechs', 'sieben', 'acht', 'neun', 'zehn'][n] ?? String(n);
+const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase(locale()) + s.slice(1);
+/** 1–10 as a word for speaking ("drei Äpfel", "three apples") */
+const numberWord = (n: number) => t('voice.numbers').split(',')[n - 1] ?? String(n);
 
 /** finds a pantry item by name: exact (ignoring case and umlauts), else the only one that starts with it */
 export function findItem(items: ShopItem[], name: string): ShopItem | undefined {
@@ -81,16 +84,16 @@ export function applyCommand(cmd: { shopping: ShopRequest[]; todos: TodoRequest[
         : deps.list.map((e) => (e.itemId === item.id ? { ...e, qty } : e));
     const it = item;
     undos.push(created ? () => deps.removeItem(it) : () => deps.setQty(it.id, prev));
-    lines.push({ icon: item.emoji, text: `${req.qty > 1 ? `${req.qty} × ` : ''}${item.name}${prev ? ` (jetzt ${qty})` : ''}` });
+    const label = `${req.qty > 1 ? `${req.qty} × ` : ''}${item.name}`;
+    lines.push({ icon: item.emoji, text: prev ? t('voice.nowQty', { text: label, n: qty }) : label });
     shopped.push(req.qty > 1 ? `${numberWord(req.qty)} ${item.name}` : item.name);
   }
-  if (shopped.length)
-    speech.push(`${joinAnd(shopped)} ${shopped.length > 1 || cmd.shopping[0].qty > 1 ? 'stehen' : 'steht'} auf der Einkaufsliste.`);
+  if (shopped.length) speech.push(t('voice.onList', { items: joinAnd(shopped), n: shopped.length > 1 || cmd.shopping[0].qty > 1 ? 2 : 1 }));
 
   /* to-dos */
   for (const req of cmd.todos) {
     if (deps.members.length === 0) {
-      lines.push({ icon: '⚠️', text: `„${req.text}“ – zuerst in den Einstellungen die Familie anlegen` });
+      lines.push({ icon: '⚠️', text: t('voice.noFamily', { text: req.text }) });
       continue;
     }
     const who = findMembers(deps.members, req.members);
@@ -98,10 +101,11 @@ export function applyCommand(cmd: { shopping: ShopRequest[]; todos: TodoRequest[
     deps.upsertTodo(todo);
     undos.push(() => deps.removeTodo(todo.id));
     const due = req.due
-      ? ` · bis ${new Date(`${req.due}T00:00`).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' })}`
+      ? t('voice.until', { date: fmt(new Date(`${req.due}T00:00`), { weekday: 'short', day: 'numeric', month: 'numeric' }) })
       : '';
-    lines.push({ icon: '📌', text: `„${req.text}“${who.length ? ` für ${joinAnd(who.map((m) => m.name))}` : ''}${due}` });
-    speech.push(`To-do „${req.text}“ ist notiert.`);
+    const forWho = who.length ? t('voice.forWhom', { names: joinAnd(who.map((m) => m.name)) }) : '';
+    lines.push({ icon: '📌', text: t('voice.todoLine', { text: req.text, who: forWho, due }) });
+    speech.push(t('voice.todoNoted', { text: req.text }));
   }
 
   return {
@@ -112,5 +116,5 @@ export function applyCommand(cmd: { shopping: ShopRequest[]; todos: TodoRequest[
 }
 
 export function joinAnd(xs: string[]): string {
-  return xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} und ${xs[xs.length - 1]}`;
+  return xs.length <= 1 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} ${t('voice.and')} ${xs[xs.length - 1]}`;
 }

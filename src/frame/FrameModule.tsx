@@ -22,14 +22,11 @@ import {
 } from '../lib/frame';
 import { Clock } from './Clocks';
 import './frame.css';
+import { t } from '../i18n';
 
 type Tab = 'mine' | 'motifs';
 
-const FITS: { id: FrameFit; label: string }[] = [
-  { id: 'cover', label: 'Füllen' },
-  { id: 'contain', label: 'Ganzes Foto' },
-  { id: 'mat', label: 'Passepartout' },
-];
+const FITS: FrameFit[] = ['cover', 'contain', 'mat'];
 
 /** Album + settings; the slideshow itself is the full-screen `PhotoFrame` opened by the shell. */
 export function FrameModule({ onStart }: { onStart: (startId?: string) => void }) {
@@ -51,11 +48,11 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
     setImporting({ done: 0, total: files.length });
     const ok = await addFiles(files, (done) => setImporting({ done, total: files.length }));
     setImporting(null);
-    if (ok < files.length) alert(`${files.length - ok} Datei(en) konnten nicht gelesen werden.`);
+    if (ok < files.length) alert(t('frame.unreadable', { n: files.length - ok }));
   };
 
   const removeOne = (id: string) => {
-    if (confirm('Dieses Foto aus dem Fotorahmen löschen?')) removePhotos([id]);
+    if (confirm(t('frame.confirmDelete'))) removePhotos([id]);
   };
 
   return (
@@ -64,27 +61,25 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
         <div className="fr-head">
           <div className="segmented small" role="tablist">
             <button className={tab === 'mine' ? 'active' : ''} onClick={() => setTab('mine')}>
-              Meine Fotos
+              {t('frame.mine')}
             </button>
             <button className={tab === 'motifs' ? 'active' : ''} onClick={() => (setTab('motifs'), setEditing(false))}>
-              Motive entdecken
+              {t('frame.discover')}
             </button>
           </div>
           {tab === 'mine' && !!photos?.length && (
             <>
-              <span className="fr-head-info">
-                {count} von {photos.length} in der Diashow
-              </span>
+              <span className="fr-head-info">{t('frame.inShow', { n: count, total: photos.length })}</span>
               {!editing && (
                 <button
                   className="btn"
                   onClick={() => patchFrameSettings({ selected: count === photos.length ? [] : photos.map((p) => p.id) })}
                 >
-                  {count === photos.length ? 'Keine' : 'Alle'}
+                  {count === photos.length ? t('frame.none') : t('frame.all')}
                 </button>
               )}
               <button className={`btn ${editing ? 'primary' : ''}`} onClick={() => setEditing((e) => !e)}>
-                {editing ? 'Fertig' : 'Bearbeiten'}
+                {editing ? t('common.done') : t('common.edit')}
               </button>
             </>
           )}
@@ -96,13 +91,13 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
           {tab === 'mine' ? (
             photos === null ? null : photos.length === 0 && !importing ? (
               <div className="fr-empty">
-                <h3>Noch keine Fotos</h3>
-                <p>Wähle Fotos von diesem Gerät oder suche dir schöne Motive aus dem Internet aus.</p>
+                <h3>{t('frame.noPhotos')}</h3>
+                <p>{t('frame.noPhotosHint')}</p>
                 <button className="btn primary" onClick={() => fileRef.current?.click()}>
-                  Fotos hinzufügen
+                  {t('frame.addPhotos')}
                 </button>
                 <button className="btn" onClick={() => setTab('motifs')}>
-                  Motive entdecken
+                  {t('frame.discover')}
                 </button>
               </div>
             ) : (
@@ -116,7 +111,7 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
                     ) : (
                       <>
                         <b>+</b>
-                        <span>Fotos hinzufügen</span>
+                        <span>{t('frame.addPhotos')}</span>
                       </>
                     )}
                   </button>
@@ -128,7 +123,7 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
                       <button
                         className="fr-tile-hit"
                         onClick={() => (editing ? removeOne(p.id) : toggleSelected(p.id))}
-                        aria-label={editing ? 'Foto löschen' : on ? 'Aus der Diashow nehmen' : 'In die Diashow aufnehmen'}
+                        aria-label={editing ? t('frame.deletePhoto') : on ? t('frame.removeFromShow') : t('frame.addToShow')}
                       >
                         <img src={thumbUrl(p)} alt="" loading="lazy" draggable={false} />
                         <span className="fr-check" aria-hidden>
@@ -137,7 +132,7 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
                         {p.credit && <span className="fr-tile-cap">{p.credit}</span>}
                       </button>
                       {!editing && (
-                        <button className="fr-play" onClick={() => onStart(p.id)} aria-label="Ab diesem Foto starten">
+                        <button className="fr-play" onClick={() => onStart(p.id)} aria-label={t('frame.startHere')}>
                           ▶
                         </button>
                       )}
@@ -154,16 +149,12 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
 
       <aside className="view fr-side">
         <button className="btn primary fr-start" disabled={count === 0 && !clockOnly} onClick={() => onStart()}>
-          ▶ {clockOnly ? 'Uhr zeigen' : count === 1 ? 'Foto zeigen' : 'Diashow starten'}
+          {clockOnly ? t('frame.showClock') : count === 1 ? t('frame.showPhoto') : t('frame.startShow')}
         </button>
-        {count === 0 && (
-          <p className="fr-start-hint">
-            {clockOnly ? 'Ohne ausgewählte Fotos zeigt der Fotorahmen nur die Uhr.' : 'Tippe Fotos an, um sie für die Diashow auszuwählen.'}
-          </p>
-        )}
+        {count === 0 && <p className="fr-start-hint">{clockOnly ? t('frame.clockOnlyHint') : t('frame.selectHint')}</p>}
 
         <div className="fr-field">
-          <span>Bildwechsel alle</span>
+          <span>{t('frame.interval')}</span>
           <div className="fr-chips">
             {INTERVALS.map((i) => (
               <button
@@ -178,38 +169,38 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
         </div>
 
         <div className="fr-field">
-          <span>Reihenfolge</span>
+          <span>{t('frame.order')}</span>
           <div className="segmented small">
             <button className={cfg.order === 'seq' ? 'active' : ''} onClick={() => patchFrameSettings({ order: 'seq' })}>
-              Der Reihe nach
+              {t('frame.seq')}
             </button>
             <button className={cfg.order === 'shuffle' ? 'active' : ''} onClick={() => patchFrameSettings({ order: 'shuffle' })}>
-              Zufällig
+              {t('frame.shuffle')}
             </button>
           </div>
         </div>
 
         <div className="fr-field">
-          <span>Darstellung</span>
-          <div className="fr-fits" role="radiogroup" aria-label="Darstellung">
+          <span>{t('frame.fit')}</span>
+          <div className="fr-fits" role="radiogroup" aria-label={t('frame.fit')}>
             {FITS.map((f) => (
               <button
-                key={f.id}
+                key={f}
                 role="radio"
-                aria-checked={cfg.fit === f.id}
-                className={`fr-fit ${cfg.fit === f.id ? 'on' : ''}`}
-                onClick={() => patchFrameSettings({ fit: f.id })}
+                aria-checked={cfg.fit === f}
+                className={`fr-fit ${cfg.fit === f ? 'on' : ''}`}
+                onClick={() => patchFrameSettings({ fit: f })}
               >
                 {/* miniature screen with a portrait photo, drawn the way this option shows it */}
-                <span className={`fr-fit-thumb fit-${f.id}`} aria-hidden>
+                <span className={`fr-fit-thumb fit-${f}`} aria-hidden>
                   <i />
                 </span>
-                <span>{f.label}</span>
+                <span>{t(`frame.fits.${f}`)}</span>
               </button>
             ))}
           </div>
           <label className="fr-toggle">
-            Langsamer Zoom
+            {t('frame.zoom')}
             <input
               type="checkbox"
               checked={cfg.motion}
@@ -222,19 +213,15 @@ export function FrameModule({ onStart }: { onStart: (startId?: string) => void }
         <ClockSettings />
 
         <div className="fr-field">
-          <span>Bildschirmschoner</span>
+          <span>{t('frame.screensaver')}</span>
           <div className="fr-chips">
             {SCREENSAVER.map((m) => (
               <button key={m} className={cfg.screensaverMin === m ? 'on' : ''} onClick={() => patchFrameSettings({ screensaverMin: m })}>
-                {m === 0 ? 'Aus' : `${m} min`}
+                {m === 0 ? t('frame.off') : t('frame.minutes', { n: m })}
               </button>
             ))}
           </div>
-          <p className="fr-hint">
-            {cfg.screensaverMin
-              ? `Startet den Fotorahmen, wenn ${cfg.screensaverMin} Minuten lang niemand den Bildschirm berührt hat. Antippen beendet ihn.`
-              : 'Startet den Fotorahmen automatisch, wenn eine Weile niemand den Bildschirm berührt.'}
-          </p>
+          <p className="fr-hint">{cfg.screensaverMin ? t('frame.screensaverOn', { n: cfg.screensaverMin }) : t('frame.screensaverOff')}</p>
         </div>
       </aside>
     </div>
@@ -264,18 +251,18 @@ function ClockSettings() {
   );
   return (
     <div className="fr-field">
-      <span>Uhr</span>
-      <div className="fr-cks" role="radiogroup" aria-label="Uhr">
-        {faceCard('none', 'Keine')}
+      <span>{t('frame.clock')}</span>
+      <div className="fr-cks" role="radiogroup" aria-label={t('frame.clock')}>
+        {faceCard('none', t('frame.noClock'))}
         {CLOCK_FACES.filter((f) => f.kind === 'digital').map((f) => faceCard(f.id, f.label))}
       </div>
-      <div className="fr-cks" role="radiogroup" aria-label="Analoge Uhr">
+      <div className="fr-cks" role="radiogroup" aria-label={t('frame.analog')}>
         {CLOCK_FACES.filter((f) => f.kind === 'analog').map((f) => faceCard(f.id, f.label))}
       </div>
 
       {on && (
         <>
-          <div className="fr-fits" role="radiogroup" aria-label="Platz der Uhr">
+          <div className="fr-fits" role="radiogroup" aria-label={t('frame.clockPlace')}>
             {CLOCK_LAYOUTS.map((l) => (
               <button
                 key={l.id}
@@ -293,20 +280,20 @@ function ClockSettings() {
             ))}
           </div>
           <label className="fr-toggle">
-            Datum
+            {t('frame.date')}
             <input type="checkbox" checked={cfg.date} onChange={(e) => patchFrameSettings({ date: e.target.checked })} />
           </label>
           <label className="fr-toggle">
-            Wetter
+            {t('frame.weather')}
             <input type="checkbox" checked={cfg.weather} onChange={(e) => patchFrameSettings({ weather: e.target.checked })} />
           </label>
           <label className="fr-toggle">
-            Termine von heute und morgen
+            {t('frame.events')}
             <input type="checkbox" checked={cfg.events} onChange={(e) => patchFrameSettings({ events: e.target.checked })} />
           </label>
           {isAnalog(cfg.clockFace) && (
             <label className="fr-toggle">
-              Sekundenzeiger
+              {t('frame.seconds')}
               <input type="checkbox" checked={cfg.seconds} onChange={(e) => patchFrameSettings({ seconds: e.target.checked })} />
             </label>
           )}
@@ -345,14 +332,14 @@ function MotifBrowser() {
   const pick = async (m: Motif) => {
     const existing = inAlbum.get(m.id);
     if (existing) {
-      if (confirm('Dieses Motiv wieder aus dem Album entfernen?')) removePhotos([existing]);
+      if (confirm(t('frame.confirmRemoveMotif'))) removePhotos([existing]);
       return;
     }
     setBusy((b) => new Set(b).add(m.id));
     try {
       await addMotif(m);
     } catch {
-      alert('Das Motiv konnte nicht geladen werden. Bitte die Internetverbindung prüfen.');
+      alert(t('frame.motifFailed'));
     } finally {
       setBusy((b) => {
         const n = new Set(b);
@@ -364,15 +351,18 @@ function MotifBrowser() {
 
   return (
     <>
-      <p className="fr-note">
-        Freie Fotos von Unsplash (über picsum.photos). Antippen lädt das Motiv ins Album – danach funktioniert es auch offline.
-      </p>
+      <p className="fr-note">{t('frame.motifNote')}</p>
       <div className="fr-grid">
         {motifs.map((m) => {
           const has = inAlbum.has(m.id);
           return (
             <div key={m.id} className={`fr-tile ${has ? 'on' : ''}`}>
-              <button className="fr-tile-hit" onClick={() => pick(m)} disabled={busy.has(m.id)} aria-label={`Motiv von ${m.author}`}>
+              <button
+                className="fr-tile-hit"
+                onClick={() => pick(m)}
+                disabled={busy.has(m.id)}
+                aria-label={t('frame.motifBy', { author: m.author })}
+              >
                 <img src={motifThumb(m)} alt="" loading="lazy" draggable={false} />
                 <span className="fr-check" aria-hidden>
                   {has ? '✓' : '+'}
@@ -390,7 +380,7 @@ function MotifBrowser() {
       </div>
       {error && (
         <div className="fr-empty">
-          <p>Motive konnten nicht geladen werden. Ist das Gerät online?</p>
+          <p>{t('frame.motifsFailed')}</p>
           <button
             className="btn"
             onClick={() => {
@@ -399,7 +389,7 @@ function MotifBrowser() {
               setRetry((r) => r + 1);
             }}
           >
-            Erneut versuchen
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -413,7 +403,7 @@ function MotifBrowser() {
               setPage((p) => p + 1);
             }}
           >
-            {loading ? 'Lädt …' : 'Mehr Motive'}
+            {loading ? t('dashboard.loading') : t('frame.moreMotifs')}
           </button>
         </div>
       )}
