@@ -1,13 +1,15 @@
 import { uid } from './id';
 import { arrayOf, isRecord, persisted, usePersisted } from './persisted';
 import { t } from '../i18n';
+import { isNative } from '../native/launcher';
 
 /**
  * Dashboard layout: an ordered list of widgets, each with a size step. The grid packs them densely
  * in that order. Stored per device in localStorage `fc.dashboard` (like photos and weather places).
  */
 
-export type WidgetType = 'clock' | 'weather' | 'events' | 'timetable' | 'todos' | 'shopping' | 'photos' | 'holidays' | 'pollen' | 'family';
+export type WidgetType =
+  'clock' | 'weather' | 'events' | 'timetable' | 'todos' | 'shopping' | 'photos' | 'holidays' | 'pollen' | 'family' | 'app';
 
 /** Klein 1×1, Mittel 2×1, Hoch 1×2, Groß 2×2, Breit 3×2 */
 export type WidgetSize = 's' | 'm' | 't' | 'l' | 'xl';
@@ -49,6 +51,8 @@ const DEFS: Omit<WidgetDef, 'title' | 'description'>[] = [
   { type: 'shopping', icon: '🛒', sizes: ['s', 'm', 't', 'l'], module: 'shopping' },
   { type: 'photos', icon: '🖼️', sizes: ['s', 'm', 't', 'l', 'xl'], module: 'frame' },
   { type: 'holidays', icon: '🏖️', sizes: ['s', 'm'] },
+  // shortcut to another Android app (only in the Android app): one tile per app
+  ...(isNative ? [{ type: 'app' as const, icon: '📱', sizes: ['s' as const] }] : []),
 ];
 
 /** the widgets with title and description in the active language */
@@ -64,11 +68,23 @@ export const WIDGETS: WidgetDef[] = DEFS.map((d) => ({
 
 export const widgetDef = (type: WidgetType) => WIDGETS.find((w) => w.type === type)!;
 
+/** the Android app an app tile starts */
+export interface AppLink {
+  packageName: string;
+  activity: string;
+  label: string;
+}
+
 export interface WidgetInstance {
   id: string;
   type: WidgetType;
   size: WidgetSize;
+  /** only for type 'app' */
+  app?: AppLink;
 }
+
+const isAppLink = (a: unknown): a is AppLink =>
+  isRecord(a) && typeof a.packageName === 'string' && typeof a.activity === 'string' && typeof a.label === 'string';
 
 /** Fills 6×3 on an iPad in landscape. */
 const DEFAULT_LAYOUT: [WidgetType, WidgetSize][] = [
@@ -93,7 +109,8 @@ const isWidget = (w: unknown): w is WidgetInstance =>
   isRecord(w) &&
   typeof w.id === 'string' &&
   WIDGETS.some((d) => d.type === w.type) &&
-  widgetDef(w.type as WidgetType).sizes.includes(w.size as WidgetSize);
+  widgetDef(w.type as WidgetType).sizes.includes(w.size as WidgetSize) &&
+  (w.type !== 'app' || isAppLink(w.app));
 
 /** nothing stored yet = the default layout */
 const layout = persisted<WidgetInstance[]>(KEY, (raw) => (Array.isArray(raw) ? arrayOf(raw, isWidget) : defaults()));
@@ -104,6 +121,12 @@ export function useLayout(): WidgetInstance[] {
 
 export function addWidget(type: WidgetType, size: WidgetSize) {
   layout.set((l) => [...l, { id: uid(), type, size }]);
+}
+
+/** adds a 1×1 tile that starts an Android app */
+export function addAppTile(app: AppLink) {
+  const { packageName, activity, label } = app;
+  layout.set((l) => [...l, { id: uid(), type: 'app', size: 's', app: { packageName, activity, label } }]);
 }
 
 export function removeWidget(id: string) {

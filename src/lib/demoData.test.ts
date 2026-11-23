@@ -58,6 +58,8 @@ describe('demo family', () => {
       shopping: s.shopping.get().list.length > 0,
       photos: frame.addDemoPhotos.mock.calls[0]?.[0].length > 0,
       holidays: cfg.settings.holidays.region !== '',
+      // app tiles start installed Android apps: nothing to fill with demo data
+      app: true,
     };
     expect(Object.entries(filled).filter(([, ok]) => !ok)).toEqual([]);
 

@@ -8,6 +8,7 @@ import { useTodos } from '../lib/todos';
 import { useShopping } from '../lib/shopping';
 import {
   addWidget,
+  addAppTile,
   moveWidget,
   removeWidget,
   resetLayout,
@@ -27,6 +28,8 @@ import { DashCtx, WIDGET_COMPONENTS, type DashData } from './widgets';
 import './dashboard.css';
 import { useToday } from '../lib/clock';
 import { t } from '../i18n';
+import { launchApp } from '../native/launcher';
+import { AppPicker } from '../apps/AppPicker';
 
 const GAP = 12;
 const LONG_PRESS_MS = 550;
@@ -196,6 +199,10 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
     }
     if (editing) return;
     if (w.type === 'clock') return startScreensaver();
+    if (w.type === 'app') {
+      if (w.app) launchApp(w.app).catch(() => {});
+      return;
+    }
     const mod = widgetDef(w.type).module;
     if (mod) openModule(mod);
   };
@@ -304,7 +311,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
               >
                 <div className="dw-inner">
                   <ErrorBoundary label={widgetDef(w.type).title} compact>
-                    <Comp size={w.size} />
+                    <Comp size={w.size} widget={w} />
                   </ErrorBoundary>
                 </div>
                 {editing && (
@@ -363,7 +370,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
           <div className="dw-inner">
             {(() => {
               const Comp = WIDGET_COMPONENTS[dragged.type];
-              return <Comp size={dragged.size} />;
+              return <Comp size={dragged.size} widget={dragged} />;
             })()}
           </div>
         </div>
@@ -455,6 +462,18 @@ function SizeMenu({
 }
 
 function Gallery({ onClose }: { onClose: () => void }) {
+  // app tiles: first choose the app
+  const [picking, setPicking] = useState(false);
+  if (picking)
+    return (
+      <AppPicker
+        onClose={() => setPicking(false)}
+        onPick={(app) => {
+          addAppTile(app);
+          onClose();
+        }}
+      />
+    );
   return (
     <Modal onClose={onClose} layerClass="dash-gallery-backdrop" label={t('dashboard.gallery')}>
       <div className="dash-gallery">
@@ -479,6 +498,7 @@ function Gallery({ onClose }: { onClose: () => void }) {
                     className="dash-size-btn"
                     title={SIZES[s].label}
                     onClick={() => {
+                      if (d.type === 'app') return setPicking(true);
                       addWidget(d.type, s);
                       onClose();
                     }}

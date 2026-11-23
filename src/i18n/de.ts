@@ -124,6 +124,7 @@ export const de = {
       shopping: { title: 'Einkaufsliste', description: 'Was fehlt – direkt abhaken' },
       photos: { title: 'Fotos', description: 'Wechselnde Fotos, Antippen startet die Diashow' },
       holidays: { title: 'Ferien-Countdown', description: 'Tage bis zu den nächsten Ferien und Feiertagen' },
+      app: { title: 'App', description: 'Kachel, die eine App startet, z. B. Netflix' },
     },
     loading: 'Lädt …',
     undo: 'Rückgängig',
@@ -779,6 +780,8 @@ export const de = {
     search: 'App suchen…',
     none: 'Keine App gefunden.',
     startFailed: '„{name}“ ließ sich nicht starten.',
+    pickTitle: 'App für die Kachel wählen',
+    pickHint: 'Antippen legt eine Kachel auf der Übersicht an.',
   },
   settings: {
     title: 'Einstellungen',

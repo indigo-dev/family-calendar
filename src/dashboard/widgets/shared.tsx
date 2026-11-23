@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { CalEvent, DayMarks, Member, Timetable } from '../../types';
-import type { WidgetSize } from '../../lib/dashboard';
+import type { WidgetInstance, WidgetSize } from '../../lib/dashboard';
 import type { ModuleId } from '../../components/ModuleNav';
 import type { SettingsTab } from '../../settings/SettingsPanel';
 import { fmtTime } from '../../lib/dates';
@@ -28,6 +28,8 @@ export const useDash = () => useContext(DashCtx)!;
 
 export interface WidgetProps {
   size: WidgetSize;
+  /** the placed widget (app tiles read their app from it) */
+  widget?: WidgetInstance;
 }
 
 /** Stops the tap from reaching the widget (which would open the module). */

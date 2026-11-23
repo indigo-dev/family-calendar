@@ -123,6 +123,7 @@ export const en: Messages = {
       shopping: { title: 'Shopping list', description: 'What’s missing – tick it off right here' },
       photos: { title: 'Photos', description: 'Changing photos, a tap starts the slideshow' },
       holidays: { title: 'Holiday countdown', description: 'Days until the next school and public holidays' },
+      app: { title: 'App', description: 'Tile that starts an app, e.g. Netflix' },
     },
     loading: 'Loading …',
     undo: 'Undo',
@@ -777,6 +778,8 @@ export const en: Messages = {
     search: 'Search apps…',
     none: 'No app found.',
     startFailed: '“{name}” could not be started.',
+    pickTitle: 'Choose an app for the tile',
+    pickHint: 'Tap to add a tile to the overview.',
   },
   settings: {
     title: 'Settings',

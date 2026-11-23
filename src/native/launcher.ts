@@ -17,6 +17,7 @@ export interface InstalledApp {
 
 interface AppLauncherPlugin {
   getApps(opts?: { icons?: boolean }): Promise<{ apps: InstalledApp[] }>;
+  getAppIcon(opts: { packageName: string; activity?: string }): Promise<{ icon: string; size: number }>;
   launch(opts: { packageName: string; activity?: string }): Promise<void>;
   openSettings(opts?: { page?: 'home' | 'app' }): Promise<void>;
   isDefaultLauncher(): Promise<{ value: boolean }>;
@@ -31,6 +32,20 @@ export async function getApps(): Promise<InstalledApp[]> {
   if (!isNative) return [];
   const { apps } = await AppLauncher.getApps({ icons: true });
   return apps.sort((a, b) => a.label.localeCompare(b.label, locale(), { sensitivity: 'base' }));
+}
+
+const bigIcons = new Map<string, Promise<string>>();
+
+/** An app's icon in the highest resolution it ships (up to 512 px), for the dashboard's app tiles. Kept in memory. */
+export function getAppIcon(app: Pick<InstalledApp, 'packageName' | 'activity'>): Promise<string> {
+  const key = `${app.packageName}/${app.activity}`;
+  let p = bigIcons.get(key);
+  if (!p) {
+    p = AppLauncher.getAppIcon({ packageName: app.packageName, activity: app.activity }).then((r) => r.icon);
+    p.catch(() => bigIcons.delete(key));
+    bigIcons.set(key, p);
+  }
+  return p;
 }
 
 export const launchApp = (app: Pick<InstalledApp, 'packageName' | 'activity'>) =>

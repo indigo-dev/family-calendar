@@ -1150,4 +1150,51 @@
       display: none;
     }
   }
+  /* ---------------- App-Kachel (nur Android-App): großes App-Symbol, Name darunter */
+  .dw-app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 10px 10px;
+  }
+  .dw-app-icon {
+    flex: 1;
+    min-height: 0;
+    max-width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    -webkit-user-drag: none;
+    /* the icon is a big picture of a small graphic: keep its edges smooth */
+    image-rendering: auto;
+  }
+  .dw-app-letter {
+    display: grid;
+    place-items: center;
+    border-radius: 24%;
+    background: var(--accent);
+    color: var(--accent-text);
+    font-size: 2.4rem;
+    font-weight: 700;
+  }
+  .dw-app-label {
+    flex: none;
+    max-width: 100%;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* App-Auswahl für die Kachel */
+  .app-picker-hint {
+    margin: 0;
+    padding: 0 16px;
+  }
+  .app-picker-list {
+    overflow-y: auto;
+    min-height: 200px;
+  }
 }

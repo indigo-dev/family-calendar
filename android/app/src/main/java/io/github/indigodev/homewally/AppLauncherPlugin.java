@@ -4,14 +4,20 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ComponentName;
+import android.content.pm.ActivityInfo;
+import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.content.res.Resources;
+import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.Base64;
+import android.util.DisplayMetrics;
 import android.view.WindowManager;
 
 import androidx.core.content.ContextCompat;
@@ -35,6 +41,7 @@ import java.util.List;
 public class AppLauncherPlugin extends Plugin {
 
     private static final int ICON_PX = 128;
+    private static final int MAX_ICON_PX = 512;
     private BroadcastReceiver packageReceiver;
 
     @Override
@@ -169,10 +176,54 @@ public class AppLauncherPlugin extends Plugin {
         });
     }
 
+    /**
+     * One app's icon in the best resolution the app ships: the drawable for the highest screen density
+     * (xxxhdpi), drawn at its full size – 432 px for adaptive icons (108 dp × 4), at most 512 px.
+     * For the 1×1 app tiles on the dashboard.
+     */
+    @PluginMethod
+    public void getAppIcon(PluginCall call) {
+        String pkg = call.getString("packageName");
+        if (pkg == null || pkg.isEmpty()) {
+            call.reject("packageName fehlt");
+            return;
+        }
+        String activity = call.getString("activity");
+        PackageManager pm = getContext().getPackageManager();
+        Drawable icon = null;
+        try {
+            ActivityInfo ai = null;
+            if (activity != null && !activity.isEmpty()) {
+                ai = pm.getActivityInfo(new ComponentName(pkg, activity), 0);
+            }
+            ApplicationInfo app = pm.getApplicationInfo(pkg, 0);
+            int res = ai != null && ai.getIconResource() != 0 ? ai.getIconResource() : app.icon;
+            if (res != 0) {
+                Resources r = pm.getResourcesForApplication(app);
+                icon = r.getDrawableForDensity(res, DisplayMetrics.DENSITY_XXXHIGH, null);
+            }
+            if (icon == null) icon = ai != null ? ai.loadIcon(pm) : app.loadIcon(pm);
+        } catch (Exception e) {
+            call.reject("App ist nicht installiert", e);
+            return;
+        }
+        int px = icon.getIntrinsicWidth();
+        if (Build.VERSION.SDK_INT >= 26 && icon instanceof AdaptiveIconDrawable) px = 432;
+        px = Math.max(ICON_PX, Math.min(MAX_ICON_PX, px > 0 ? px : MAX_ICON_PX));
+        JSObject ret = new JSObject();
+        ret.put("icon", toDataUrl(icon, px));
+        ret.put("size", px);
+        call.resolve(ret);
+    }
+
     private static String toDataUrl(Drawable icon) {
-        Bitmap bmp = Bitmap.createBitmap(ICON_PX, ICON_PX, Bitmap.Config.ARGB_8888);
+        return toDataUrl(icon, ICON_PX);
+    }
+
+    private static String toDataUrl(Drawable icon, int px) {
+        Bitmap bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bmp);
-        icon.setBounds(0, 0, ICON_PX, ICON_PX);
+        icon.setBounds(0, 0, px, px);
         icon.draw(canvas);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         bmp.compress(Build.VERSION.SDK_INT >= 30 ? Bitmap.CompressFormat.WEBP_LOSSLESS : Bitmap.CompressFormat.PNG, 100, out);
