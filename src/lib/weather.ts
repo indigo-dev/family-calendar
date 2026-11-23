@@ -2,10 +2,11 @@ import { useEffect, useSyncExternalStore } from 'react';
 import { uid } from './id';
 import { arrayOf, isRecord, persisted, storage, usePersisted } from './persisted';
 import { getLanguage, t, type Messages } from '../i18n';
-import { fmtClock, fmtHHMM, uses12h } from './dates';
+import { dayKey, fmtClock, fmtHHMM, uses12h } from './dates';
 
 /**
- * Weather: forecast + pollen + UV from Open-Meteo, official warnings of the DWD via Bright Sky.
+ * Weather: forecast, 15-minute precipitation nowcast, air quality, pollen and UV from Open-Meteo,
+ * official warnings of the DWD via Bright Sky.
  * All free, no API key, CORS enabled. Places and the last fetched data live in localStorage
  * (per device, like the photo frame), so the wall display still shows the last state offline.
  */
@@ -38,6 +39,14 @@ export interface Current {
   windDir: number;
   humidity: number;
   precipitation: number;
+  /** hPa, reduced to sea level */
+  pressure: number;
+  /** % */
+  cloud: number;
+  dewPoint: number;
+  /** metres */
+  visibility: number;
+  uv: number;
 }
 
 export interface Hour {
@@ -55,6 +64,13 @@ export interface Hour {
   windDir: number;
   humidity: number;
   cloud: number;
+  dewPoint: number;
+  /** hPa, reduced to sea level */
+  pressure: number;
+  /** metres */
+  visibility: number;
+  /** cm in this hour */
+  snow: number;
 }
 
 export interface Day {
@@ -68,6 +84,41 @@ export interface Day {
   uvMax: number;
   sunrise: string;
   sunset: string;
+  feelsMax: number;
+  feelsMin: number;
+  /** seconds of sunshine */
+  sunshine: number;
+  /** seconds between sunrise and sunset */
+  daylight: number;
+  /** hours with precipitation */
+  rainHours: number;
+  /** cm */
+  snowSum: number;
+  windMax: number;
+  gustsMax: number;
+  /** degrees, dominant direction the wind comes from */
+  windDir: number;
+}
+
+/** precipitation in 15-minute steps for the next hours (DWD ICON-D2 in Central Europe) */
+export interface Quarter {
+  time: string;
+  /** mm in these 15 minutes */
+  rain: number;
+  /** cm in these 15 minutes */
+  snow: number;
+}
+
+/** air quality of one hour (CAMS Europe) */
+export interface AirHour {
+  time: string;
+  /** European Air Quality Index */
+  aqi: number;
+  /** µg/m³ */
+  pm25: number;
+  pm10: number;
+  no2: number;
+  o3: number;
 }
 
 export type PollenType = 'alder' | 'birch' | 'grass' | 'mugwort' | 'ragweed';
@@ -96,8 +147,12 @@ export interface WeatherData {
   current: Current;
   hours: Hour[];
   days: Day[];
+  /** null outside the nowcast area */
+  nowcast: Quarter[] | null;
   /** null when the pollen service failed – the rest still works */
   pollen: PollenDay[] | null;
+  /** null when the air quality service failed */
+  air: AirHour[] | null;
   /** null when the warning service failed */
   alerts: Alert[] | null;
   /** DWD warn cell, e.g. "Berl. - Mitte" */
@@ -107,8 +162,8 @@ export interface WeatherData {
 /* ------------------------------------------------------------------ settings */
 
 const KEY = 'fc.weather';
-/** v2: hourly details (wind, feels like, …) – older caches are ignored */
-const DATA_KEY = 'fc.weather.v2.';
+/** cached data per place; the version changes with the data shape */
+const DATA_KEY = 'fc.weather.v3.';
 /** data older than this is fetched again */
 const STALE_MS = 20 * 60_000;
 /** don't hammer the services after an error */
@@ -123,10 +178,10 @@ export const weatherSettings = persisted<WeatherSettings>(KEY, (raw) => {
   return { places, activeId: places.some((p) => p.id === v.activeId) ? (v.activeId as string) : places[0]?.id };
 });
 
-// caches of the first version lack the hourly details – drop them
+// cached data of another data shape is useless – drop it
 storage
   .keys()
-  .filter((k) => k.startsWith('fc.weather.data.'))
+  .filter((k) => k.startsWith('fc.weather.') && !k.startsWith(DATA_KEY))
   .forEach(storage.remove);
 
 export function useWeatherSettings(): WeatherSettings {
@@ -277,7 +332,13 @@ interface ForecastJson {
     wind_direction_10m: number;
     relative_humidity_2m: number;
     precipitation: number;
+    pressure_msl: number;
+    cloud_cover: number;
+    dew_point_2m: number;
+    visibility: number;
+    uv_index: number | null;
   };
+  minutely_15?: { time: string[]; precipitation: (number | null)[]; snowfall: (number | null)[] };
   hourly: {
     time: string[];
     temperature_2m: number[];
@@ -292,6 +353,10 @@ interface ForecastJson {
     wind_direction_10m: number[];
     relative_humidity_2m: number[];
     cloud_cover: number[];
+    dew_point_2m: number[];
+    pressure_msl: number[];
+    visibility: number[];
+    snowfall: (number | null)[];
   };
   daily: {
     time: string[];
@@ -303,21 +368,35 @@ interface ForecastJson {
     uv_index_max: (number | null)[];
     sunrise: string[];
     sunset: string[];
+    apparent_temperature_max: number[];
+    apparent_temperature_min: number[];
+    sunshine_duration: (number | null)[];
+    daylight_duration: number[];
+    precipitation_hours: (number | null)[];
+    snowfall_sum: (number | null)[];
+    wind_speed_10m_max: number[];
+    wind_gusts_10m_max: number[];
+    wind_direction_10m_dominant: number[];
   };
 }
 
 async function fetchForecast(p: Place) {
   const url =
     `https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lon}` +
-    '&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,precipitation' +
+    '&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,' +
+    'precipitation,pressure_msl,cloud_cover,dew_point_2m,visibility,uv_index' +
+    '&minutely_15=precipitation,snowfall&forecast_minutely_15=12' +
     '&hourly=temperature_2m,weather_code,is_day,precipitation_probability,precipitation,uv_index,apparent_temperature,' +
-    'wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,cloud_cover' +
-    '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max,sunrise,sunset' +
+    'wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,cloud_cover,dew_point_2m,pressure_msl,visibility,snowfall' +
+    '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,uv_index_max,sunrise,sunset,' +
+    'apparent_temperature_max,apparent_temperature_min,sunshine_duration,daylight_duration,precipitation_hours,snowfall_sum,' +
+    'wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant' +
     '&timezone=Europe%2FBerlin&past_days=1&forecast_days=8';
   const j = await getJson<ForecastJson>(url);
   const c = j.current;
   const h = j.hourly;
   const d = j.daily;
+  const q = j.minutely_15;
   return {
     current: {
       time: c.time,
@@ -330,7 +409,17 @@ async function fetchForecast(p: Place) {
       windDir: c.wind_direction_10m,
       humidity: c.relative_humidity_2m,
       precipitation: c.precipitation,
+      pressure: c.pressure_msl,
+      cloud: c.cloud_cover,
+      dewPoint: c.dew_point_2m,
+      visibility: c.visibility,
+      uv: c.uv_index ?? 0,
     },
+    // values are null where the nowcast model does not reach
+    nowcast:
+      q && q.precipitation.some((v) => v !== null)
+        ? q.time.map((time, i) => ({ time, rain: q.precipitation[i] ?? 0, snow: q.snowfall[i] ?? 0 }))
+        : null,
     hours: h.time.map((time, i) => ({
       time,
       temp: h.temperature_2m[i],
@@ -345,6 +434,10 @@ async function fetchForecast(p: Place) {
       windDir: h.wind_direction_10m[i],
       humidity: h.relative_humidity_2m[i],
       cloud: h.cloud_cover[i],
+      dewPoint: h.dew_point_2m[i],
+      pressure: h.pressure_msl[i],
+      visibility: h.visibility[i],
+      snow: h.snowfall[i] ?? 0,
     })),
     days: d.time.map((date, i) => ({
       date,
@@ -356,15 +449,33 @@ async function fetchForecast(p: Place) {
       uvMax: d.uv_index_max[i] ?? 0,
       sunrise: d.sunrise[i],
       sunset: d.sunset[i],
+      feelsMax: d.apparent_temperature_max[i],
+      feelsMin: d.apparent_temperature_min[i],
+      sunshine: d.sunshine_duration[i] ?? 0,
+      daylight: d.daylight_duration[i],
+      rainHours: d.precipitation_hours[i] ?? 0,
+      snowSum: d.snowfall_sum[i] ?? 0,
+      windMax: d.wind_speed_10m_max[i],
+      gustsMax: d.wind_gusts_10m_max[i],
+      windDir: d.wind_direction_10m_dominant[i],
     })),
   };
 }
 
-async function fetchPollen(p: Place): Promise<PollenDay[]> {
+/** pollen per day and air quality per hour – one request to the air quality service */
+async function fetchAir(p: Place): Promise<{ pollen: PollenDay[]; air: AirHour[] }> {
   const url =
     `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${p.lat}&longitude=${p.lon}` +
-    `&hourly=${POLLEN.map((t) => `${t}_pollen`).join(',')}&timezone=Europe%2FBerlin&forecast_days=4`;
+    `&hourly=${POLLEN.map((t) => `${t}_pollen`).join(',')},european_aqi,pm2_5,pm10,nitrogen_dioxide,ozone` +
+    '&timezone=Europe%2FBerlin&forecast_days=4';
   const j = await getJson<{ hourly: Record<string, (number | null)[]> & { time: string[] } }>(url);
+  const v = (key: string, i: number) => j.hourly[key]?.[i] ?? null;
+  const air: AirHour[] = [];
+  j.hourly.time.forEach((time, i) => {
+    const aqi = v('european_aqi', i);
+    if (aqi === null) return;
+    air.push({ time, aqi, pm25: v('pm2_5', i) ?? 0, pm10: v('pm10', i) ?? 0, no2: v('nitrogen_dioxide', i) ?? 0, o3: v('ozone', i) ?? 0 });
+  });
   const byDay = new Map<string, Record<PollenType, number>>();
   j.hourly.time.forEach((t, i) => {
     const date = t.slice(0, 10);
@@ -372,7 +483,7 @@ async function fetchPollen(p: Place): Promise<PollenDay[]> {
     for (const type of POLLEN) rec[type] = Math.max(rec[type], j.hourly[`${type}_pollen`]?.[i] ?? 0);
     byDay.set(date, rec);
   });
-  return [...byDay].map(([date, values]) => ({ date, values }));
+  return { pollen: [...byDay].map(([date, values]) => ({ date, values })), air };
 }
 
 interface AlertsJson {
@@ -440,7 +551,7 @@ function entry(id: string): Entry {
   let e = cache.get(id);
   if (!e) {
     const data = storage.read(DATA_KEY + id);
-    // only data of this version (v2) is ever stored under DATA_KEY
+    // only data of this version is ever stored under DATA_KEY
     e = { data: isRecord(data) ? (data as unknown as WeatherData) : null, loading: false, lastTry: 0 };
     cache.set(id, e);
   }
@@ -462,7 +573,7 @@ export async function refresh(place: Place, force = false) {
     if (e.error && now - e.lastTry < RETRY_MS) return;
   }
   put(place.id, { loading: true, lastTry: now });
-  const [forecast, pollen, alerts] = await Promise.allSettled([fetchForecast(place), fetchPollen(place), fetchAlerts(place)]);
+  const [forecast, air, alerts] = await Promise.allSettled([fetchForecast(place), fetchAir(place), fetchAlerts(place)]);
   if (forecast.status === 'rejected') {
     put(place.id, {
       loading: false,
@@ -473,7 +584,8 @@ export async function refresh(place: Place, force = false) {
   const data: WeatherData = {
     fetchedAt: Date.now(),
     ...forecast.value,
-    pollen: pollen.status === 'fulfilled' ? pollen.value : (e.data?.pollen ?? null),
+    pollen: air.status === 'fulfilled' ? air.value.pollen : (e.data?.pollen ?? null),
+    air: air.status === 'fulfilled' && air.value.air.length ? air.value.air : (e.data?.air ?? null),
     alerts: alerts.status === 'fulfilled' ? alerts.value.alerts : null,
     warnCell: alerts.status === 'fulfilled' ? alerts.value.warnCell : e.data?.warnCell,
   };
@@ -664,3 +776,72 @@ export function activeAlerts(data: WeatherData | null, now: Date): Alert[] {
 
 /** time of an ISO timestamp ('…T06:42') in the active clock format */
 export const fmtTime = (iso: string) => fmtHHMM(iso.slice(11, 16));
+
+/* ------------------------------------------------------------------ derived values (weather module) */
+
+const pad2 = (n: number) => String(n).padStart(2, '0');
+/** local 'yyyy-mm-ddThh:mm' of a date – the format the services use for Europe/Berlin */
+export const localIso = (d: Date) => `${dayKey(d)}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+
+export type AqiLevel = 1 | 2 | 3 | 4 | 5 | 6;
+const AQI_KEYS = ['good', 'fair', 'moderate', 'poor', 'veryPoor', 'extremelyPoor'] as const;
+
+/** European Air Quality Index → level 1 (good) … 6 (extremely poor), bands of 20 */
+export function aqiLevel(aqi: number): { level: AqiLevel; label: string } {
+  const level = Math.min(6, Math.max(1, Math.ceil(aqi / 20))) as AqiLevel;
+  return { level, label: t(`weather.aqi.levels.${AQI_KEYS[level - 1]}`) };
+}
+
+/** upper limits (km/h) of Beaufort 0 … 11; above is 12 */
+const BEAUFORT = [1, 6, 12, 20, 29, 39, 50, 62, 75, 89, 103, 118];
+
+/** wind speed → Beaufort number and its name in the active language */
+export function beaufort(kmh: number): { bft: number; label: string } {
+  const i = BEAUFORT.findIndex((limit) => kmh < limit);
+  const bft = i === -1 ? 12 : i;
+  return { bft, label: t('weather.beaufort').split(',')[bft] };
+}
+
+/** pressure tendency over the three hours up to `time` (meteorological rule: ±1 hPa) */
+export function pressureTrend(hours: Hour[], time: string): 'rising' | 'falling' | 'steady' | null {
+  const i = hours.findIndex((h) => h.time === time);
+  if (i < 3) return null;
+  const d = hours[i].pressure - hours[i - 3].pressure;
+  return d >= 1 ? 'rising' : d <= -1 ? 'falling' : 'steady';
+}
+
+export interface Nowcast {
+  /** the quarters from now on (two hours) */
+  slots: Quarter[];
+  kind: 'dry' | 'starts' | 'stops' | 'continues';
+  /** start of the change ('…T15:30') */
+  at?: string;
+  snow: boolean;
+  /** mm in the two hours */
+  total: number;
+}
+
+/** below this a quarter counts as dry (the model's smallest step is 0.1 mm) */
+const WET = 0.1;
+
+/** What the next two hours bring, from the 15-minute nowcast. */
+export function nowcast(quarters: Quarter[] | null, now: Date): Nowcast | null {
+  if (!quarters) return null;
+  const from = localIso(new Date(Math.floor(now.getTime() / 900_000) * 900_000));
+  const slots = quarters.filter((q) => q.time >= from).slice(0, 8);
+  if (slots.length < 4) return null;
+  const wet = slots.map((q) => q.rain >= WET || q.snow > 0);
+  const snow = slots.some((q) => q.snow > 0);
+  const total = Math.round(slots.reduce((s, q) => s + q.rain, 0) * 10) / 10;
+  if (!wet.includes(true)) return { slots, kind: 'dry', snow, total };
+  if (wet[0]) {
+    const dry = wet.indexOf(false);
+    return dry === -1 ? { slots, kind: 'continues', snow, total } : { slots, kind: 'stops', at: slots[dry].time, snow, total };
+  }
+  return { slots, kind: 'starts', at: slots[wet.indexOf(true)].time, snow, total };
+}
+
+/** air quality of the hour `time` ('…T15:00'); null beyond the air quality forecast (4 days) */
+export function airAt(air: AirHour[] | null, time: string): AirHour | null {
+  return air?.find((a) => a.time.slice(0, 13) === time.slice(0, 13)) ?? null;
+}

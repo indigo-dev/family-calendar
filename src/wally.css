@@ -783,10 +783,10 @@
     box-shadow: var(--shadow-float);
   }
 
-  /* ------------------------------------------------------------ weather hero, shopping, to-dos */
+  /* ------------------------------------------------------------ weather cockpit */
   /* the sky keeps its meaning (clear, clouds, rain …) but is tuned to the brand: blue into violet,
      indigo greys instead of plain greys, plus the halo rings of the logo */
-  [data-style='wally'] .wx-hero {
+  [data-style='wally'] .wx-now {
     --sky-a: #2f7cf6;
     --sky-b: #7c6cff;
     border-radius: 26px;
@@ -804,38 +804,82 @@
       linear-gradient(140deg, var(--sky-a), var(--sky-b));
     box-shadow: 0 18px 40px -18px color-mix(in srgb, var(--sky-b) 70%, transparent);
   }
-  [data-style='wally'] .wx-hero.sky-cloudy {
+  [data-style='wally'] .wx-now.sky-cloudy {
     --sky-a: #4f5596;
     --sky-b: #959ad6;
   }
-  [data-style='wally'] .wx-hero.sky-rain {
+  [data-style='wally'] .wx-now.sky-rain {
     --sky-a: #2e3270;
     --sky-b: #6268ad;
   }
-  [data-style='wally'] .wx-hero.sky-storm {
+  [data-style='wally'] .wx-now.sky-storm {
     --sky-a: #1e1b4b;
     --sky-b: #5b4aa6;
   }
-  [data-style='wally'] .wx-hero.sky-snow {
+  [data-style='wally'] .wx-now.sky-snow {
     --sky-a: #7483cf;
     --sky-b: #c3c9f3;
   }
-  [data-style='wally'] .wx-hero.sky-fog {
+  [data-style='wally'] .wx-now.sky-fog {
     --sky-a: #686c98;
     --sky-b: #b0b3d2;
   }
-  [data-style='wally'] .wx-hero.sky-night {
+  [data-style='wally'] .wx-now.sky-night {
     --sky-a: #15123d;
     --sky-b: #3b2f8f;
   }
-  [data-style='wally'][data-mode='dark'] .wx-hero {
+  [data-style='wally'][data-mode='dark'] .wx-now {
     filter: none;
   }
-  [data-style='wally'] .wx-hero-temp {
+  [data-style='wally'] .wx-now-temp {
+    font-family: var(--display);
     font-weight: 300;
   }
-  [data-style='wally'] .wx-alert {
-    border-radius: 18px;
+  [data-style='wally'] .wx-now-text {
+    font-family: var(--display);
+    font-weight: 800;
+  }
+  /* cards like the dashboard: light edge, the warm roof colour for the curve and the selection */
+  [data-style='wally'] .wx-board {
+    --tl-line: #fb923c;
+  }
+  [data-style='wally'] .wx-tl,
+  [data-style='wally'] .wx-tile,
+  [data-style='wally'] .wx-week {
+    background-image: var(--card-light);
+    border: 1px solid var(--panel-border);
+  }
+  [data-style='wally'] .wx-tl-col.on::before {
+    background: color-mix(in srgb, #fb923c 14%, transparent);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #fb923c 60%, transparent);
+  }
+  [data-style='wally'] .wx-tl-col.on .wx-tl-time,
+  [data-style='wally'] .wx-tile-when,
+  [data-style='wally'] .wx-wd.on .wx-wd-name {
+    color: var(--accent);
+  }
+  [data-style='wally'] .wx-tile-icon {
+    width: 26px;
+    height: 26px;
+    padding: 4px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--tile-c) 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tile-c) 26%, transparent);
+  }
+  [data-style='wally'] .wx-big,
+  [data-style='wally'] .wx-wd-max,
+  [data-style='wally'] .wx-wd-name {
+    font-family: var(--display);
+  }
+  [data-style='wally'] .wx-wd.on {
+    background: color-mix(in srgb, #fb923c 14%, transparent);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #fb923c 60%, transparent);
+  }
+  [data-style='wally'] .wx-wd-bar i {
+    background: linear-gradient(90deg, #8b5cf6, #fb923c);
+  }
+  [data-style='wally'] .wx-now {
+    border-radius: 26px;
   }
 }
 
