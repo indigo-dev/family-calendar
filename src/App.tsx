@@ -195,6 +195,8 @@ export function App() {
                   onEditing={setDashEditing}
                   openModule={setModule}
                   startFrame={(startId) => setFrame({ mode: 'manual', startId })}
+                  // nothing to show yet (no photos, no clock face): open the photo frame to set it up
+                  startScreensaver={() => (canFrame ? setFrame({ mode: 'screensaver' }) : setModule('frame'))}
                   openSettings={openSettings}
                 />
               </>

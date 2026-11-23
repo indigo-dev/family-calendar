@@ -30,7 +30,7 @@ describe('demo family', () => {
   });
 
   it('only uses subjects of the matching school type', () => {
-    const paint = painter(colorScheme('vivid', '#4f6d9a'));
+    const paint = painter(colorScheme('vivid'));
     for (const kid of [lena, max]) {
       const t = kid.timetable!;
       const allowed = new Set(subjectsFor(t.schoolType, { colors: {}, custom: [] }, paint).map((s) => s.id));

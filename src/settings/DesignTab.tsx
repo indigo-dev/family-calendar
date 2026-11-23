@@ -7,15 +7,13 @@ import { Sym } from '../components/Sym';
 import { SYMBOL_SETS, type SymbolSet } from '../lib/symbols';
 import { WEATHER_ICON_SETS, type WeatherIconSet, type WeatherKey } from '../lib/weatherIcons';
 import { WxIcon } from '../weather/WxIcon';
-import { CORE_SUGGESTIONS, PALETTES, paletteColors } from '../lib/colors';
-import { Group, Row } from './controls';
+import { Group } from './controls';
 import { MODULE_TRANSITIONS } from '../lib/transition';
 
-type DesignSection = 'style' | 'colors' | 'weather' | 'shopping' | 'motion';
+type DesignSection = 'style' | 'weather' | 'shopping' | 'motion';
 
 const SECTIONS: { id: DesignSection; label: () => string }[] = [
   { id: 'style', label: () => t('settings.design.style') },
-  { id: 'colors', label: () => t('settings.design.colors') },
   { id: 'weather', label: () => t('settings.design.weatherIcons') },
   { id: 'shopping', label: () => t('settings.design.shoppingIcons') },
   { id: 'motion', label: () => t('settings.design.motion') },
@@ -105,61 +103,6 @@ export function DesignTab() {
             </div>
           </Group>
         </>
-      )}
-
-      {section === 'colors' && (
-        <Group title={t('settings.design.colors')} note={t('settings.design.colorsNote')}>
-          <div className="pick-grid three" role="radiogroup" aria-label={t('settings.design.palette')}>
-            {PALETTES.map((p) => (
-              <button
-                key={p.id}
-                role="radio"
-                aria-checked={settings.palette === p.id}
-                className={`pick-card ${settings.palette === p.id ? 'on' : ''}`}
-                onClick={() => updateSettings({ palette: p.id })}
-              >
-                <span className="palette-thumb" aria-hidden>
-                  {paletteColors(p.id, settings.coreColor)
-                    .slice(0, 6)
-                    .map((c, i) => (
-                      <i key={i} style={{ background: c }} />
-                    ))}
-                </span>
-                <span className="pick-label">{p.label}</span>
-                <span className="pick-note">{p.note}</span>
-              </button>
-            ))}
-          </div>
-          {settings.palette === 'core' && (
-            <div className="set-card">
-              <Row label={t('settings.design.coreColor')} hint={t('settings.design.coreColorHint')}>
-                <div className="swatches">
-                  {CORE_SUGGESTIONS.map((c) => (
-                    <button
-                      key={c}
-                      className={`swatch ${settings.coreColor.toLowerCase() === c ? 'on' : ''}`}
-                      style={{ background: c }}
-                      onClick={() => updateSettings({ coreColor: c })}
-                      aria-label={c}
-                    />
-                  ))}
-                  <label
-                    className={`swatch custom ${CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? '' : 'on'}`}
-                    style={{ background: CORE_SUGGESTIONS.includes(settings.coreColor.toLowerCase()) ? undefined : settings.coreColor }}
-                    title={t('common.ownColor')}
-                  >
-                    <input type="color" value={settings.coreColor} onChange={(e) => updateSettings({ coreColor: e.target.value })} />+
-                  </label>
-                </div>
-              </Row>
-              <div className="core-strip" aria-label={t('settings.design.generated')}>
-                {paletteColors('core', settings.coreColor).map((c, i) => (
-                  <i key={i} style={{ background: c }} />
-                ))}
-              </div>
-            </div>
-          )}
-        </Group>
       )}
 
       {section === 'motion' && (

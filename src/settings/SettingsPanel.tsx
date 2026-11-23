@@ -11,11 +11,13 @@ import { DeviceTab } from './DeviceTab';
 import { VoiceTab } from './VoiceTab';
 import { BackupTab } from './BackupTab';
 import { t } from '../i18n';
+import { GlyphIcon, type IconName } from '../components/Icon';
 
 export type SettingsTab = 'family' | 'calendars' | 'holidays' | 'school' | 'design' | 'view' | 'device' | 'voice' | 'backup';
 type Tab = SettingsTab;
 
-/** order: set up the family and its data first, then the look, the device and the backup */
+/** order: set up the family and its data first, then the look, the device and the backup.
+ * `icon`: emoji of the classic style; the other styles draw the line icon of the same name (`calendars` → calendar). */
 const TABS: { id: Tab; icon: string }[] = [
   { id: 'family', icon: '👨‍👩‍👧' },
   { id: 'calendars', icon: '📅' },
@@ -44,11 +46,12 @@ export function SettingsPanel({ onClose, initialTab }: { onClose: () => void; in
             <button
               key={x.id}
               className={`settings-nav-item ${tab === x.id ? 'active' : ''}`}
+              data-tab={x.id}
               onClick={() => setTab(x.id)}
               aria-current={tab === x.id}
             >
               <span className="settings-nav-icon" aria-hidden>
-                {x.icon}
+                <GlyphIcon glyph={x.icon} name={(x.id === 'calendars' ? 'calendar' : x.id) as IconName} />
               </span>
               <span className="settings-nav-label">{t(`settings.tabs.${x.id}`)}</span>
             </button>

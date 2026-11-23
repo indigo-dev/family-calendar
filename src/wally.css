@@ -559,8 +559,44 @@
     font-weight: 800;
     box-shadow: var(--shadow);
   }
+  /* every section has its spectrum colour, like the widget heads */
+  [data-style='wally'] .settings-nav-item {
+    --hue: var(--indigo);
+  }
+  [data-style='wally'] .settings-nav-item[data-tab='family'] {
+    --hue: var(--pink);
+  }
+  [data-style='wally'] .settings-nav-item[data-tab='calendars'] {
+    --hue: var(--rose);
+  }
+  [data-style='wally'] .settings-nav-item[data-tab='holidays'],
+  [data-style='wally'] .settings-nav-item[data-tab='school'] {
+    --hue: var(--amber);
+  }
+  [data-style='wally'] .settings-nav-item[data-tab='design'] {
+    --hue: var(--violet);
+  }
+  [data-style='wally'] .settings-nav-item[data-tab='view'] {
+    --hue: var(--sky);
+  }
+  [data-style='wally'] .settings-nav-item[data-tab='voice'] {
+    --hue: var(--emerald);
+  }
+  [data-style='wally'] .settings-nav-icon {
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--hue) 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hue) 26%, transparent);
+  }
+  [data-style='wally'] .settings-nav-icon .ui-icon {
+    color: color-mix(in srgb, var(--hue) 75%, var(--text));
+    stroke-width: 2;
+  }
   [data-style='wally'] .settings-nav-item.active .settings-nav-icon {
-    box-shadow: 0 0 0 2px #fb923c;
+    background: color-mix(in srgb, var(--hue) 26%, transparent);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--hue) 60%, transparent);
+  }
+  [data-style='wally'] .settings-nav-item.active .settings-nav-icon .ui-icon {
+    color: color-mix(in srgb, var(--hue) 85%, var(--text));
   }
   [data-style='wally'] .settings-head h2,
   [data-style='wally'] .event-detail h2 {

@@ -6,9 +6,7 @@ import { t } from '../i18n';
  * public/symbols/<set>/ and are fetched by scripts/fetch-symbols.mjs – nothing is loaded from the internet.
  */
 export type SymbolSet =
-  | 'system'
   | 'fluent-3d'
-  | 'fluent-color'
   | 'fluent-flat'
   | 'noto'
   | 'noto-3d'
@@ -35,9 +33,7 @@ export interface SymbolSetInfo {
 }
 
 const SETS: Omit<SymbolSetInfo, 'label' | 'note'>[] = [
-  { id: 'system', group: 'color', mode: 'native' },
   { id: 'fluent-3d', group: 'color', mode: 'image', ext: 'png' },
-  { id: 'fluent-color', group: 'color', mode: 'image', ext: 'svg' },
   { id: 'fluent-flat', group: 'color', mode: 'image', ext: 'svg' },
   { id: 'noto-3d', group: 'color', mode: 'image', ext: 'png' },
   { id: 'noto', group: 'color', mode: 'image', ext: 'svg' },
@@ -61,7 +57,7 @@ export const SYMBOL_SETS: SymbolSetInfo[] = SETS.map((s) => ({
   },
 }));
 
-export const DEFAULT_SYMBOL_SET: SymbolSet = 'system';
+export const DEFAULT_SYMBOL_SET: SymbolSet = 'twemoji';
 
 const available = new Map<string, Set<string>>(
   Object.entries(manifest as Record<string, string[]>).map(([set, keys]) => [set, new Set(keys)]),

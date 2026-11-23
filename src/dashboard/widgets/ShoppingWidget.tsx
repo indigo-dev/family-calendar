@@ -3,8 +3,11 @@ import { useStore } from '../../store';
 import { BUILTIN, CATEGORIES, type ListEntry, type ShopItem } from '../../lib/shopping';
 import { Head, stop, useDash, useUndo, type WidgetProps } from './shared';
 import { t } from '../../i18n';
+import { Sym } from '../../components/Sym';
 
 const CAT_ORDER = new Map(CATEGORIES.map((c, i) => [c.id, i]));
+/** department icon: the symbol for items whose own emoji is missing in the chosen symbol style */
+const CAT_ICON = new Map(CATEGORIES.map((c) => [c.id, c.icon]));
 
 export function ShoppingWidget({ size }: WidgetProps) {
   const { shopping } = useDash();
@@ -38,10 +41,11 @@ export function ShoppingWidget({ size }: WidgetProps) {
         <div className="dw-count-num">{list.length}</div>
         <div className="dw-count-label">{t('dashboard.onList', { n: list.length })}</div>
         <div className="dw-count-emoji">
-          {list
-            .slice(0, 6)
-            .map(({ item }) => item.emoji)
-            .join('')}
+          {list.slice(0, 6).map(({ e, item }) => (
+            <span key={e.itemId} style={{ '--cat': paint(CATEGORIES.find((c) => c.id === item.cat)?.color) } as CSSProperties}>
+              <Sym emoji={item.emoji} fallback={CAT_ICON.get(item.cat)} />
+            </span>
+          ))}
         </div>
         {undoNode}
       </div>
@@ -66,7 +70,9 @@ export function ShoppingWidget({ size }: WidgetProps) {
               }}
               aria-label={t('dashboard.check', { name: item.name })}
             >
-              <span className="dw-shop-emoji">{item.emoji}</span>
+              <span className="dw-shop-emoji">
+                <Sym emoji={item.emoji} fallback={CAT_ICON.get(item.cat)} />
+              </span>
               <span className="dw-shop-name">{item.name}</span>
               {e.qty > 1 && <span className="dw-shop-qty">{e.qty}×</span>}
             </button>

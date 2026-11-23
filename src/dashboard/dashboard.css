@@ -870,6 +870,13 @@
   }
   .dw-shop-emoji {
     font-size: 1.2rem;
+    display: inline-grid;
+    place-items: center;
+    /* one-colour symbol styles: department colour, as in the shopping module */
+    --sym-tint: color-mix(in srgb, var(--cat, currentColor) 78%, var(--text));
+  }
+  .dw-count-emoji > span {
+    --sym-tint: color-mix(in srgb, var(--cat, currentColor) 78%, var(--text));
   }
   .dw-shop-name {
     flex: 1;

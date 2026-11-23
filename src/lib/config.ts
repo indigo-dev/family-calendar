@@ -3,7 +3,7 @@ import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings, Time
 import { DEFAULT_PERIODS, parseSchool, parseTimetable } from './school';
 import { DEFAULT_SYMBOL_SET, isSymbolSet } from './symbols';
 import { DEFAULT_WEATHER_ICONS, isWeatherIconSet } from './weatherIcons';
-import { DEFAULT_CORE_COLOR, PALETTE, PALETTES } from './colors';
+import { PALETTE } from './colors';
 import { demoId, uid } from './id';
 import { persisted } from './persisted';
 import { isLanguageSetting, t } from '../i18n';
@@ -106,12 +106,10 @@ export const DEFAULT_SETTINGS: Settings = {
   style: 'wally',
   symbols: DEFAULT_SYMBOL_SET,
   weatherIcons: DEFAULT_WEATHER_ICONS,
-  palette: 'vivid',
-  coreColor: DEFAULT_CORE_COLOR,
   moduleTransition: 'fade',
 };
 
-const STYLE_IDS: UiStyle[] = ['wally', 'classic', 'soft', 'clear', 'flow', 'aurora', 'nodes', 'states', 'minimal'];
+const STYLE_IDS: UiStyle[] = ['wally', 'classic', 'clear', 'flow', 'aurora', 'nodes', 'minimal'];
 
 /** The styles with name and short description in the active language. */
 export const UI_STYLES: { id: UiStyle; label: string; note: string }[] = STYLE_IDS.map((id) => ({
@@ -235,9 +233,7 @@ export function parseConfig(raw: unknown): AppConfig {
   if (!isLanguageSetting(settings.language)) settings.language = DEFAULT_SETTINGS.language;
   if (!isSymbolSet(settings.symbols)) settings.symbols = DEFAULT_SETTINGS.symbols;
   if (!isWeatherIconSet(settings.weatherIcons)) settings.weatherIcons = DEFAULT_SETTINGS.weatherIcons;
-  if (!PALETTES.some((x) => x.id === settings.palette)) settings.palette = DEFAULT_SETTINGS.palette;
   if (!isModuleTransition(settings.moduleTransition)) settings.moduleTransition = DEFAULT_SETTINGS.moduleTransition;
-  if (!/^#[0-9a-f]{6}$/i.test(settings.coreColor)) settings.coreColor = DEFAULT_CORE_COLOR;
 
   return { schemaVersion: 3, settings, members, calendars, school: parseSchool(o.school) };
 }

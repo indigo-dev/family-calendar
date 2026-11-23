@@ -1,7 +1,8 @@
 import type { CSSProperties } from 'react';
 import { useStore } from '../store';
-import { WEATHER_ICON_SETS, weatherEmoji, weatherIconSrc, weatherKey, type WeatherIconSet, type WeatherKey } from '../lib/weatherIcons';
+import { WEATHER_ICON_SETS, weatherIconSrc, weatherKey, type WeatherIconSet, type WeatherKey } from '../lib/weatherIcons';
 import { describe } from '../lib/weather';
+import { absoluteUrl } from '../lib/absoluteUrl';
 
 const byId = new Map(WEATHER_ICON_SETS.map((s) => [s.id, s]));
 
@@ -33,16 +34,9 @@ export function WxIcon({
   const a11y = label ? { role: 'img', 'aria-label': label, title: label } : { 'aria-hidden': true };
   const cls = `wxi ${info.padded ? 'wxi-padded' : ''} ${className}`;
 
-  if (info.mode === 'native') {
-    return (
-      <span className={`${cls} wxi-native`} {...a11y}>
-        {weatherEmoji(key)}
-      </span>
-    );
-  }
   const src = weatherIconSrc(info, key);
   if (info.mode === 'mask') {
-    const style = { ['--wxi-src' as string]: `url("${src}")` } as CSSProperties;
+    const style = { ['--wxi-src' as string]: `url("${absoluteUrl(src)}")` } as CSSProperties;
     return <span className={`${cls} wxi-mask`} style={style} {...a11y} />;
   }
   return <img className={cls} src={src} alt={label ?? ''} title={label} draggable={false} />;

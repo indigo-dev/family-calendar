@@ -2,19 +2,19 @@ import { flushSync } from 'react-dom';
 import { t } from '../i18n';
 
 /** How the app animates when switching between the main areas (modules). */
-export type ModuleTransition = 'none' | 'fade' | 'slide' | 'zoom' | 'push';
+export type ModuleTransition = 'fade' | 'slide' | 'zoom' | 'none';
 
-export const MODULE_TRANSITIONS: { id: ModuleTransition; label: string; note: string }[] = (
-  ['none', 'fade', 'slide', 'zoom', 'push'] as const
-).map((id) => ({
-  id,
-  get label() {
-    return t(`transitions.${id}.label`);
-  },
-  get note() {
-    return t(`transitions.${id}.note`);
-  },
-}));
+export const MODULE_TRANSITIONS: { id: ModuleTransition; label: string; note: string }[] = (['fade', 'slide', 'zoom', 'none'] as const).map(
+  (id) => ({
+    id,
+    get label() {
+      return t(`transitions.${id}.label`);
+    },
+    get note() {
+      return t(`transitions.${id}.note`);
+    },
+  }),
+);
 
 export const isModuleTransition = (v: unknown): v is ModuleTransition => MODULE_TRANSITIONS.some((t) => t.id === v);
 

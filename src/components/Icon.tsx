@@ -61,6 +61,59 @@ const PATHS = {
       <circle cx="15.5" cy="8.5" r="1.5" />
     </>
   ),
+  // settings sections
+  family: (
+    <>
+      <circle cx="9" cy="8" r="3" />
+      <path d="M3.5 20a5.5 5.5 0 0 1 11 0" />
+      <circle cx="17" cy="9.5" r="2.3" />
+      <path d="M15.8 14.6A4.6 4.6 0 0 1 20.5 19" />
+    </>
+  ),
+  holidays: (
+    <>
+      <path d="M12 4a8.5 8.5 0 0 1 8.5 8.5h-17A8.5 8.5 0 0 1 12 4z" />
+      <path d="M12 12.5V20M8 20.5h8" />
+    </>
+  ),
+  school: (
+    <>
+      <path d="M6 10.5a6 6 0 0 1 12 0V19a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z" />
+      <path d="M9.5 4.6V4a2.5 2.5 0 0 1 5 0v.6M9 14h6v3.5H9z" />
+    </>
+  ),
+  design: (
+    <>
+      <path d="M12 3a9 9 0 1 0 0 18 1.8 1.8 0 0 0 1.3-3.1 1.8 1.8 0 0 1 1.3-3.1h2.3A4.1 4.1 0 0 0 21 10.7C20.6 6.4 16.7 3 12 3z" />
+      <circle cx="7.6" cy="11" r="1" />
+      <circle cx="10" cy="7.3" r="1" />
+      <circle cx="14.6" cy="7.6" r="1" />
+    </>
+  ),
+  view: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="3" />
+      <path d="M3 10h18M8 3v4M16 3v4M7 14h4M7 17.5h7" />
+    </>
+  ),
+  device: (
+    <>
+      <rect x="4.5" y="2.5" width="15" height="19" rx="3" />
+      <path d="M10.5 18.5h3" />
+    </>
+  ),
+  voice: (
+    <>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
+    </>
+  ),
+  backup: (
+    <>
+      <rect x="3" y="4" width="18" height="5" rx="1.5" />
+      <path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof PATHS;

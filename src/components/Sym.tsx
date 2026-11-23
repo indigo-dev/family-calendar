@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { useStore } from '../store';
 import { resolveSymbol, type SymbolSet } from '../lib/symbols';
+import { absoluteUrl } from '../lib/absoluteUrl';
 
 /**
  * An emoji drawn in the chosen symbol style. Size follows the font size (1em box).
@@ -19,6 +20,6 @@ export function Sym({ emoji, fallback, set, className = '' }: { emoji: string; f
   if (r.mode === 'image') {
     return <img className={`sym sym-image ${className}`} src={r.src} alt="" aria-hidden draggable={false} loading="lazy" />;
   }
-  const style = { ['--sym-src' as string]: `url("${r.src}")` } as CSSProperties;
+  const style = { ['--sym-src' as string]: `url("${absoluteUrl(r.src)}")` } as CSSProperties;
   return <span className={`sym sym-mask ${className}`} style={style} aria-hidden />;
 }

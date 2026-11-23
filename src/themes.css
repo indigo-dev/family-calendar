@@ -2,7 +2,7 @@
 @layer themes {
   /* =====================================================================================
    Styles (Einstellungen → Stil). Independent of light/dark:
-   - <html data-style="classic|soft|clear|flow|aurora|nodes|states|minimal">
+   - <html data-style="wally|classic|clear|flow|aurora|nodes|minimal (wally: src/wally.css)">
    - <html data-mode="light|dark">  (resolved from the theme setting + system, set in App.tsx)
    "classic" is styles.css as is. Every other style redefines the tokens and adjusts the
    shared components. Each style defines ALL its tokens in the light block and again in the
@@ -50,211 +50,12 @@
   :root:not([data-style='classic']) .year-day.today > span:first-child {
     color: var(--today-text);
   }
-
-  /* =====================================================================================
-   HELL · SANFT  –  white, hairlines, system blue, red today
-   ===================================================================================== */
-  :root[data-style='soft'] {
-    --bg: #f5f5f7;
-    --surface: #ffffff;
-    --surface-2: #f2f2f4;
-    --line: #e3e3e7;
-    --line-strong: #d1d1d6;
-    --text: #1d1d1f;
-    --muted: #86868b;
-    --accent: #007aff;
-    --accent-text: #ffffff;
-    --today: #ff3b30;
-    --today-text: #ffffff;
-    --danger: #ff3b30;
-    --ok: #34c759;
-    --radius: 12px;
-    --shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.07), 0 1px 3px rgba(0, 0, 0, 0.05);
-    --fill: rgba(118, 118, 128, 0.12);
-    --fill-strong: rgba(118, 118, 128, 0.18);
-    --seg-thumb: #ffffff;
-    --sidebar: rgba(234, 234, 238, 0.92);
-    --holiday: #d1442b;
-    --school-text: #0a64c2;
-    color-scheme: light;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', system-ui, sans-serif;
-  }
-  :root[data-style='soft'][data-mode='dark'] {
-    --bg: #161617;
-    --surface: #1f1f21;
-    --surface-2: #2c2c2e;
-    --line: #333336;
-    --line-strong: #48484a;
-    --text: #f5f5f7;
-    --muted: #98989d;
-    --accent: #0a84ff;
-    --accent-text: #ffffff;
-    --today: #ff453a;
-    --today-text: #ffffff;
-    --danger: #ff453a;
-    --ok: #30d158;
-    --shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.07);
-    --fill: rgba(118, 118, 128, 0.24);
-    --fill-strong: rgba(118, 118, 128, 0.32);
-    --seg-thumb: #636366;
-    --sidebar: rgba(36, 36, 38, 0.92);
-    --holiday: #ff7a5c;
-    --school-text: #64b5ff;
-    color-scheme: dark;
-  }
-  [data-style='soft'] .title {
-    font-size: 1.45rem;
-    font-weight: 700;
-  }
-  [data-style='soft'] .title-year {
-    font-weight: 400;
-  }
-  [data-style='soft'] .clock-time {
-    font-weight: 600;
-  }
-  [data-style='soft'] .btn {
-    border-color: transparent;
-    background: var(--fill);
-    color: var(--accent);
-    font-weight: 500;
-    border-radius: 10px;
-  }
-  [data-style='soft'] .btn.primary {
-    background: var(--accent);
-    color: var(--accent-text);
-  }
-  [data-style='soft'] .btn.danger {
-    color: var(--danger);
-  }
-  [data-style='soft'] .btn.ghost {
-    background: transparent;
-    border-color: var(--line-strong);
-  }
-  [data-style='soft'] .icon-btn {
-    background: transparent;
-    border-color: transparent;
-    color: var(--accent);
-  }
-  [data-style='soft'] .segmented {
-    background: var(--fill);
-    border-radius: 9px;
-    padding: 2px;
-  }
-  [data-style='soft'] .segmented > button,
-  [data-style='soft'] .segmented > .seg-days {
-    color: var(--text);
-    font-weight: 500;
-    border-radius: 7px;
-  }
-  [data-style='soft'] .segmented > .active {
-    background: var(--seg-thumb);
-    box-shadow:
-      0 3px 8px rgba(0, 0, 0, 0.12),
-      0 0 0 0.5px rgba(0, 0, 0, 0.04);
-  }
-  [data-style='soft'] .chip {
-    border-width: 1.5px;
-    font-weight: 500;
-  }
-  [data-style='soft'] .chip.all.on {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--accent-text);
-  }
-  [data-style='soft'] .month-head > div {
-    text-align: right;
-    font-weight: 500;
-  }
-  [data-style='soft'] .month-dn {
-    font-weight: 500;
-  }
-  [data-style='soft'] .month-cell.other {
-    background: transparent;
-  }
-  [data-style='soft'] .chip-event .t {
-    order: 2;
-    margin-left: auto;
-    padding-left: 4px;
-    font-size: 0.74rem;
-  }
-  [data-style='soft'] .chip-event.solid,
   [data-style='clear'] .chip-event.solid {
     /* tint the member colour instead of a solid bar. The colour comes as an inline `background`
      shorthand, which also resets background-image, hence !important */
     background-image: linear-gradient(var(--chip-veil), var(--chip-veil)) !important;
     color: var(--text);
     font-weight: 500;
-  }
-  [data-style='soft'] {
-    --chip-veil: color-mix(in srgb, var(--surface) 76%, transparent);
-  }
-  [data-style='soft'] .tg-event {
-    border-radius: 6px;
-  }
-  [data-style='soft'] .agenda-item {
-    border-radius: 10px;
-  }
-  [data-style='soft'] .modal {
-    border-radius: 14px;
-    box-shadow:
-      0 0 0 0.5px rgba(0, 0, 0, 0.12),
-      0 22px 60px rgba(0, 0, 0, 0.28);
-  }
-  [data-style='soft'] .field input:not([type='checkbox']):not([type='color']),
-  [data-style='soft'] .field select {
-    border-radius: 8px;
-  }
-  [data-style='soft'] .module-btn.active .module-svg {
-    color: var(--accent);
-  }
-  @media (min-width: 1100px) {
-    [data-style='soft'] .module-nav {
-      width: 210px;
-      flex: none;
-      gap: 2px;
-      background: var(--sidebar);
-      border-right: 1px solid var(--line);
-      padding: max(18px, env(safe-area-inset-top)) 10px 10px max(10px, env(safe-area-inset-left));
-    }
-    [data-style='soft'] .module-nav-label {
-      display: block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--muted);
-      padding: 0 10px 6px;
-    }
-    [data-style='soft'] .module-btn {
-      width: auto;
-      flex-direction: row;
-      justify-content: flex-start;
-      gap: 11px;
-      padding: 10px 10px;
-      border-radius: 8px;
-      color: var(--text);
-      font-size: 0.98rem;
-      font-weight: 500;
-    }
-    [data-style='soft'] .module-svg {
-      color: var(--accent);
-    }
-    [data-style='soft'] .module-btn.active {
-      background: var(--fill-strong);
-      box-shadow: none;
-    }
-    [data-style='soft'] .shell > .app {
-      padding-left: 16px;
-    }
-  }
-  @media (max-width: 640px) {
-    [data-style='soft'] .module-nav {
-      background: color-mix(in srgb, var(--surface) 88%, transparent);
-      -webkit-backdrop-filter: blur(20px) saturate(180%);
-      backdrop-filter: blur(20px) saturate(180%);
-    }
-    [data-style='soft'] .module-btn.active {
-      background: transparent;
-      color: var(--accent);
-    }
   }
 
   /* =====================================================================================
@@ -456,16 +257,19 @@
       margin-left: max(12px, env(safe-area-inset-left));
       padding: 8px;
       gap: 4px;
-      border-radius: 44px;
+      /* concentric with the buttons: 24px button radius + 8px padding */
+      border-radius: 32px;
       background: var(--surface);
       border: 1px solid var(--glass-border);
       box-shadow: var(--shadow);
       -webkit-backdrop-filter: blur(24px) saturate(180%);
       backdrop-filter: blur(24px) saturate(180%);
     }
+    /* a soft rounded square, not a tall capsule (72 × 62 with 34px corners looked narrow and egg-shaped) */
     [data-style='clear'] .module-btn {
-      width: 72px;
-      border-radius: 34px;
+      width: 78px;
+      padding: 10px 4px 9px;
+      border-radius: 24px;
       font-size: 0.7rem;
     }
     [data-style='clear'] .shell > .app {
@@ -1147,246 +951,9 @@
       font-size: 0.7rem;
     }
   }
-
-  /* =====================================================================================
-   DIAGRAMM · ZUSTÄNDE  –  visual state machine editor: line grid, states as boxes with
-   a header, events as pills, the selected state outlined, modules joined by transitions
-   ===================================================================================== */
-  :root[data-style='states'] {
-    --bg: #f4f5f8;
-    --bg-image:
-      linear-gradient(rgba(40, 50, 80, 0.055) 1px, transparent 1px), linear-gradient(90deg, rgba(40, 50, 80, 0.055) 1px, transparent 1px);
-    --bg-size: 24px 24px;
-    --surface: #ffffff;
-    --surface-2: #f0f1f5;
-    --tint-base: #ffffff;
-    --line: #e3e5ec;
-    --line-strong: #c8ccd8;
-    --text: #1c1e29;
-    --muted: #6b7088;
-    --accent: #4f6bff;
-    --accent-text: #ffffff;
-    --today: #4f6bff;
-    --today-text: #ffffff;
-    --danger: #e5484d;
-    --ok: #22a06b;
-    --radius: 10px;
-    --shadow: 0 1px 2px rgba(20, 24, 40, 0.06);
-    --state-border: #cfd3de;
-    --state-head: #f6f7fa;
-    --edge: #9aa1b8;
-    --mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', monospace;
-    --holiday: #d9480f;
-    --school-text: #3b5bdb;
-    --school: color-mix(in srgb, #4f6bff 7%, transparent);
-    color-scheme: light;
-    font-family:
-      'Inter Variable',
-      -apple-system,
-      'Segoe UI',
-      system-ui,
-      sans-serif;
-  }
-  :root[data-style='states'][data-mode='dark'] {
-    --bg: #0e0f15;
-    --bg-image:
-      linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-    --bg-size: 24px 24px;
-    --surface: #181a23;
-    --surface-2: #20232e;
-    --tint-base: #1b1d27;
-    --line: #2a2d3a;
-    --line-strong: #3a3e4f;
-    --text: #e8e9f1;
-    --muted: #9094ab;
-    --accent: #7b93ff;
-    --accent-text: #0b0d16;
-    --today: #7b93ff;
-    --today-text: #0b0d16;
-    --danger: #ff6369;
-    --ok: #3dd68c;
-    --shadow: none;
-    --state-border: #333747;
-    --state-head: #1f2230;
-    --edge: #5b6180;
-    --holiday: #ff9466;
-    --school-text: #8aa2ff;
-    --school: color-mix(in srgb, #7b93ff 9%, transparent);
-    color-scheme: dark;
-  }
-  [data-style='states'] .view,
-  [data-style='states'] .dw,
-  [data-style='states'] .modal {
-    border: 1px solid var(--state-border);
-    box-shadow: var(--shadow);
-  }
   /* widget title = state name in the node header */
-  [data-style='states'] .dw-head {
-    background: var(--state-head);
-    border-bottom: 1px solid var(--state-border);
-    padding: 9px 14px;
-    margin-bottom: 6px;
-    color: var(--text);
-    text-transform: none;
-    letter-spacing: 0;
-    font-weight: 600;
-    font-size: 0.85rem;
-  }
-  [data-style='states'] .btn,
-  [data-style='states'] .icon-btn {
-    border-radius: 8px;
-    border: 1px solid var(--state-border);
-  }
-  [data-style='states'] .btn.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--accent-text);
-  }
-  [data-style='states'] .nav .btn {
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-  [data-style='states'] .btn.danger {
-    color: var(--danger);
-  }
-  [data-style='states'] .title {
-    font-weight: 650;
-    letter-spacing: -0.015em;
-  }
-  [data-style='states'] .title-year {
-    font-weight: 400;
-    color: var(--muted);
-  }
-  [data-style='states'] .segmented {
-    background: var(--surface);
-    border: 1px solid var(--state-border);
-    border-radius: 10px;
-  }
-  [data-style='states'] .segmented > button,
-  [data-style='states'] .segmented > .seg-days {
-    border-radius: 7px;
-  }
-  [data-style='states'] .segmented > .active {
-    background: color-mix(in srgb, var(--accent) 13%, var(--surface));
-    color: var(--accent);
-    box-shadow: inset 0 0 0 1.5px var(--accent);
-  }
-  [data-style='states'] .chip {
-    border-width: 1.5px;
-  }
-  [data-style='states'] .chip.all.on {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: var(--accent-text);
-  }
   /* events and weekdays read like event names on transitions */
-  [data-style='states'] .month-head > div,
-  [data-style='states'] .chip-event .t,
-  [data-style='states'] .more,
-  [data-style='states'] .tg-event .ev-time,
-  [data-style='states'] .tg-hour-label,
-  [data-style='states'] .agenda-time,
-  [data-style='states'] .month-wk {
-    font-family: var(--mono);
-  }
-  [data-style='states'] .month-head > div {
-    text-transform: uppercase;
-    font-size: 0.72rem;
-    letter-spacing: 0.04em;
-    font-weight: 500;
-  }
-  [data-style='states'] .month-cell.other {
-    background: transparent;
-  }
-  [data-style='states'] .month-cell.other .month-dn {
-    opacity: 0.45;
-  }
   /* today = the active state: filled dot with a ring */
-  [data-style='states'] .month-cell.today .month-dn,
-  [data-style='states'] .tg-dayhead.today .tg-dn {
-    box-shadow:
-      0 0 0 2px var(--surface),
-      0 0 0 3.5px var(--accent);
-  }
-  [data-style='states'] .chip-event {
-    border-radius: 999px;
-    border: 1px solid var(--line-strong);
-    background-color: var(--surface-2);
-    padding: 0 7px;
-  }
-  [data-style='states'] .chip-event.solid {
-    border-color: transparent;
-  }
-  [data-style='states'] .chip-event .t {
-    font-size: 0.72rem;
-  }
-  [data-style='states'] .tg-event {
-    border-radius: 8px;
-  }
-  [data-style='states'] .agenda-item {
-    background: var(--surface);
-    border: 1px solid var(--state-border);
-    border-radius: 10px;
-  }
-  [data-style='states'] .modal {
-    border-radius: 12px;
-    box-shadow: 0 20px 56px rgba(0, 0, 0, 0.25);
-  }
-  [data-style='states'] .field input:not([type='checkbox']):not([type='color']),
-  [data-style='states'] .field select {
-    border-radius: 8px;
-  }
-  [data-style='states'] .switch input:checked + .switch-track {
-    background: var(--accent);
-  }
-  [data-style='states'] .module-btn {
-    position: relative;
-    border: 1px solid var(--state-border);
-    background: var(--surface);
-    border-radius: 10px;
-  }
-  [data-style='states'] .module-btn.active {
-    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
-    color: var(--accent);
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
-  }
-  @media (min-width: 641px) {
-    [data-style='states'] .module-nav {
-      gap: 16px;
-    }
-    [data-style='states'] .module-btn {
-      width: 70px;
-      font-size: 0.7rem;
-    }
-    /* transitions between the modules: a line with an arrow head */
-    [data-style='states'] .module-btn + .module-btn::before {
-      content: '';
-      position: absolute;
-      left: 50%;
-      top: -17px;
-      height: 12px;
-      border-left: 1.5px solid var(--edge);
-      pointer-events: none;
-    }
-    [data-style='states'] .module-btn + .module-btn::after {
-      content: '';
-      position: absolute;
-      left: calc(50% - 3.5px);
-      top: -7px;
-      border: 4px solid transparent;
-      border-top: 5px solid var(--edge);
-      border-bottom: 0;
-      pointer-events: none;
-    }
-  }
-  @media (max-width: 640px) {
-    [data-style='states'] .module-btn {
-      border-color: transparent;
-      background: transparent;
-    }
-  }
 
   /* =====================================================================================
    MINIMAL · FUNKTIONAL  –  warm grey plastic, round dark keys, one orange
@@ -1606,12 +1173,6 @@
       width: 20px;
       height: 20px;
       padding: 7px;
-    }
-  }
-  @media (min-width: 641px) {
-    /* the overview is the initial state: no divider, the transition arrow leads on */
-    [data-style='states'] .module-btn.pinned::after {
-      display: none;
     }
   }
 }

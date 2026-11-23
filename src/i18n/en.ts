@@ -752,7 +752,7 @@ export const en: Messages = {
       calendars: 'Subscription links and who they belong to',
       holidays: 'Federal state, public and school holidays',
       school: 'Bell times and subjects',
-      design: 'Style, colours, weather and shopping symbols, transitions',
+      design: 'Style, weather and shopping symbols, transitions',
       view: 'Start view, first day of the week, hours',
       device: 'Language, refresh, sleep',
       voice: 'Gemini key, model, read aloud',
@@ -843,7 +843,7 @@ export const en: Messages = {
       down: 'Move down',
       confirmRemove: 'Really remove {name}?\n\nThe calendars are kept and can be assigned again.',
       colorN: 'Colour {n}',
-      paletteHint: 'Custom colours are adapted to the chosen colour palette (Settings → Design).',
+      paletteHint: 'Custom colours are adapted to the colours of the chosen style (Settings → Design).',
       avatar: 'Avatar',
       initials: 'Initials',
       emoji: 'Emoji',
@@ -939,7 +939,6 @@ export const en: Messages = {
     design: {
       sections: 'Design sections',
       style: 'Style',
-      colors: 'Colours',
       weatherIcons: 'Weather symbols',
       shoppingIcons: 'Shopping symbols',
       motion: 'Transitions',
@@ -952,12 +951,6 @@ export const en: Messages = {
         dark: 'Dark',
         darkNote: 'always dark',
       },
-      colorsNote:
-        'Applies to people, school subjects and shopping list departments. The chosen colours stay saved – only the way they are shown changes.',
-      palette: 'Colour palette',
-      coreColor: 'Core colour',
-      coreColorHint: 'All other colours are made from it',
-      generated: 'Generated colours',
       motionNote: 'How the sections blend into each other when you switch.',
       weatherNote: 'For the weather module, the overview, the calendar and the screensaver. The Meteocons move slightly.',
       shoppingTitle: 'Shopping list symbols',
@@ -992,25 +985,17 @@ export const en: Messages = {
   styles: {
     wally: { label: 'HomeWally', note: 'Our own design: night blue, spectrum, warm accents' },
     classic: { label: 'Classic', note: 'Plain and clear' },
-    soft: { label: 'Light · Soft', note: 'White, fine lines, calm' },
     clear: { label: 'Glass · Clear', note: 'Floating glass, capsules' },
     flow: { label: 'Glass · Flow', note: 'Technical, dot grid' },
     aurora: { label: 'Glass · Aurora', note: 'Gradients, glow' },
     nodes: { label: 'Workflow · Nodes', note: 'Nodes on a dot grid' },
-    states: { label: 'Diagram · States', note: 'States and transitions' },
     minimal: { label: 'Minimal · Functional', note: 'Reduced, warm greys' },
-  },
-  palettes: {
-    vivid: { label: 'Vivid', note: 'Clear, bright colours' },
-    muted: { label: 'Refined', note: 'Muted tones like on a colour chart' },
-    core: { label: 'Core colour', note: 'Variations of a colour of your choice' },
   },
   transitions: {
     none: { label: 'Instant', note: 'no animation' },
     fade: { label: 'Fade', note: 'calm and soft' },
     slide: { label: 'Slide', note: 'follows the bar' },
     zoom: { label: 'Zoom', note: 'like on a tablet' },
-    push: { label: 'Page', note: 'the whole page moves' },
   },
   symbolGroups: {
     color: 'Colour',
@@ -1018,9 +1003,7 @@ export const en: Messages = {
     line: 'Line icons',
   },
   symbolSets: {
-    system: { label: 'Device (default)', note: 'The device’s emoji – looks different on every device' },
     'fluent-3d': { label: 'Fluent 3D', note: 'Three-dimensional' },
-    'fluent-color': { label: 'Fluent Colour', note: 'With gradients' },
     'fluent-flat': { label: 'Fluent Flat', note: 'Flat colours' },
     'noto-3d': { label: 'Noto 3D', note: 'Three-dimensional, soft' },
     noto: { label: 'Noto', note: 'Round and friendly' },
@@ -1035,13 +1018,11 @@ export const en: Messages = {
   },
   weatherSets: {
     'mc-fill': { label: 'Meteocons Colour', note: 'Three-dimensional, animated' },
-    'mc-flat': { label: 'Meteocons Flat', note: 'Clear shapes, animated' },
     'mc-line': { label: 'Meteocons Line', note: 'Coloured outlines, animated' },
     'mc-mono': { label: 'Meteocons One Colour', note: 'In the text colour, understated' },
     material: { label: 'Material Rounded', note: 'Rounded, in the text colour' },
     'fluent-3d': { label: 'Fluent 3D', note: 'Three-dimensional' },
     'fluent-flat': { label: 'Fluent Flat', note: 'Flat and friendly' },
-    system: { label: 'Device emoji', note: 'Looks different on every device' },
   },
   school: {
     types: {

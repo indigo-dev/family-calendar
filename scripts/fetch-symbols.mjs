@@ -54,7 +54,6 @@ const fluent = (style) => async (e) => {
 
 export const SETS = [
   { id: 'fluent-3d', ext: 'png', url: fluent('3D') },
-  { id: 'fluent-color', ext: 'svg', url: fluent('Color') },
   { id: 'fluent-flat', ext: 'svg', url: fluent('Flat') },
   { id: 'fluent-mono', ext: 'svg', url: fluent('High Contrast') },
   { id: 'noto', ext: 'svg', url: (e) => `${NOTO}/2D/svg/emoji_u${emojiKey(e).replace(/-/g, '_')}.svg` },

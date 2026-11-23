@@ -1,7 +1,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import type { AppConfig, CalendarSource, Member, SchoolConfig, Settings } from './types';
 import { configStore } from './lib/config';
-import { colorScheme, painter, type Paint } from './lib/colors';
+import { colorScheme, painter, stylePalette, type Paint } from './lib/colors';
 import { arrayOf, isString, persisted, usePersisted } from './lib/persisted';
 import { resolveLanguage, setLanguage, t } from './i18n';
 
@@ -117,12 +117,12 @@ const actions = {
 
 interface Store extends Readonly<typeof actions> {
   config: AppConfig;
-  /** people with their colour in the chosen palette (`config.members` keeps the stored colours) */
+  /** people with their colour in the palette of the style (`config.members` keeps the stored colours) */
   members: Member[];
   calendars: CalendarSource[];
   settings: Settings;
   memberById: Map<string, Member>;
-  /** maps stored colours (people, subjects, departments) to the chosen palette */
+  /** maps stored colours (people, subjects, departments) to the palette of the style */
   paint: Paint;
   school: SchoolConfig;
   /** person filter: empty = all members, otherwise only these members */
@@ -139,10 +139,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const config = usePersisted(configStore);
   const selected = usePersisted(selectedStore);
 
-  const paint = useMemo(
-    () => painter(colorScheme(config.settings.palette, config.settings.coreColor)),
-    [config.settings.palette, config.settings.coreColor],
-  );
+  const paint = useMemo(() => painter(colorScheme(stylePalette(config.settings.style))), [config.settings.style]);
   const members = useMemo(() => config.members.map((m) => ({ ...m, color: paint(m.color) })), [config.members, paint]);
   // only existing members count; everyone selected is the same as "Alle"
   const selectedIds = useMemo(() => {

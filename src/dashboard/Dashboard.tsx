@@ -37,6 +37,8 @@ interface Props {
   onEditing: (on: boolean) => void;
   openModule: (id: ModuleId) => void;
   startFrame: (startId?: string) => void;
+  /** tap on the clock: the screensaver exactly as set up in the photo frame */
+  startScreensaver: () => void;
   openSettings: (tab?: SettingsTab) => void;
 }
 
@@ -45,7 +47,7 @@ function columnsFor(width: number) {
   return width >= 960 ? 6 : width >= 560 ? 4 : 2;
 }
 
-export function Dashboard({ reloadKey, editing, onEditing, openModule, startFrame, openSettings }: Props) {
+export function Dashboard({ reloadKey, editing, onEditing, openModule, startFrame, startScreensaver, openSettings }: Props) {
   const { members, calendars, settings } = useStore();
   const layout = useLayout();
   const [gridRef, size] = useSize<HTMLDivElement>();
@@ -193,6 +195,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
       return;
     }
     if (editing) return;
+    if (w.type === 'clock') return startScreensaver();
     const mod = widgetDef(w.type).module;
     if (mod) openModule(mod);
   };

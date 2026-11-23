@@ -3,7 +3,7 @@ import { t } from '../i18n';
  * Weather icon styles. The files live in public/weather-icons/<set>/<key>.<ext> and are fetched by
  * scripts/fetch-weather-icons.mjs – nothing is loaded from the internet at runtime.
  */
-export type WeatherIconSet = 'mc-fill' | 'mc-flat' | 'mc-line' | 'mc-mono' | 'material' | 'fluent-3d' | 'fluent-flat' | 'system';
+export type WeatherIconSet = 'mc-fill' | 'mc-line' | 'mc-mono' | 'material' | 'fluent-3d' | 'fluent-flat';
 
 export type WeatherKey =
   | 'clear-day'
@@ -28,8 +28,8 @@ export interface WeatherIconSetInfo {
   id: WeatherIconSet;
   label: string;
   note: string;
-  /** image = coloured file, mask = one-colour shape in the text colour, native = device emoji */
-  mode: 'image' | 'mask' | 'native';
+  /** image = coloured file, mask = one-colour shape in the text colour */
+  mode: 'image' | 'mask';
   ext?: 'svg' | 'png';
   /** the Meteocons draw with a margin inside their box – shown a bit larger */
   padded?: boolean;
@@ -37,13 +37,11 @@ export interface WeatherIconSetInfo {
 
 const SETS: Omit<WeatherIconSetInfo, 'label' | 'note'>[] = [
   { id: 'mc-fill', mode: 'image', ext: 'svg', padded: true },
-  { id: 'mc-flat', mode: 'image', ext: 'svg', padded: true },
   { id: 'mc-line', mode: 'image', ext: 'svg', padded: true },
   { id: 'mc-mono', mode: 'mask', ext: 'svg', padded: true },
   { id: 'material', mode: 'mask', ext: 'svg' },
   { id: 'fluent-3d', mode: 'image', ext: 'png' },
   { id: 'fluent-flat', mode: 'image', ext: 'svg' },
-  { id: 'system', mode: 'native' },
 ];
 
 /** the sets with name and note in the active language */
@@ -80,28 +78,6 @@ export function weatherKey(code: number, isDay = true): WeatherKey {
   if (code === 96 || code === 99) return 'hail';
   return 'overcast';
 }
-
-const EMOJI: Record<WeatherKey, string> = {
-  'clear-day': '☀️',
-  'clear-night': '🌙',
-  'partly-cloudy-day': '⛅',
-  'partly-cloudy-night': '☁️',
-  overcast: '☁️',
-  fog: '🌫️',
-  drizzle: '🌦️',
-  sleet: '🌧️',
-  rain: '🌧️',
-  'partly-cloudy-day-rain': '🌦️',
-  'partly-cloudy-night-rain': '🌧️',
-  snow: '🌨️',
-  'partly-cloudy-day-snow': '🌨️',
-  'partly-cloudy-night-snow': '🌨️',
-  'thunderstorms-day-rain': '⛈️',
-  'thunderstorms-night-rain': '⛈️',
-  hail: '⛈️',
-};
-
-export const weatherEmoji = (key: WeatherKey) => EMOJI[key];
 
 export function weatherIconSrc(set: WeatherIconSetInfo, key: WeatherKey): string {
   return `weather-icons/${set.id}/${key}.${set.ext}`;

@@ -81,7 +81,6 @@ const fluent = (style, ext) => (k) => {
 
 const SETS = [
   { id: 'mc-fill', ext: 'svg', url: (k) => `${METEOCONS}/fill/${k}.svg` },
-  { id: 'mc-flat', ext: 'svg', url: (k) => `${METEOCONS}/flat/${k}.svg` },
   { id: 'mc-line', ext: 'svg', url: (k) => `${METEOCONS}/line/${k}.svg` },
   { id: 'mc-mono', ext: 'svg', url: (k) => `${METEOCONS}/monochrome/${k}.svg` },
   { id: 'material', ext: 'svg', url: (k) => `${MATERIAL}/${MATERIAL_NAMES[k]}-fill.svg` },

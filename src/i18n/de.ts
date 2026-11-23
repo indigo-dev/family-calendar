@@ -754,7 +754,7 @@ export const de = {
       calendars: 'Abo-Links und Zuordnung zu Personen',
       holidays: 'Bundesland, Feiertage, Schulferien',
       school: 'Klingelzeiten und Fächer',
-      design: 'Stil, Farben, Wetter- und Einkaufs-Symbole, Übergänge',
+      design: 'Stil, Wetter- und Einkaufs-Symbole, Übergänge',
       view: 'Startansicht, Wochenbeginn, Tageszeiten',
       device: 'Sprache, Aktualisierung, Ruhezustand',
       voice: 'Gemini-Key, Modell, Vorlesen',
@@ -845,7 +845,7 @@ export const de = {
       down: 'Nach unten',
       confirmRemove: '{name} wirklich entfernen?\n\nDie Kalender bleiben erhalten und können neu zugeordnet werden.',
       colorN: 'Farbe {n}',
-      paletteHint: 'Eigene Farben werden an die gewählte Farbpalette angepasst (Einstellungen → Design).',
+      paletteHint: 'Eigene Farben werden an die Farben des gewählten Stils angepasst (Einstellungen → Design).',
       avatar: 'Avatar',
       initials: 'Initialen',
       emoji: 'Emoji',
@@ -942,7 +942,6 @@ export const de = {
     design: {
       sections: 'Design-Bereiche',
       style: 'Stil',
-      colors: 'Farben',
       weatherIcons: 'Wetter-Symbole',
       shoppingIcons: 'Einkaufs-Symbole',
       motion: 'Übergänge',
@@ -955,12 +954,6 @@ export const de = {
         dark: 'Dunkel',
         darkNote: 'immer dunkel',
       },
-      colorsNote:
-        'Gilt für Personen, Schulfächer und Abteilungen der Einkaufsliste. Die gewählten Farben bleiben gespeichert – es ändert sich nur die Darstellung.',
-      palette: 'Farbpalette',
-      coreColor: 'Kernfarbe',
-      coreColorHint: 'Daraus entstehen alle anderen Farben',
-      generated: 'Erzeugte Farben',
       motionNote: 'Wie die Bereiche beim Wechseln ineinander übergehen.',
       weatherNote: 'Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht.',
       shoppingTitle: 'Symbole der Einkaufsliste',
@@ -995,25 +988,17 @@ export const de = {
   styles: {
     wally: { label: 'HomeWally', note: 'Eigenes Design: Nachtblau, Spektrum, warme Akzente' },
     classic: { label: 'Klassisch', note: 'Schlicht und klar' },
-    soft: { label: 'Hell · Sanft', note: 'Weiß, feine Linien, ruhig' },
     clear: { label: 'Glas · Klar', note: 'Schwebendes Glas, Kapseln' },
     flow: { label: 'Glas · Flow', note: 'Technisch, Punktraster' },
     aurora: { label: 'Glas · Aurora', note: 'Farbverläufe, Leuchten' },
     nodes: { label: 'Workflow · Knoten', note: 'Knoten auf Punktraster' },
-    states: { label: 'Diagramm · Zustände', note: 'Zustände und Übergänge' },
     minimal: { label: 'Minimal · Funktional', note: 'Reduziert, warme Grautöne' },
-  },
-  palettes: {
-    vivid: { label: 'Kräftig', note: 'Klare, leuchtende Farben' },
-    muted: { label: 'Edel', note: 'Gedeckte Töne wie auf einer Farbkarte' },
-    core: { label: 'Kernfarbe', note: 'Variationen einer Farbe deiner Wahl' },
   },
   transitions: {
     none: { label: 'Sofort', note: 'ohne Animation' },
     fade: { label: 'Überblenden', note: 'ruhig und weich' },
     slide: { label: 'Gleiten', note: 'folgt der Leiste' },
     zoom: { label: 'Zoomen', note: 'wie auf dem Tablet' },
-    push: { label: 'Blättern', note: 'ganze Seite schiebt' },
   },
   symbolGroups: {
     color: 'Farbig',
@@ -1021,9 +1006,7 @@ export const de = {
     line: 'Strich-Icons',
   },
   symbolSets: {
-    system: { label: 'Gerät (Standard)', note: 'Emoji des Geräts – sieht auf jedem Gerät anders aus' },
     'fluent-3d': { label: 'Fluent 3D', note: 'Plastisch, 3D' },
-    'fluent-color': { label: 'Fluent Farbig', note: 'Mit Farbverläufen' },
     'fluent-flat': { label: 'Fluent Flach', note: 'Flache Farben' },
     'noto-3d': { label: 'Noto 3D', note: 'Plastisch, weich' },
     noto: { label: 'Noto', note: 'Rund und freundlich' },
@@ -1038,13 +1021,11 @@ export const de = {
   },
   weatherSets: {
     'mc-fill': { label: 'Meteocons Farbig', note: 'Plastisch, animiert' },
-    'mc-flat': { label: 'Meteocons Flach', note: 'Klare Flächen, animiert' },
     'mc-line': { label: 'Meteocons Linie', note: 'Farbige Umrisse, animiert' },
     'mc-mono': { label: 'Meteocons Einfarbig', note: 'In der Textfarbe, zurückhaltend' },
     material: { label: 'Material Rund', note: 'Abgerundet, in der Textfarbe' },
     'fluent-3d': { label: 'Fluent 3D', note: 'Plastisch, 3D' },
     'fluent-flat': { label: 'Fluent Flach', note: 'Flach und freundlich' },
-    system: { label: 'Geräte-Emoji', note: 'Sieht je nach Gerät anders aus' },
   },
   school: {
     types: {

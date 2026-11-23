@@ -5,7 +5,7 @@ import { EMOJIS, imageFileToAvatar, newMember } from '../lib/config';
 import { loadDemo } from '../lib/demoData';
 import { Avatar } from '../components/Avatar';
 import { newTimetable, SCHOOL_TYPES } from '../lib/school';
-import { PALETTE, paletteColors } from '../lib/colors';
+import { PALETTE, paletteColors, stylePalette } from '../lib/colors';
 import { t } from '../i18n';
 
 export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
@@ -66,9 +66,9 @@ export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
 
 function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; onGoCalendars: () => void; onDeleted: () => void }) {
   const { patchMember, removeMember, moveMember, calendars, config, settings } = useStore();
-  // `member` is drawn in the chosen palette; the swatches edit the stored colour
+  // `member` is drawn in the palette of the style; the swatches edit the stored colour
   const rawColor = config.members.find((m) => m.id === member.id)?.color ?? member.color;
-  const shown = paletteColors(settings.palette, settings.coreColor);
+  const shown = paletteColors(stylePalette(settings.style));
   const fileRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const set = (patch: Partial<Member>) => patchMember(member.id, patch);
@@ -134,7 +134,9 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
             <input type="color" value={rawColor} onChange={(e) => set({ color: e.target.value })} />+
           </label>
         </div>
-        {settings.palette !== 'vivid' && !PALETTE.includes(rawColor) && <p className="hint muted">{t('settings.family.paletteHint')}</p>}
+        {stylePalette(settings.style) !== 'vivid' && !PALETTE.includes(rawColor) && (
+          <p className="hint muted">{t('settings.family.paletteHint')}</p>
+        )}
       </div>
 
       <div className="field">

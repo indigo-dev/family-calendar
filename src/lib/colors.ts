@@ -1,10 +1,10 @@
-import type { ColorPalette } from '../types';
-import { t } from '../i18n';
+import type { UiStyle } from '../types';
 
 /**
- * Colour palettes. Stored colours (people, subjects, shopping departments) stay unchanged in the config;
- * `painter()` maps them to the chosen palette when they are drawn. Colours from the base palette keep
- * their slot (Papa stays "the first colour"), other colours are mapped by hue.
+ * Colour palettes. There is no palette setting: every UI style draws with its own palette.
+ * Stored colours (people, subjects, shopping departments) stay unchanged in the config; `painter()` maps
+ * them to the palette of the style when they are drawn. Colours from the base palette keep their slot
+ * (Papa stays "the first colour"), other colours are mapped by hue.
  */
 
 /** base palette – the vivid colours people pick from */
@@ -39,20 +39,30 @@ const MUTED = [
   '#7b8590', // Schiefer
 ];
 
-export const PALETTES: { id: ColorPalette; label: string; note: string }[] = (['vivid', 'muted', 'core'] as const).map((id) => ({
-  id,
-  get label() {
-    return t(`palettes.${id}.label`);
-  },
-  get note() {
-    return t(`palettes.${id}.note`);
-  },
-}));
+/** HomeWally: the spectrum of the logo bars, completed to twelve slots in the same spirit */
+const WALLY = [
+  '#0ea5e9', // sky
+  '#f43f5e', // rose
+  '#10b981', // emerald
+  '#8b5cf6', // violet
+  '#f59e0b', // amber
+  '#ec4899', // pink
+  '#14b8a6', // teal
+  '#fb923c', // orange
+  '#6366f1', // indigo
+  '#84cc16', // lime
+  '#e11d48', // red
+  '#64748b', // slate
+];
 
-export const DEFAULT_CORE_COLOR = '#4f6d9a';
+export type ColorPalette = 'vivid' | 'muted' | 'wally';
 
-/** suggestions for the core colour */
-export const CORE_SUGGESTIONS = ['#4f6d9a', '#5f8a6e', '#c4705a', '#8b74a6', '#4f8f8a', '#b0855a', '#a9545c', '#5b6b7d'];
+/** the palette a UI style draws with */
+export function stylePalette(style: UiStyle): ColorPalette {
+  if (style === 'wally') return 'wally';
+  if (style === 'minimal') return 'muted';
+  return 'vivid';
+}
 
 /* ---------------------------------------------------------------- colour maths */
 
@@ -111,33 +121,6 @@ function nearestSlot(hsl: Hsl): number {
   return best;
 }
 
-/**
- * Twelve variations of one colour: neighbouring hues plus lighter and darker shades, ordered so that
- * the first colours (the ones the family members get first) differ most from each other.
- */
-export function corePalette(core: string): string[] {
-  const [h, s0, l0] = hexToHsl(core) ?? hexToHsl(DEFAULT_CORE_COLOR)!;
-  const s = Math.max(22, Math.min(62, s0));
-  const l = Math.max(38, Math.min(58, l0));
-  const steps: [dh: number, ds: number, dl: number][] = [
-    [0, 0, 0],
-    [-38, 0, 8],
-    [34, -4, -8],
-    [-16, 6, -20],
-    [0, -8, 22],
-    [62, -8, 6],
-    [-62, -6, 2],
-    [16, 6, 14],
-    [0, 2, -24],
-    [-38, -4, -12],
-    [34, -8, 22],
-    [0, -100, 0],
-  ];
-  return steps.map(([dh, ds, dl], i) =>
-    i === steps.length - 1 ? hslToHex([h, Math.min(10, s * 0.2), Math.max(44, Math.min(56, l))]) : hslToHex([h + dh, s + ds, l + dl]),
-  );
-}
-
 /* ---------------------------------------------------------------- schemes and painting */
 
 /** A palette resolved to its twelve colours. Objects are cached, so equal settings give the same scheme. */
@@ -152,19 +135,18 @@ export interface Paint {
   (color: string | undefined): string | undefined;
 }
 
-/** the colours of a palette (the core palette depends on the chosen core colour) */
-export function paletteColors(palette: ColorPalette, coreColor: string): string[] {
-  return palette === 'muted' ? MUTED : palette === 'core' ? corePalette(coreColor) : PALETTE;
+/** the twelve colours of a palette */
+export function paletteColors(palette: ColorPalette): string[] {
+  return palette === 'muted' ? MUTED : palette === 'wally' ? WALLY : PALETTE;
 }
 
-const schemes = new Map<string, ColorScheme>();
+const schemes = new Map<ColorPalette, ColorScheme>();
 
-export function colorScheme(palette: ColorPalette, coreColor: string): ColorScheme {
-  const key = palette === 'core' ? `core:${coreColor.toLowerCase()}` : palette;
-  let s = schemes.get(key);
+export function colorScheme(palette: ColorPalette): ColorScheme {
+  let s = schemes.get(palette);
   if (!s) {
-    s = { palette, colors: paletteColors(palette, coreColor) };
-    schemes.set(key, s);
+    s = { palette, colors: paletteColors(palette) };
+    schemes.set(palette, s);
   }
   return s;
 }
@@ -175,7 +157,7 @@ function mapColor(scheme: ColorScheme, color: string): string {
   if (slot >= 0) return scheme.colors[slot];
   const hsl = hexToHsl(color);
   if (!hsl) return color;
-  // muted: greyed, calmer and with medium lightness; core: the nearest slot of the core palette
+  // muted: greyed, calmer and with medium lightness; wally: the nearest slot of the spectrum
   return scheme.palette === 'muted'
     ? hslToHex([hsl[0], Math.min(hsl[1] * 0.55, 48), 40 + (hsl[2] - 40) * 0.45])
     : scheme.colors[nearestSlot(hsl)];

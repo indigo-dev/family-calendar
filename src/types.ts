@@ -90,16 +90,11 @@ export interface Settings {
   /** how weather conditions are drawn */
   weatherIcons: WeatherIconSet;
   /** how people, subjects and departments are coloured */
-  palette: ColorPalette;
-  /** base colour of the 'core' palette */
-  coreColor: string;
   /** animation when switching modules */
   moduleTransition: ModuleTransition;
 }
 
-export type ColorPalette = 'vivid' | 'muted' | 'core';
-
-export type UiStyle = 'wally' | 'classic' | 'soft' | 'clear' | 'flow' | 'aurora' | 'nodes' | 'states' | 'minimal';
+export type UiStyle = 'wally' | 'classic' | 'clear' | 'flow' | 'aurora' | 'nodes' | 'minimal';
 
 export interface AppConfig {
   schemaVersion: 3;

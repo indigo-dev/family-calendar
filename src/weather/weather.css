@@ -21,12 +21,6 @@
     -webkit-mask: var(--wxi-src) center / contain no-repeat;
     mask: var(--wxi-src) center / contain no-repeat;
   }
-  .wxi-native {
-    width: auto;
-    height: auto;
-    line-height: 1;
-    font-size: 0.85em;
-  }
 
   /* ---------------------------------------------------------------- Wetter: Modulseite */
   .wx {
