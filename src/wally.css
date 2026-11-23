@@ -398,22 +398,14 @@
       overflow-y: auto;
       scrollbar-width: none;
     }
-    [data-style='wally'] .module-nav-label {
-      display: block;
-      flex: none;
-      width: 46px;
-      height: 46px;
-      margin: 0 auto 12px;
-      background: url('./assets/homewally-logo.svg') center / contain no-repeat;
-      font-size: 0;
-      color: transparent;
-      filter: drop-shadow(0 6px 10px rgba(26, 24, 70, 0.22));
-    }
-    /* daylight: the logo sits on its night-blue app tile (the white house would vanish on white glass) */
-    [data-style='wally'][data-mode='light'] .module-nav-label {
+    /* the logo IS the overview button: it replaces the grid icon, the label stays so it reads as a button.
+       (On phones there is no logo; the bottom bar keeps the normal overview icon.) */
+    [data-style='wally'] .module-btn[data-module='dashboard'] .module-svg.ui-icon {
       width: 50px;
       height: 50px;
+      padding: 0;
       border-radius: 16px;
+      /* daylight: the logo on its night-blue app tile (the white house would vanish on white glass) */
       background:
         url('./assets/homewally-logo.svg') center 46% / 78% no-repeat,
         radial-gradient(80% 80% at 30% 20%, rgba(124, 108, 255, 0.55), transparent 70%),
@@ -421,10 +413,28 @@
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.18),
         0 8px 18px -8px rgba(26, 24, 70, 0.55);
-      filter: none;
+      transition: box-shadow 0.2s ease;
     }
-    [data-style='wally'][data-mode='dark'] .module-nav-label {
-      filter: drop-shadow(0 0 16px rgba(139, 120, 255, 0.45));
+    [data-style='wally'] .module-btn[data-module='dashboard'] .module-svg.ui-icon > * {
+      display: none;
+    }
+    [data-style='wally'][data-mode='dark'] .module-btn[data-module='dashboard'] .module-svg.ui-icon {
+      background:
+        url('./assets/homewally-logo.svg') center 46% / 78% no-repeat,
+        radial-gradient(80% 80% at 30% 20%, rgba(139, 120, 255, 0.35), transparent 70%),
+        rgba(255, 255, 255, 0.06);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    }
+    /* open overview: a warm ring with glow around the tile */
+    [data-style='wally'] .module-btn[data-module='dashboard'].active .module-svg.ui-icon {
+      box-shadow:
+        0 0 0 2px var(--sidebar),
+        0 0 0 4px #fb923c,
+        0 8px 22px -6px var(--glow);
+    }
+    [data-style='wally'] .module-btn[data-module='dashboard'] {
+      padding-top: 2px;
+      gap: 5px;
     }
     [data-style='wally'] .module-btn {
       width: 72px;
