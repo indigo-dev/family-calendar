@@ -37,7 +37,7 @@ export function CalendarsTab() {
             <input
               style={{ flex: 1, minHeight: 44, border: '1px solid var(--line-strong)', borderRadius: 10, padding: '0 12px' }}
               value={proxy}
-              placeholder="https://familienkalender-ics.NAME.workers.dev"
+              placeholder="https://homewally-ics-proxy.NAME.workers.dev"
               onChange={(e) => setProxy(e.target.value)}
               autoCapitalize="off"
               autoCorrect="off"

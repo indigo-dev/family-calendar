@@ -1,8 +1,8 @@
 @echo off
-rem Startet den Familienkalender lokal (Entwicklungsserver) und oeffnet ihn im Browser.
+rem Startet HomeWally lokal (Entwicklungsserver) und oeffnet ihn im Browser.
 rem Im WLAN ist er auch vom iPad erreichbar - die Adresse steht unten bei "Network".
 cd /d "%~dp0"
-title Familienkalender (lokal)
+title HomeWally (lokal)
 where node >NUL 2>&1
 if errorlevel 1 (
   echo Node.js fehlt - bitte von https://nodejs.org installieren.
@@ -18,7 +18,7 @@ if not exist node_modules (
   )
 )
 echo.
-echo Familienkalender startet ... Zum Beenden dieses Fenster schliessen oder Strg+C druecken.
+echo HomeWally startet ... Zum Beenden dieses Fenster schliessen oder Strg+C druecken.
 echo.
 call npm run dev -- --open
 pause

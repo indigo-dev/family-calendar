@@ -28,31 +28,30 @@ describe('fetchIcs', () => {
     expect(Object.keys(fetchMock.mock.calls[0][1].headers)).toEqual(['Content-Type']);
   });
 
-  it('falls back to GET ?url= for workers of the old version', async () => {
-    fetchMock.mockResolvedValueOnce(new Response('Nur GET erlaubt', { status: 405 })).mockResolvedValueOnce(new Response(ICS));
-    expect(await fetchIcs({ url: W, key: '' }, 'https://calendar.google.com/c.ics', true)).toBe(ICS);
-    expect(fetchMock.mock.calls[1][0]).toBe(W + '/?url=' + encodeURIComponent('https://calendar.google.com/c.ics'));
+  it('shows the proxy error code in the app language', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: 'host_not_allowed', detail: 'evil.example' }), { status: 403 }));
+    await expect(fetchIcs({ url: W, key: '' }, 'https://calendar.google.com/d.ics', true)).rejects.toThrow(
+      'Diese Adresse ist nicht erlaubt: evil.example',
+    );
   });
 
-  it('shows the worker error text', async () => {
-    fetchMock.mockResolvedValue(new Response('Schlüssel fehlt oder ist falsch', { status: 401 }));
-    await expect(fetchIcs({ url: W, key: '' }, 'https://calendar.google.com/d.ics', true)).rejects.toThrow('Schlüssel fehlt');
+  it('falls back to the HTTP status for answers that are not from the proxy', async () => {
+    fetchMock.mockResolvedValue(new Response('<html>Bad Gateway</html>', { status: 502 }));
+    await expect(fetchIcs({ url: W, key: '' }, 'https://calendar.google.com/e.ics', true)).rejects.toThrow('Fehler 502');
   });
 });
 
 describe('checkProxy', () => {
   const json = (o: object) => new Response(JSON.stringify(o));
-  it('understands the status of the new worker', async () => {
-    fetchMock.mockResolvedValueOnce(json({ service: 'Familienkalender-Weiterleitung', version: 2, keyRequired: true, keyOk: false }));
+  it('understands the HomeWally proxy', async () => {
+    fetchMock.mockResolvedValueOnce(json({ service: 'homewally-ics-proxy', keyRequired: true, keyOk: false }));
     expect(await checkProxy({ url: W, key: 'x' })).toEqual({ ok: false, text: 'Der Schlüssel ist falsch.' });
-    fetchMock.mockResolvedValueOnce(json({ service: 'Familienkalender-Weiterleitung', version: 2, keyRequired: true, keyOk: true }));
-    expect((await checkProxy({ url: W, key: 'x' })).ok).toBe(true);
+    fetchMock.mockResolvedValueOnce(json({ service: 'homewally-ics-proxy', keyRequired: false, keyOk: true }));
+    expect((await checkProxy({ url: W, key: '' })).ok).toBe(true);
   });
 
-  it('recognises an old worker and asks to update it', async () => {
-    fetchMock.mockResolvedValueOnce(new Response('Familienkalender-Weiterleitung läuft. Aufruf: ?url=<ICS-Link>'));
-    const r = await checkProxy({ url: W, key: '' });
-    expect(r.ok).toBe(true);
-    expect(r.text).toContain('ältere Version');
+  it('does not take other servers for the proxy', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('Hello World'));
+    expect(await checkProxy({ url: W, key: '' })).toEqual({ ok: false, text: 'Unerwartete Antwort (200). Ist das die Worker-Adresse?' });
   });
 });

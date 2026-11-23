@@ -171,6 +171,7 @@ export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (i
           className={`module-btn ${active === m.id ? 'active' : ''} ${dragging === m.id ? 'lifted' : ''} ${
             m.id === 'dashboard' ? 'pinned' : ''
           }`}
+          data-module={m.id}
           aria-current={active === m.id ? 'page' : undefined}
           title={m.id === 'dashboard' ? undefined : t('nav.sortHint')}
           onPointerDown={onPointerDown(m.id)}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- themed icon, Android 13+ (from ic_launcher_monochrome.svg): only the shape counts, the bars are cut out -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="512"
+    android:viewportHeight="512">
+    <group android:pivotX="256" android:pivotY="256" android:scaleX="0.8" android:scaleY="0.8">
+        <path android:fillColor="#FF000000" android:fillType="evenOdd" android:pathData="M142,222Q142,214 150,209L246,147Q256,141 266,147L362,209Q370,214 370,222L370,342Q370,378 334,378L206,378C182,378 158,396 138,402C129,404 125,398 128,388C132,372 142,358 142,338ZM169,235A11,11 0 0 1 191,235V289A11,11 0 0 1 169,289ZM207,263A11,11 0 0 1 229,263V317A11,11 0 0 1 207,317ZM245,245A11,11 0 0 1 267,245V291A11,11 0 0 1 245,291ZM283,263A11,11 0 0 1 305,263V317A11,11 0 0 1 283,317ZM321,235A11,11 0 0 1 343,235V289A11,11 0 0 1 321,289Z" />
+        <path android:fillColor="#FF000000" android:pathData="M154,181L154,130Q154,121 163,121L171,121Q180,121 180,130L180,164Z" />
+        <path android:pathData="M108,212L256,114L404,212" android:strokeColor="#FF000000" android:strokeWidth="28" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    </group>
+</vector>

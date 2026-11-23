@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="90 92 336 336">
+  <!-- HomeWally logo (geometry from the official icon set, without background) -->
+  <defs>
+    <linearGradient id="wall" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <linearGradient id="roof" gradientUnits="userSpaceOnUse" x1="108" y1="200" x2="404" y2="140">
+      <stop offset="0%" stop-color="#F43F5E"/>
+      <stop offset="55%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#FBBF24"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#wall)" d="M142 222Q142 214 150 209L246 147Q256 141 266 147L362 209Q370 214 370 222L370 342Q370 378 334 378L206 378C182 378 158 396 138 402C129 404 125 398 128 388C132 372 142 358 142 338Z"/>
+  <rect x="169" y="224" width="22" height="76" rx="11" fill="#F43F5E"/>
+  <rect x="207" y="252" width="22" height="76" rx="11" fill="#F59E0B"/>
+  <rect x="245" y="234" width="22" height="68" rx="11" fill="#10B981"/>
+  <rect x="283" y="252" width="22" height="76" rx="11" fill="#0EA5E9"/>
+  <rect x="321" y="224" width="22" height="76" rx="11" fill="#8B5CF6"/>
+  <path fill="url(#roof)" d="M154 181L154 130Q154 121 163 121L171 121Q180 121 180 130L180 164Z"/>
+  <path d="M108 212L256 114L404 212" fill="none" stroke="url(#roof)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

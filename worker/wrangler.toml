@@ -1,6 +1,6 @@
-# Cloudflare Worker "proxy" – deploy: npm run worker:deploy
+# HomeWally ICS proxy (Cloudflare Worker) – deploy: npm run worker:deploy
 # The name must match the worker in the Cloudflare dashboard (address https://<name>.<account>.workers.dev).
-name = "familienkalender-ics"
+name = "homewally-ics-proxy"
 main = "worker.js"
 compatibility_date = "2026-11-01"
 

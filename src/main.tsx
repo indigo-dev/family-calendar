@@ -18,7 +18,10 @@ import '@fontsource/ibm-plex-mono/500.css';
 import '@fontsource-variable/open-sans/wght.css';
 import '@fontsource-variable/inter/wght.css';
 import '@fontsource-variable/inter-tight/wght.css';
+import '@fontsource-variable/plus-jakarta-sans/wght.css';
 import './themes.css';
+// HomeWally, the app's own design (default style)
+import './wally.css';
 
 // set the style before the first paint (App.tsx keeps it in sync afterwards)
 document.documentElement.setAttribute('data-style', configStore.get().settings.style);

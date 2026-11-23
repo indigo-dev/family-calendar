@@ -99,7 +99,7 @@ export interface Settings {
 
 export type ColorPalette = 'vivid' | 'muted' | 'core';
 
-export type UiStyle = 'classic' | 'soft' | 'clear' | 'flow' | 'aurora' | 'nodes' | 'states' | 'minimal';
+export type UiStyle = 'wally' | 'classic' | 'soft' | 'clear' | 'flow' | 'aurora' | 'nodes' | 'states' | 'minimal';
 
 export interface AppConfig {
   schemaVersion: 3;

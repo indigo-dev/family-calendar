@@ -65,12 +65,12 @@ to use the worker from the browser – localhost and the local network are alway
 
 ### Or in the Cloudflare dashboard
 
-1. <https://dash.cloudflare.com> → Workers & Pages → Create → “Start with Hello World”, name `familienkalender-ics`,
+1. <https://dash.cloudflare.com> → Workers & Pages → Create → “Start with Hello World”, name `homewally-ics-proxy`,
    Deploy.
 2. “Edit code”, replace everything with the contents of `worker/worker.js`, Deploy.
 3. Optionally set `ALLOWED_HOSTS` / `ALLOWED_ORIGINS` under Settings → Variables.
 
-Then enter the address (`https://familienkalender-ics.<name>.workers.dev`) in the app under
+Then enter the address (`https://homewally-ics-proxy.<name>.workers.dev`) in the app under
 **Settings → Calendars → Proxy** and click “Save & test”.
 
 ### Access key (recommended)
@@ -83,8 +83,8 @@ own app:
 2. Enter the same value in the app under **Settings → Calendars → Proxy** in the “Key” field and click “Save & test”.
    Needed on every device (or transfer it via backup).
 
-Order when upgrading from an older version: deploy the new worker first, then set the key. The app works with both the
-old and the new worker.
+Errors come back as English codes (e.g. `{"error": "host_not_allowed", "detail": "example.com"}`); the app shows them
+in its own language.
 
 ## Finding subscription links
 

@@ -1,0 +1,828 @@
+/* Cascade layer "themes" (order: app, modules, themes – declared in index.html).
+
+   =====================================================================================
+   HOMEWALLY  –  the app's own design (data-style="wally")
+   =====================================================================================
+   Derived from the HomeWally brand picture:
+   - night indigo with a soft violet glow and thin halo rings (dark), lavender daylight (light)
+   - the five logo bars as the spectrum: rose · amber · emerald · sky · violet.
+     Every area of the app owns one of them (nav, widget heads), the title carries all five.
+   - the roof / "Wally" gradient (rose → orange → gold) as THE action colour, always with ink text
+   - one typeface: Plus Jakarta Sans, heavy (800) for headings and numbers
+   - soft shapes: 24px cards, pill buttons and chips, round icon buttons
+   Cards are (almost) opaque on purpose: a wall tablet must stay readable from across the room and
+   cheap tablets stutter with many blurred layers. Only floating things (rail, dialogs, voice) blur.
+   ===================================================================================== */
+@layer themes {
+  :root[data-style='wally'] {
+    /* brand */
+    --rose: #f43f5e;
+    --amber: #f59e0b;
+    --emerald: #10b981;
+    --sky: #0ea5e9;
+    --violet: #8b5cf6;
+    --pink: #ec4899;
+    --indigo: #6366f1;
+    --ink: #1a1846;
+    --grad-warm: linear-gradient(115deg, #fb7185 0%, #fb923c 52%, #fbbf24 100%);
+    --grad-text: linear-gradient(100deg, #f43f5e 0%, #fb923c 45%, #f59e0b 100%);
+    --hue: var(--indigo);
+    --halo: rgba(26, 24, 70, 0.07);
+
+    /* light: "daylight" */
+    --bg: #f4f3fc;
+    --bg-image:
+      radial-gradient(
+        circle at 6% 20%,
+        transparent 0 229px,
+        var(--halo) 230px 231px,
+        transparent 232px 359px,
+        var(--halo) 360px 361px,
+        transparent 362px
+      ),
+      radial-gradient(42% 58% at 4% 14%, rgba(139, 92, 246, 0.16), transparent 70%),
+      radial-gradient(34% 44% at 100% 0%, rgba(251, 146, 60, 0.15), transparent 70%),
+      radial-gradient(40% 50% at 72% 108%, rgba(14, 165, 233, 0.1), transparent 70%), linear-gradient(180deg, #f8f7ff, #efeefa);
+    --surface: rgba(255, 255, 255, 0.9);
+    --surface-2: rgba(26, 24, 70, 0.045);
+    --tint-base: #ffffff;
+    --line: rgba(26, 24, 70, 0.08);
+    --line-strong: rgba(26, 24, 70, 0.16);
+    --text: #1a1846;
+    --muted: #6a6898;
+    --accent: #d23f1c;
+    --accent-2: #f59e0b;
+    --accent-text: #ffffff;
+    --today: #f0532d;
+    --today-text: var(--ink);
+    --danger: #e11d48;
+    --ok: #059669;
+    --radius: 24px;
+    --panel-border: rgba(26, 24, 70, 0.06);
+    --card-light: linear-gradient(180deg, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 60%);
+    --shadow: 0 1px 2px rgba(26, 24, 70, 0.04), 0 14px 34px -16px rgba(26, 24, 70, 0.2);
+    --shadow-float: 0 24px 60px -18px rgba(26, 24, 70, 0.35);
+    --glass: rgba(255, 255, 255, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.95);
+    --sheet: rgba(255, 255, 255, 0.94);
+    --fill: rgba(26, 24, 70, 0.06);
+    --fill-strong: rgba(26, 24, 70, 0.1);
+    --seg-thumb: #ffffff;
+    --sidebar: rgba(244, 243, 252, 0.94);
+    --glow: rgba(251, 146, 60, 0.35);
+    --display: 'Plus Jakarta Sans Variable', system-ui, sans-serif;
+    --holiday: #c2410c;
+    --school-text: #0369a1;
+    --chip-veil: color-mix(in srgb, var(--surface) 74%, transparent);
+    color-scheme: light;
+    font-family:
+      'Plus Jakarta Sans Variable',
+      -apple-system,
+      'Segoe UI',
+      system-ui,
+      sans-serif;
+    font-feature-settings: 'cv11';
+  }
+  /* dark: "night" – the brand picture */
+  :root[data-style='wally'][data-mode='dark'] {
+    --halo: rgba(255, 255, 255, 0.055);
+    --bg: #0f0d2c;
+    --bg-image:
+      radial-gradient(
+        circle at 6% 20%,
+        transparent 0 229px,
+        var(--halo) 230px 231px,
+        transparent 232px 359px,
+        var(--halo) 360px 361px,
+        transparent 362px
+      ),
+      radial-gradient(40% 56% at 5% 16%, rgba(109, 92, 255, 0.32), transparent 70%),
+      radial-gradient(36% 46% at 100% 0%, rgba(124, 115, 255, 0.12), transparent 70%),
+      radial-gradient(40% 50% at 80% 110%, rgba(244, 63, 94, 0.1), transparent 70%),
+      linear-gradient(160deg, #24215c 0%, #17154a 42%, #0e0c2a 100%);
+    --surface: rgba(33, 30, 82, 0.86);
+    --surface-2: rgba(255, 255, 255, 0.06);
+    --tint-base: #201d51;
+    --line: rgba(255, 255, 255, 0.08);
+    --line-strong: rgba(255, 255, 255, 0.16);
+    --text: #f7f6ff;
+    --muted: #a9a7d4;
+    --accent: #fb923c;
+    --accent-2: #fbbf24;
+    --accent-text: var(--ink);
+    --today: #fb923c;
+    --today-text: var(--ink);
+    --danger: #fb7185;
+    --ok: #34d399;
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --card-light: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0) 55%);
+    --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 36px -18px rgba(4, 3, 20, 0.75);
+    --shadow-float: 0 28px 70px -20px rgba(3, 2, 16, 0.85);
+    --glass: rgba(30, 27, 78, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --sheet: rgba(27, 24, 70, 0.95);
+    --fill: rgba(255, 255, 255, 0.07);
+    --fill-strong: rgba(255, 255, 255, 0.12);
+    --seg-thumb: rgba(255, 255, 255, 0.14);
+    --sidebar: rgba(22, 20, 58, 0.94);
+    --glow: rgba(251, 146, 60, 0.45);
+    --holiday: #fdba74;
+    --school-text: #7dd3fc;
+    color-scheme: dark;
+  }
+
+  /* ------------------------------------------------------------ shell */
+  [data-style='wally'] .app {
+    gap: 14px;
+  }
+  [data-style='wally'] .view,
+  [data-style='wally'] .dw {
+    background-image: var(--card-light);
+    border: 1px solid var(--panel-border);
+    box-shadow: var(--shadow);
+  }
+  [data-style='wally'] .view {
+    border-radius: 26px;
+  }
+  [data-style='wally'] .module-loading {
+    background: transparent;
+  }
+
+  /* ------------------------------------------------------------ type */
+  [data-style='wally'] .title,
+  [data-style='wally'] .clock-time,
+  [data-style='wally'] .month-dn,
+  [data-style='wally'] .month-head > div,
+  [data-style='wally'] .tg-dn,
+  [data-style='wally'] .agenda-dn,
+  [data-style='wally'] .year-title,
+  [data-style='wally'] .settings-head h2,
+  [data-style='wally'] .settings-nav h2,
+  [data-style='wally'] .event-detail h2,
+  [data-style='wally'] .tt-wd,
+  [data-style='wally'] .shop-pane-head h2 {
+    font-family: var(--display);
+  }
+  [data-style='wally'] .clock-time,
+  [data-style='wally'] .tg-hour-label,
+  [data-style='wally'] .chip-event .t,
+  [data-style='wally'] .agenda-time,
+  [data-style='wally'] .dw-event-time,
+  [data-style='wally'] .dw-clock-time {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* title: the five logo dashes above, the year in the roof gradient */
+  [data-style='wally'] .topbar .title {
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+    padding-top: 2px;
+  }
+  [data-style='wally'] .topbar .title::before {
+    content: '';
+    display: block;
+    width: 12px;
+    height: 4px;
+    margin: 0 0 7px 1px;
+    border-radius: 4px;
+    background: var(--rose);
+    box-shadow:
+      16px 0 var(--amber),
+      32px 0 var(--emerald),
+      48px 0 var(--sky),
+      64px 0 var(--violet);
+  }
+  [data-style='wally'] .title-year {
+    font-weight: 800;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+  }
+  [data-style='wally'] .clock-time {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  [data-style='wally'] .clock-date {
+    font-weight: 600;
+  }
+
+  /* ------------------------------------------------------------ buttons */
+  [data-style='wally'] .btn {
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    font-weight: 700;
+    box-shadow: var(--shadow);
+    transition:
+      transform 0.12s ease,
+      box-shadow 0.2s ease;
+  }
+  [data-style='wally'] .btn:active,
+  [data-style='wally'] .icon-btn:active {
+    transform: scale(0.96);
+  }
+  [data-style='wally'] .btn.primary,
+  [data-style='wally'] .nav .btn {
+    background: var(--grad-warm);
+    border-color: transparent;
+    color: var(--ink);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.35),
+      0 8px 22px -8px var(--glow);
+  }
+  [data-style='wally'] .btn.ghost {
+    background: transparent;
+    border: 1.5px dashed var(--line-strong);
+    box-shadow: none;
+  }
+  [data-style='wally'] .btn.danger {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 35%, transparent);
+  }
+  [data-style='wally'] .icon-btn {
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    transition: transform 0.12s ease;
+  }
+  [data-style='wally'] .nav {
+    gap: 8px;
+  }
+  [data-style='wally'] .link,
+  [data-style='wally'] .dw-link {
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  /* ------------------------------------------------------------ segmented: pill track */
+  [data-style='wally'] .segmented {
+    border-radius: 999px;
+    padding: 4px;
+    gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow);
+  }
+  [data-style='wally'] .segmented > button,
+  [data-style='wally'] .segmented > .seg-days {
+    border-radius: 999px;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  [data-style='wally'] .segmented > .active {
+    background: var(--ink);
+    color: #fff;
+    box-shadow: 0 4px 12px -4px rgba(26, 24, 70, 0.45);
+  }
+  [data-style='wally'][data-mode='dark'] .segmented > .active {
+    background: #fff;
+    color: var(--ink);
+    box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.5);
+  }
+  [data-style='wally'] .segmented .seg-days > .seg-step {
+    border-radius: 50%;
+    color: inherit;
+  }
+  [data-style='wally'] .segmented .seg-days > .seg-step:not(:disabled):hover {
+    background: color-mix(in srgb, currentColor 12%, transparent);
+  }
+
+  /* ------------------------------------------------------------ chips: the pills of the brand picture */
+  [data-style='wally'] .chip {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    font-weight: 700;
+  }
+  [data-style='wally'] .chip.all.on {
+    background: var(--grad-warm);
+    border-color: transparent;
+    color: var(--ink);
+    box-shadow: 0 8px 22px -10px var(--glow);
+  }
+  [data-style='wally'] .badge {
+    font-weight: 700;
+    background: var(--fill);
+  }
+
+  /* ------------------------------------------------------------ module rail with the logo */
+  [data-style='wally'] .module-btn {
+    --hue: var(--indigo);
+    position: relative;
+    color: var(--muted);
+    font-weight: 700;
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease;
+  }
+  [data-style='wally'] .module-btn[data-module='dashboard'] {
+    --hue: #fb923c;
+  }
+  [data-style='wally'] .module-btn[data-module='calendar'] {
+    --hue: var(--rose);
+  }
+  [data-style='wally'] .module-btn[data-module='timetable'] {
+    --hue: var(--amber);
+  }
+  [data-style='wally'] .module-btn[data-module='todos'] {
+    --hue: var(--violet);
+  }
+  [data-style='wally'] .module-btn[data-module='shopping'] {
+    --hue: var(--emerald);
+  }
+  [data-style='wally'] .module-btn[data-module='weather'] {
+    --hue: var(--sky);
+  }
+  [data-style='wally'] .module-btn[data-module='frame'] {
+    --hue: var(--pink);
+  }
+  [data-style='wally'] .module-svg.ui-icon {
+    stroke-width: 2;
+    padding: 4px 13px;
+    width: 52px;
+    height: 32px;
+    border-radius: 999px;
+    box-sizing: border-box;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
+  [data-style='wally'] .module-btn:hover .module-svg {
+    color: var(--text);
+  }
+  [data-style='wally'] .module-btn.active {
+    background: transparent;
+    box-shadow: none;
+    color: var(--text);
+  }
+  [data-style='wally'] .module-btn.active .module-svg {
+    background: color-mix(in srgb, var(--hue) 20%, transparent);
+    color: color-mix(in srgb, var(--hue) 82%, var(--text));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hue) 30%, transparent);
+  }
+  [data-style='wally'][data-mode='dark'] .module-btn.active .module-svg {
+    color: color-mix(in srgb, var(--hue) 70%, #fff);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--hue) 40%, transparent),
+      0 0 18px -4px color-mix(in srgb, var(--hue) 70%, transparent);
+  }
+  [data-style='wally'] .module-btn[data-module='dashboard'].active .module-svg {
+    background: var(--grad-warm);
+    color: var(--ink);
+    box-shadow: 0 6px 18px -6px var(--glow);
+  }
+  [data-style='wally'] .module-btn.lifted {
+    background: var(--sheet);
+    border-radius: 18px;
+  }
+  [data-style='wally'] .module-btn.pinned::after {
+    background: var(--line-strong);
+  }
+  @media (min-width: 641px) {
+    [data-style='wally'] .module-nav {
+      margin: max(12px, env(safe-area-inset-top)) 0 max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+      padding: 14px 6px 12px;
+      gap: 4px;
+      border-radius: 28px;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      box-shadow: var(--shadow);
+      -webkit-backdrop-filter: blur(22px) saturate(150%);
+      backdrop-filter: blur(22px) saturate(150%);
+      overflow-y: auto;
+      scrollbar-width: none;
+    }
+    [data-style='wally'] .module-nav-label {
+      display: block;
+      flex: none;
+      width: 46px;
+      height: 46px;
+      margin: 0 auto 12px;
+      background: url('./assets/homewally-logo.svg') center / contain no-repeat;
+      font-size: 0;
+      color: transparent;
+      filter: drop-shadow(0 6px 10px rgba(26, 24, 70, 0.22));
+    }
+    /* daylight: the logo sits on its night-blue app tile (the white house would vanish on white glass) */
+    [data-style='wally'][data-mode='light'] .module-nav-label {
+      width: 50px;
+      height: 50px;
+      border-radius: 16px;
+      background:
+        url('./assets/homewally-logo.svg') center 46% / 78% no-repeat,
+        radial-gradient(80% 80% at 30% 20%, rgba(124, 108, 255, 0.55), transparent 70%),
+        linear-gradient(160deg, #2a2668, #13113a);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        0 8px 18px -8px rgba(26, 24, 70, 0.55);
+      filter: none;
+    }
+    [data-style='wally'][data-mode='dark'] .module-nav-label {
+      filter: drop-shadow(0 0 16px rgba(139, 120, 255, 0.45));
+    }
+    [data-style='wally'] .module-btn {
+      width: 72px;
+      padding: 6px 2px 7px;
+      gap: 3px;
+      font-size: 0.68rem;
+      border-radius: 18px;
+    }
+    [data-style='wally'] .shell > .app {
+      padding-left: 14px;
+    }
+  }
+  @media (max-width: 640px) {
+    [data-style='wally'] .module-nav {
+      background: var(--glass);
+      border-top: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: blur(22px) saturate(150%);
+      backdrop-filter: blur(22px) saturate(150%);
+    }
+    [data-style='wally'] .module-btn.active {
+      background: transparent;
+    }
+    [data-style='wally'] .module-svg.ui-icon {
+      width: 44px;
+      height: 28px;
+      padding: 3px 10px;
+    }
+  }
+
+  /* ------------------------------------------------------------ calendar */
+  [data-style='wally'] .month-head > div {
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  [data-style='wally'] .month-dn,
+  [data-style='wally'] .tg-dn {
+    font-weight: 800;
+  }
+  [data-style='wally'] .month-cell.other {
+    background: transparent;
+  }
+  [data-style='wally'] .month-cell.other .month-dn {
+    opacity: 0.42;
+  }
+  [data-style='wally'] .month-cell.today {
+    background: radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, #fb923c 14%, transparent), transparent 65%);
+  }
+  /* today: the roof gradient with ink, never a flat red disc */
+  [data-style='wally'] .month-cell.today .month-dn,
+  [data-style='wally'] .tg-dayhead.today .tg-dn,
+  [data-style='wally'] .year-day.today > span:first-child {
+    background: var(--grad-warm);
+    color: var(--ink);
+    box-shadow: 0 6px 16px -6px var(--glow);
+  }
+  [data-style='wally'] .tg-dayhead.today .tg-wd,
+  [data-style='wally'] .agenda-day.today .agenda-dn {
+    color: var(--accent);
+  }
+  [data-style='wally'] .tg-col.today {
+    background: linear-gradient(180deg, color-mix(in srgb, #fb923c 7%, transparent), color-mix(in srgb, #fb923c 2%, transparent));
+  }
+  [data-style='wally'] .tg-now {
+    height: 2.5px;
+    border-radius: 2px;
+    background: var(--grad-warm);
+    box-shadow: 0 0 10px var(--glow);
+  }
+  [data-style='wally'] .tg-now::before {
+    background: #f43f5e;
+    box-shadow: 0 0 0 3px color-mix(in srgb, #f43f5e 25%, transparent);
+  }
+  [data-style='wally'] .tg-event {
+    border-radius: 12px;
+    box-shadow: 0 0 0 1.5px var(--tint-base);
+  }
+  [data-style='wally'] .tg-event .ev-title {
+    font-weight: 700;
+  }
+  [data-style='wally'] .chip-event {
+    border-radius: 8px;
+  }
+  [data-style='wally'] .chip-event.solid {
+    /* a veil over the member colour instead of a solid bar (inline `background` resets the image) */
+    background-image: linear-gradient(var(--chip-veil), var(--chip-veil)) !important;
+    color: var(--text);
+    font-weight: 700;
+  }
+  [data-style='wally'] .agenda-item {
+    border-radius: 16px;
+  }
+  [data-style='wally'] .ev-stripe {
+    width: 5px;
+  }
+
+  /* ------------------------------------------------------------ dialogs, settings, forms */
+  [data-style='wally'] .modal-backdrop {
+    background: rgba(12, 10, 36, 0.42);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  [data-style='wally'] .modal {
+    background: var(--sheet);
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
+    box-shadow: var(--shadow-float);
+  }
+  [data-style='wally'] .settings-nav {
+    background: var(--surface-2);
+  }
+  [data-style='wally'] .settings-nav h2 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  [data-style='wally'] .settings-nav-item {
+    border-radius: 14px;
+    font-weight: 600;
+  }
+  [data-style='wally'] .settings-nav-item.active {
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 800;
+    box-shadow: var(--shadow);
+  }
+  [data-style='wally'] .settings-nav-item.active .settings-nav-icon {
+    box-shadow: 0 0 0 2px #fb923c;
+  }
+  [data-style='wally'] .settings-head h2,
+  [data-style='wally'] .event-detail h2 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  [data-style='wally'] .pick-card {
+    border-radius: 18px;
+    border: 1.5px solid var(--line);
+  }
+  [data-style='wally'] .pick-card.on {
+    border-color: #fb923c;
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, #fb923c 22%, transparent),
+      0 10px 24px -14px var(--glow);
+  }
+  [data-style='wally'] .field input:not([type='checkbox']):not([type='color']),
+  [data-style='wally'] .field select,
+  [data-style='wally'] .field textarea {
+    border-radius: 14px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    transition:
+      border-color 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+  [data-style='wally'] .field input:focus,
+  [data-style='wally'] .field select:focus,
+  [data-style='wally'] .field textarea:focus {
+    outline: none;
+    border-color: #fb923c;
+    box-shadow: 0 0 0 4px color-mix(in srgb, #fb923c 22%, transparent);
+  }
+  [data-style='wally'] .switch input:checked + .switch-track {
+    background: var(--grad-warm);
+  }
+  [data-style='wally'] :focus-visible {
+    outline: 2.5px solid #fb923c;
+    outline-offset: 2px;
+  }
+
+  /* ------------------------------------------------------------ dashboard */
+  [data-style='wally'] .dw.dw-events,
+  [data-style='wally'] .dw.dw-family {
+    --hue: var(--rose);
+  }
+  [data-style='wally'] .dw.dw-timetable,
+  [data-style='wally'] .dw.dw-holidays {
+    --hue: var(--amber);
+  }
+  [data-style='wally'] .dw.dw-todos,
+  [data-style='wally'] .dw.dw-photos {
+    --hue: var(--violet);
+  }
+  [data-style='wally'] .dw.dw-shopping,
+  [data-style='wally'] .dw.dw-pollen {
+    --hue: var(--emerald);
+  }
+  [data-style='wally'] .dw.dw-weather {
+    --hue: var(--sky);
+  }
+  [data-style='wally'] .dw-head {
+    padding: 14px 16px 8px;
+    gap: 9px;
+    font-family: var(--display);
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    color: var(--text);
+  }
+  /* the head icon sits in a squircle tinted with the widget's spectrum colour */
+  [data-style='wally'] .dw-head-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    font-size: 0.95rem;
+    background: color-mix(in srgb, var(--hue) 18%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hue) 28%, transparent);
+  }
+  [data-style='wally'] .dw-head-meta {
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--hue) 70%, var(--text));
+    background: color-mix(in srgb, var(--hue) 13%, transparent);
+  }
+  [data-style='wally'] .dw-count {
+    font-weight: 800;
+  }
+
+  /* clock: the hero card with the halo rings of the logo */
+  [data-style='wally'] .dw.dw-clock .dw-inner {
+    background:
+      radial-gradient(
+        circle at 100% 0%,
+        transparent 0 69px,
+        var(--halo) 70px 71px,
+        transparent 72px 129px,
+        var(--halo) 130px 131px,
+        transparent 132px 199px,
+        var(--halo) 200px 201px,
+        transparent 202px
+      ),
+      radial-gradient(70% 90% at 100% 0%, color-mix(in srgb, #fb923c 16%, transparent), transparent 70%);
+  }
+  [data-style='wally'][data-mode='dark'] .dw.dw-clock .dw-inner {
+    background:
+      radial-gradient(
+        circle at 100% 0%,
+        transparent 0 69px,
+        var(--halo) 70px 71px,
+        transparent 72px 129px,
+        var(--halo) 130px 131px,
+        transparent 132px 199px,
+        var(--halo) 200px 201px,
+        transparent 202px
+      ),
+      radial-gradient(70% 90% at 100% 0%, rgba(124, 108, 255, 0.28), transparent 70%);
+  }
+  [data-style='wally'] .dw-clock-time {
+    font-family: var(--display);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+  }
+  [data-style='wally'] .dw-clock-day {
+    font-family: var(--display);
+    font-weight: 800;
+    background: var(--grad-text);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    width: fit-content;
+  }
+  [data-style='wally'] .dw-clock-date {
+    font-weight: 600;
+  }
+  [data-style='wally'] .dw-alert {
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--amber) 16%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--amber) 32%, transparent);
+  }
+  [data-style='wally'] .dw-event-time {
+    font-weight: 700;
+  }
+  [data-style='wally'] .dw-event-bar {
+    width: 4px;
+    border-radius: 4px;
+  }
+  [data-style='wally'] .dw-tt-chip {
+    border-radius: 8px;
+  }
+  [data-style='wally'] .dw-undo {
+    border-radius: 999px;
+  }
+  [data-style='wally'] .dash.editing .dw {
+    border-style: dashed;
+    border-color: var(--line-strong);
+  }
+
+  /* ------------------------------------------------------------ voice: warm button with halo */
+  [data-style='wally'] .voice-fab {
+    background: var(--grad-warm);
+    color: var(--ink);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.4),
+      0 0 0 8px color-mix(in srgb, #fb923c 12%, transparent),
+      0 12px 28px -8px var(--glow);
+  }
+  [data-style='wally'] .voice-fab.listening {
+    background: var(--grad-warm);
+    box-shadow:
+      0 0 0 calc(8px + var(--lvl, 0) * 18px) color-mix(in srgb, #f43f5e 22%, transparent),
+      0 12px 28px -8px var(--glow);
+  }
+  [data-style='wally'] .voice-card {
+    border-radius: 26px;
+    background: var(--sheet);
+    border-color: var(--glass-border);
+    box-shadow: var(--shadow-float);
+  }
+
+  /* ------------------------------------------------------------ weather hero, shopping, to-dos */
+  /* the sky keeps its meaning (clear, clouds, rain …) but is tuned to the brand: blue into violet,
+     indigo greys instead of plain greys, plus the halo rings of the logo */
+  [data-style='wally'] .wx-hero {
+    --sky-a: #2f7cf6;
+    --sky-b: #7c6cff;
+    border-radius: 26px;
+    background:
+      radial-gradient(
+        circle at 100% 0%,
+        transparent 0 109px,
+        rgba(255, 255, 255, 0.12) 110px 111px,
+        transparent 112px 199px,
+        rgba(255, 255, 255, 0.09) 200px 201px,
+        transparent 202px 299px,
+        rgba(255, 255, 255, 0.06) 300px 301px,
+        transparent 302px
+      ),
+      linear-gradient(140deg, var(--sky-a), var(--sky-b));
+    box-shadow: 0 18px 40px -18px color-mix(in srgb, var(--sky-b) 70%, transparent);
+  }
+  [data-style='wally'] .wx-hero.sky-cloudy {
+    --sky-a: #4f5596;
+    --sky-b: #959ad6;
+  }
+  [data-style='wally'] .wx-hero.sky-rain {
+    --sky-a: #2e3270;
+    --sky-b: #6268ad;
+  }
+  [data-style='wally'] .wx-hero.sky-storm {
+    --sky-a: #1e1b4b;
+    --sky-b: #5b4aa6;
+  }
+  [data-style='wally'] .wx-hero.sky-snow {
+    --sky-a: #7483cf;
+    --sky-b: #c3c9f3;
+  }
+  [data-style='wally'] .wx-hero.sky-fog {
+    --sky-a: #686c98;
+    --sky-b: #b0b3d2;
+  }
+  [data-style='wally'] .wx-hero.sky-night {
+    --sky-a: #15123d;
+    --sky-b: #3b2f8f;
+  }
+  [data-style='wally'][data-mode='dark'] .wx-hero {
+    filter: none;
+  }
+  [data-style='wally'] .wx-hero-temp {
+    font-weight: 300;
+  }
+  [data-style='wally'] .wx-alert {
+    border-radius: 18px;
+  }
+}
+
+/* style picker thumbnail (Einstellungen → Design) – outside the [data-style] scope, always visible */
+@layer themes {
+  .st-wally {
+    background:
+      radial-gradient(circle at 0% 30%, transparent 0 34px, rgba(255, 255, 255, 0.08) 35px 36px, transparent 37px),
+      radial-gradient(60% 80% at 10% 25%, rgba(109, 92, 255, 0.55), transparent 70%), linear-gradient(160deg, #24215c, #0e0c2a);
+  }
+  .st-wally i {
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.09);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  }
+  .st-wally .st-bar {
+    background: transparent;
+    box-shadow: none;
+    height: 4px;
+    width: 9px;
+    right: auto;
+    top: 12px;
+    border-radius: 3px;
+    background-color: #f43f5e;
+    box-shadow:
+      12px 0 #f59e0b,
+      24px 0 #10b981,
+      36px 0 #0ea5e9,
+      48px 0 #8b5cf6;
+  }
+  .st-wally .st-b {
+    border-radius: 999px;
+    background: linear-gradient(115deg, #fb7185, #fb923c 52%, #fbbf24);
+    box-shadow: 0 0 12px rgba(251, 146, 60, 0.6);
+  }
+}

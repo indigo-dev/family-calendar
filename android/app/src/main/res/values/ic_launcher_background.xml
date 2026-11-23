@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#2F3B52</color>
-    <!-- splash background = the web app's light background (public/manifest.webmanifest) -->
-    <color name="splash_background">#F6F5F2</color>
+    <!-- night indigo of the HomeWally icon (the adaptive icon itself uses drawable/ic_launcher_background) -->
+    <color name="ic_launcher_background">#1E1B4B</color>
+    <!-- start screen: the same night indigo, so the icon reads as one piece with it -->
+    <color name="splash_background">#1E1B4B</color>
 </resources>

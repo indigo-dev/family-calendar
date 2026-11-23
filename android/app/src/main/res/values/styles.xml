@@ -18,7 +18,7 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
-        <!-- Android 12+: system start screen with the app icon on the light background -->
+        <!-- Android 12+: system start screen with the app icon on the night-indigo background -->
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>

@@ -1,18 +1,22 @@
-// Familienkalender – ICS-Weiterleitung (Cloudflare Worker)
+// HomeWally ICS proxy (Cloudflare Worker)
 //
-// Lädt Kalender-Abo-Links (ICS) und gibt sie mit CORS-Headern an die Kalender-App weiter. Speichert nichts.
+// Fetches calendar subscription links (ICS) and hands them to the HomeWally web app with CORS headers.
+// Stores nothing.
 //
-// Aufruf (App):  POST /  Body {"url": "<ICS-Link>", "fresh": false}  Header X-Access-Key: <Schlüssel>
-//   – der geheime Link steht im Body, nicht in der URL, und taucht so nicht in Logs auf
-//   – fresh: true lädt am Cloudflare-Cache vorbei (Knopf „Neu laden“)
-// Alt:           GET /?url=<ICS-Link>   (für ältere App-Versionen; nur ohne ACCESS_KEY)
-// Status:        GET /                  (zeigt, ob die Weiterleitung läuft und ob ein Schlüssel nötig/gültig ist)
+// Fetch:   POST /  body {"url": "<ICS link>", "fresh": false}  header X-Access-Key: <key>
+//   - the secret link travels in the body, not in the URL, so it never shows up in logs
+//   - fresh: true bypasses the Cloudflare cache (the app's "reload" button)
+// Status:  GET /   tells whether the proxy runs and whether a key is required / valid
+// Errors:  JSON {"error": "<code>", "detail"?: "<host or status>"} - the app translates the codes,
+//          so the worker itself never needs to know the user's language
 //
-// Einstellungen (wrangler.toml bzw. Cloudflare-Dashboard → Einstellungen → Variablen):
-//   ACCESS_KEY       Secret. Gesetzt = nur Anfragen mit diesem Schlüssel werden bedient.
-//   ALLOWED_HOSTS    Erlaubte Kalender-Server, durch Komma getrennt, z. B. "calendar.google.com, *.icloud.com".
-//                    "*" (Standard) = jeder https-Server. IP-Adressen und localhost sind nie erlaubt.
-//   ALLOWED_ORIGINS  Seiten, die den Worker im Browser nutzen dürfen (zusätzlich localhost und Heimnetz).
+// Settings (wrangler.toml or Cloudflare dashboard -> Settings -> Variables):
+//   ACCESS_KEY       secret. When set, only requests with this key are served.
+//   ALLOWED_HOSTS    allowed calendar servers, comma-separated, e.g. "calendar.google.com, *.icloud.com".
+//                    "*" (default) = any https server. IP addresses and localhost are never allowed.
+//   ALLOWED_ORIGINS  sites allowed to use the worker from the browser (plus localhost and the home network).
+
+export const SERVICE = 'homewally-ics-proxy';
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_REDIRECTS = 5;
@@ -43,7 +47,7 @@ export function hostAllowed(host, env = {}) {
   return list(env.ALLOWED_HOSTS, '*').some((p) => p === '*' || p === host || (p.startsWith('*.') && host.endsWith(p.slice(1))));
 }
 
-/** https link (webcal:// counts as https) that may be fetched, or an error text */
+/** https link (webcal:// counts as https) that may be fetched, or an error code */
 export function checkTarget(raw, env = {}) {
   let url;
   try {
@@ -53,10 +57,10 @@ export function checkTarget(raw, env = {}) {
         .replace(/^webcals?:\/\//i, 'https://'),
     );
   } catch {
-    return { error: 'Ungültiger Link' };
+    return { error: 'invalid_link' };
   }
-  if (url.protocol !== 'https:') return { error: 'Nur https-Links' };
-  if (!hostAllowed(url.hostname, env)) return { error: 'Diese Adresse ist nicht erlaubt: ' + url.hostname, status: 403 };
+  if (url.protocol !== 'https:') return { error: 'https_only' };
+  if (!hostAllowed(url.hostname, env)) return { error: 'host_not_allowed', detail: url.hostname, status: 403 };
   return { url };
 }
 
@@ -81,8 +85,12 @@ function baseHeaders(request, env) {
   return h;
 }
 
-function fail(status, msg, request, env) {
-  return new Response(msg, { status, headers: { 'Content-Type': 'text/plain; charset=utf-8', ...baseHeaders(request, env) } });
+/** error answer: an English code (plus host or status as detail) that the app turns into its own language */
+function fail(status, error, request, env, detail) {
+  return new Response(JSON.stringify(detail == null ? { error } : { error, detail: String(detail) }), {
+    status,
+    headers: { 'Content-Type': 'application/json; charset=utf-8', ...baseHeaders(request, env) },
+  });
 }
 
 /**
@@ -92,7 +100,7 @@ function fail(status, msg, request, env) {
 async function fetchUpstream(url, fresh, env) {
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const res = await fetch(url.toString(), {
-      headers: { 'User-Agent': 'Familienkalender/2.0', Accept: 'text/calendar, */*' },
+      headers: { 'User-Agent': 'HomeWally/2.0', Accept: 'text/calendar, */*' },
       // fresh: the cached copy expires at once, so the provider is asked again
       cf: { cacheTtl: fresh ? 0 : EDGE_CACHE_S, cacheEverything: true },
       redirect: 'manual',
@@ -102,10 +110,10 @@ async function fetchUpstream(url, fresh, env) {
     const location = res.headers.get('Location');
     if (!location) return { res };
     const next = checkTarget(new URL(location, url).toString(), env);
-    if (next.error) return { error: 'Weiterleitung nicht erlaubt: ' + next.error.replace(/^Diese Adresse ist nicht erlaubt: /, '') };
+    if (next.error) return { error: 'redirect_not_allowed', detail: next.detail };
     url = next.url;
   }
-  return { error: 'Zu viele Weiterleitungen' };
+  return { error: 'too_many_redirects' };
 }
 
 /** concatenates the first chunks until at least n bytes (or the end) are there */
@@ -133,61 +141,55 @@ const looksLikeIcs = (chunks) => {
 
 async function handle(request, env) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: baseHeaders(request, env) });
-  if (request.method !== 'GET' && request.method !== 'POST') return fail(405, 'Nur GET und POST erlaubt', request, env);
+  if (request.method !== 'GET' && request.method !== 'POST') return fail(405, 'method_not_allowed', request, env);
 
   const keyRequired = !!env.ACCESS_KEY;
   const keyOk = !keyRequired || keyMatches(request.headers.get('X-Access-Key'), env.ACCESS_KEY);
 
-  let raw;
-  let fresh = false;
-  if (request.method === 'POST') {
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return fail(400, 'Ungültige Anfrage', request, env);
-    }
-    raw = body?.url;
-    fresh = body?.fresh === true;
-  } else {
-    raw = new URL(request.url).searchParams.get('url');
-    if (!raw) {
-      // status check for the settings
-      return new Response(JSON.stringify({ service: 'Familienkalender-Weiterleitung', version: 2, keyRequired, keyOk }), {
-        headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...baseHeaders(request, env) },
-      });
-    }
+  // GET: status check for the settings
+  if (request.method === 'GET') {
+    return new Response(JSON.stringify({ service: SERVICE, keyRequired, keyOk }), {
+      headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...baseHeaders(request, env) },
+    });
   }
-  if (!keyOk) return fail(401, 'Schlüssel fehlt oder ist falsch', request, env);
-  if (!raw) return fail(400, 'Kein Kalender-Link angegeben', request, env);
+  if (!keyOk) return fail(401, 'key_invalid', request, env);
+
+  let input;
+  try {
+    input = await request.json();
+  } catch {
+    return fail(400, 'bad_request', request, env);
+  }
+  const raw = input?.url;
+  const fresh = input?.fresh === true;
+  if (!raw) return fail(400, 'missing_url', request, env);
 
   const target = checkTarget(raw, env);
-  if (target.error) return fail(target.status ?? 400, target.error, request, env);
+  if (target.error) return fail(target.status ?? 400, target.error, request, env, target.detail);
 
   let upstream;
   try {
     const r = await fetchUpstream(target.url, fresh, env);
-    if (r.error) return fail(403, r.error, request, env);
+    if (r.error) return fail(403, r.error, request, env, r.detail);
     upstream = r.res;
   } catch (e) {
-    return fail(e?.name === 'TimeoutError' ? 504 : 502, 'Kalender nicht erreichbar', request, env);
+    return fail(e?.name === 'TimeoutError' ? 504 : 502, 'unreachable', request, env);
   }
-  if (!upstream.ok)
-    return fail(upstream.status >= 500 ? 502 : upstream.status, 'Kalender-Anbieter antwortet mit ' + upstream.status, request, env);
-  if (Number(upstream.headers.get('Content-Length') || 0) > MAX_BYTES) return fail(413, 'Kalender ist zu groß', request, env);
-  if (!upstream.body) return fail(415, 'Antwort ist kein Kalender (ICS)', request, env);
+  if (!upstream.ok) return fail(upstream.status >= 500 ? 502 : upstream.status, 'upstream_error', request, env, upstream.status);
+  if (Number(upstream.headers.get('Content-Length') || 0) > MAX_BYTES) return fail(413, 'too_large', request, env);
+  if (!upstream.body) return fail(415, 'not_calendar', request, env);
 
   // check the start, then pass the rest through without buffering or decoding (little CPU time)
   const reader = upstream.body.getReader();
   const head = await readHead(reader, 64);
   if (!looksLikeIcs(head.chunks)) {
     reader.cancel().catch(() => {});
-    return fail(415, 'Antwort ist kein Kalender (ICS)', request, env);
+    return fail(415, 'not_calendar', request, env);
   }
   let size = head.size;
   if (size > MAX_BYTES) {
     reader.cancel().catch(() => {});
-    return fail(413, 'Kalender ist zu groß', request, env);
+    return fail(413, 'too_large', request, env);
   }
   const body = new ReadableStream({
     start(controller) {
@@ -200,7 +202,7 @@ async function handle(request, env) {
       // the status is already sent – breaking the stream makes the app see a failed load
       if (size > MAX_BYTES) {
         reader.cancel().catch(() => {});
-        return controller.error(new Error('Kalender ist zu groß'));
+        return controller.error(new Error('too_large'));
       }
       controller.enqueue(value);
     },

@@ -103,7 +103,7 @@ export const DEFAULT_SETTINGS: Settings = {
   idleResetMinutes: 3,
   keepAwake: true,
   theme: 'auto',
-  style: 'classic',
+  style: 'wally',
   symbols: DEFAULT_SYMBOL_SET,
   weatherIcons: DEFAULT_WEATHER_ICONS,
   palette: 'vivid',
@@ -111,7 +111,7 @@ export const DEFAULT_SETTINGS: Settings = {
   moduleTransition: 'fade',
 };
 
-const STYLE_IDS: UiStyle[] = ['classic', 'soft', 'clear', 'flow', 'aurora', 'nodes', 'states', 'minimal'];
+const STYLE_IDS: UiStyle[] = ['wally', 'classic', 'soft', 'clear', 'flow', 'aurora', 'nodes', 'states', 'minimal'];
 
 /** The styles with name and short description in the active language. */
 export const UI_STYLES: { id: UiStyle; label: string; note: string }[] = STYLE_IDS.map((id) => ({
@@ -123,15 +123,6 @@ export const UI_STYLES: { id: UiStyle; label: string; note: string }[] = STYLE_I
     return t(`styles.${id}.note`);
   },
 }));
-
-/** Style ids of earlier versions (named after products) → today's ids, so saved settings and backups keep their style. */
-const LEGACY_STYLES: Record<string, UiStyle> = {
-  sonoma: 'soft',
-  liquid: 'clear',
-  n8n: 'nodes',
-  stately: 'states',
-  braun: 'minimal',
-};
 
 /** Day count of the 'days' view. */
 export function clampDays(n: number): number {
@@ -239,7 +230,6 @@ export function parseConfig(raw: unknown): AppConfig {
   }
   settings.holidays = { ...DEFAULT_HOLIDAYS, ...obj(s.holidays) } as HolidaySettings;
   settings.multiDays = clampDays(settings.multiDays);
-  settings.style = (LEGACY_STYLES[settings.style] ?? settings.style) as UiStyle;
   if (!STYLE_IDS.includes(settings.style)) settings.style = DEFAULT_SETTINGS.style;
   // backups from before the language setting: 'auto' (= device language)
   if (!isLanguageSetting(settings.language)) settings.language = DEFAULT_SETTINGS.language;

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import worker, { checkTarget, hostAllowed } from './worker.js';
+import worker, { SERVICE, checkTarget, hostAllowed } from './worker.js';
 
 const ICS =
   'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:1\r\nDTSTART:20260101T100000Z\r\nSUMMARY:Test\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n';
@@ -37,7 +37,8 @@ describe('targets', () => {
     expect(hostAllowed('calendar.google.com')).toBe(true);
     for (const h of ['localhost', 'nas.local', 'x.internal', '10.0.0.1', '[::1]', 'intranet']) expect(hostAllowed(h)).toBe(false);
     expect(checkTarget('webcal://p01-caldav.icloud.com/x.ics').url?.protocol).toBe('https:');
-    expect(checkTarget('http://example.com/x.ics').error).toBe('Nur https-Links');
+    expect(checkTarget('http://example.com/x.ics').error).toBe('https_only');
+    expect(checkTarget('https://10.0.0.1/x.ics')).toMatchObject({ error: 'host_not_allowed', detail: '10.0.0.1', status: 403 });
   });
 
   it('can be limited to known providers', () => {
@@ -85,6 +86,7 @@ describe('POST /', () => {
     expect(await (await run(post({ url: 'https://calendar.google.com/moved.ics' }))).text()).toBe(ICS);
     const bad = await run(post({ url: 'https://calendar.google.com/evil.ics' }));
     expect(bad.status).toBe(403);
+    expect(await bad.json()).toEqual({ error: 'redirect_not_allowed', detail: '127.0.0.1' });
     expect(calls.some((c) => c.url.includes('127.0.0.1'))).toBe(false);
   });
 
@@ -103,22 +105,24 @@ describe('POST /', () => {
   it('reports unreachable providers and their errors', async () => {
     expect((await run(post({ url: 'https://unknown.example/x.ics' }))).status).toBe(502);
     upstream['https://calendar.google.com/gone.ics'] = () => new Response('nope', { status: 404 });
-    expect((await run(post({ url: 'https://calendar.google.com/gone.ics' }))).status).toBe(404);
+    const gone = await run(post({ url: 'https://calendar.google.com/gone.ics' }));
+    expect(gone.status).toBe(404);
+    expect(await gone.json()).toEqual({ error: 'upstream_error', detail: '404' });
   });
 });
 
 describe('GET', () => {
   it('status check tells whether a key is needed and valid', async () => {
     const req = (key) => new Request('https://w.example/', { headers: { Origin: APP, ...(key ? { 'X-Access-Key': key } : {}) } });
-    expect(await (await run(req())).json()).toMatchObject({ version: 2, keyRequired: false, keyOk: true });
+    expect(await (await run(req())).json()).toEqual({ service: SERVICE, keyRequired: false, keyOk: true });
     expect(await (await run(req('x'), { ACCESS_KEY: 'k' })).json()).toMatchObject({ keyRequired: true, keyOk: false });
   });
 
-  it('still serves older app versions via ?url= – but not once a key is set', async () => {
+  it('never fetches a calendar via GET (the link would end up in the URL)', async () => {
     const req = new Request('https://w.example/?url=' + encodeURIComponent('https://calendar.google.com/cal.ics'), {
       headers: { Origin: APP },
     });
-    expect(await (await run(req)).text()).toBe(ICS);
-    expect((await run(req.clone(), { ACCESS_KEY: 'k' })).status).toBe(401);
+    expect((await (await run(req)).json()).service).toBe(SERVICE);
+    expect(calls).toHaveLength(0);
   });
 });

@@ -86,24 +86,49 @@ export async function fetchIcs(proxy: Proxy, url: string, force = false): Promis
   const key = proxy.key.trim();
   let res: Response;
   try {
-    // text/plain and no extra header (without a key) = a "simple" request without CORS preflight,
-    // which older workers can answer with 405 instead of failing the preflight
+    // text/plain and no extra header (without a key) = a "simple" request without CORS preflight
     res = await fetch(`${base}/`, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8', ...(key ? { 'X-Access-Key': key } : {}) },
       body: JSON.stringify({ url: target, fresh: force }),
       cache: 'no-store',
     });
-    // workers before version 2 only know GET ?url=
-    if (res.status === 405) res = await fetch(`${base}/?url=${encodeURIComponent(target)}`, { cache: 'no-store' });
   } catch {
     throw new Error(t('events.proxyUnreachable'));
   }
   const text = await res.text();
-  if (!res.ok) throw new Error(text.slice(0, 200) || t('events.error', { status: res.status }));
+  if (!res.ok) throw new Error(proxyError(text, res.status));
   if (!text.trimStart().startsWith('BEGIN:VCALENDAR')) throw new Error(t('events.notCalendar'));
   textCache.set(target, { text, at: Date.now() });
   return text;
+}
+
+/** the proxy's error codes (see worker/worker.js) in the app's language */
+const PROXY_ERRORS = [
+  'method_not_allowed',
+  'bad_request',
+  'key_invalid',
+  'missing_url',
+  'invalid_link',
+  'https_only',
+  'host_not_allowed',
+  'redirect_not_allowed',
+  'too_many_redirects',
+  'unreachable',
+  'upstream_error',
+  'too_large',
+  'not_calendar',
+] as const;
+
+export function proxyError(body: string, status: number): string {
+  let err: { error?: string; detail?: string } | null = null;
+  try {
+    err = JSON.parse(body);
+  } catch {
+    /* not an answer of the proxy */
+  }
+  const code = PROXY_ERRORS.find((c) => c === err?.error);
+  return code ? t(`events.proxyErrors.${code}`, { detail: err?.detail ?? '' }) : t('events.error', { status });
 }
 
 export type ProxyCheck = { ok: true; text: string } | { ok: false; text: string };
@@ -122,17 +147,16 @@ export async function checkProxy(proxy: Proxy): Promise<ProxyCheck> {
     };
   }
   const text = await res.text();
-  let info: { service?: string; version?: number; keyRequired?: boolean; keyOk?: boolean } | null = null;
+  let info: { service?: string; keyRequired?: boolean; keyOk?: boolean } | null = null;
   try {
     info = JSON.parse(text);
   } catch {
-    /* older worker: plain text */
+    /* not the proxy */
   }
-  if (info?.service === 'Familienkalender-Weiterleitung') {
+  if (info?.service === 'homewally-ics-proxy') {
     if (info.keyRequired && !info.keyOk) return { ok: false, text: key ? t('events.wrongKey') : t('events.keyRequired') };
     return { ok: true, text: info.keyRequired ? t('events.proxyOkKey') : t('events.proxyOk') };
   }
-  if (res.ok && text.includes('Familienkalender')) return { ok: true, text: t('events.proxyOld') };
   return { ok: false, text: t('events.unexpected', { status: res.status }) };
 }
 

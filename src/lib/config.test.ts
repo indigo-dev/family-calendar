@@ -23,14 +23,10 @@ describe('parseConfig', () => {
     expect(cfg.settings.multiDays).toBe(6);
   });
 
-  it('maps the style ids of earlier versions to the new ones', () => {
+  it('keeps known styles and falls back to the default for unknown ones', () => {
     const style = (s: string) => parseConfig({ ...base, settings: { style: s } }).settings.style;
-    expect(style('sonoma')).toBe('soft');
-    expect(style('liquid')).toBe('clear');
-    expect(style('n8n')).toBe('nodes');
-    expect(style('stately')).toBe('states');
-    expect(style('braun')).toBe('minimal');
     expect(style('aurora')).toBe('aurora');
+    expect(style('sonoma')).toBe(DEFAULT_SETTINGS.style);
   });
 
   it('accepts backups without a language and keeps a valid one', () => {
