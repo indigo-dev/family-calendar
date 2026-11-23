@@ -220,11 +220,6 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
         )}
         {member.timetable && <p className="hint muted">{t('settings.family.timetableHint')}</p>}
       </div>
-
-      <label className="check">
-        <input type="checkbox" checked={!!member.demo} onChange={(e) => set({ demo: e.target.checked || undefined })} />
-        <span>{t('settings.family.showDemo')}</span>
-      </label>
     </div>
   );
 }

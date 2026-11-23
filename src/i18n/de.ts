@@ -857,7 +857,6 @@ export const de = {
       hasTimetable: 'Hat Stundenplan',
       confirmDeleteTimetable: 'Stundenplan von {name} löschen?',
       timetableHint: 'Fächer trägst du im Stundenplan über „Bearbeiten“ ein, Klingelzeiten unter „Schule“.',
-      showDemo: 'Beispieltermine anzeigen (Demo)',
       newPerson: 'Person {n}',
     },
     calendars: {

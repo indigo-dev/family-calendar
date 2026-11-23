@@ -16,6 +16,10 @@
      scroll area, otherwise classic scrollbars (Edge/Windows) appear and vanish and the grid jumps */
     padding: 10px;
     margin: -10px -10px 0;
+    /* The grid is measured from this width (columns, row height). Without a reserved gutter a scrollbar
+       that appears narrows the grid, the grid gets shorter, the bar disappears, the grid widens again …
+       – an endless loop that made the dashboard shake (seen in the installed Edge app). */
+    scrollbar-gutter: stable;
   }
   .dash-toolbar {
     /* stays clickable above the grid's padding (see .dash) */

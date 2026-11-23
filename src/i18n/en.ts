@@ -855,7 +855,6 @@ export const en: Messages = {
       hasTimetable: 'Has a timetable',
       confirmDeleteTimetable: 'Delete the timetable of {name}?',
       timetableHint: 'Enter subjects in the timetable with “Edit”, bell times under “School”.',
-      showDemo: 'Show sample events (demo)',
       newPerson: 'Person {n}',
     },
     calendars: {
