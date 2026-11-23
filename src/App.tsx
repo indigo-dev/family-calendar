@@ -1,4 +1,5 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useGamesSettings } from './games/store';
 import { useStore } from './store';
 import { oneOf, persisted, usePersisted } from './lib/persisted';
 import { useWakeLock } from './lib/hooks';
@@ -41,6 +42,7 @@ const FrameModule = lazyNamed(() => import('./frame/FrameModule'), 'FrameModule'
 const PhotoFrame = lazyNamed(() => import('./frame/PhotoFrame'), 'PhotoFrame');
 const SettingsPanel = lazyNamed(() => import('./settings/SettingsPanel'), 'SettingsPanel');
 const AppsModule = lazyNamed(() => import('./apps/AppsModule'), 'AppsModule');
+const GamesModule = lazyNamed(() => import('./games/GamesModule'), 'GamesModule');
 const LAZY = [
   CalendarModule,
   WeatherModule,
@@ -50,6 +52,7 @@ const LAZY = [
   FrameModule,
   PhotoFrame,
   SettingsPanel,
+  GamesModule,
   ...(isNative ? [AppsModule] : []),
 ];
 
@@ -71,6 +74,11 @@ export function App() {
   const frameIds = (photos ?? []).filter((p) => frameCfg.selected.includes(p.id)).map((p) => p.id);
 
   useWakeLock(settings.keepAwake);
+  // the games corner was switched off while open: back to the overview
+  const games = useGamesSettings();
+  useEffect(() => {
+    if (module === 'games' && !games.enabled) setModule('dashboard');
+  }, [module, games.enabled]);
   // changes inside the areas animate the same way as switching areas
   useEffect(() => setTransitionKind(settings.moduleTransition), [settings.moduleTransition]);
 
@@ -249,6 +257,12 @@ export function App() {
               <>
                 <ModuleHeader title={t('titles.apps')} onSettings={() => openSettings()} />
                 <AppsModule />
+              </>
+            )}
+            {module === 'games' && (
+              <>
+                <ModuleHeader title={t('titles.games')} onSettings={() => openSettings('device')} />
+                <GamesModule />
               </>
             )}
           </Suspense>

@@ -1,0 +1,520 @@
+/* Cascade layer "modules" (order: app, modules, themes – declared in index.html). The games corner. */
+@layer modules {
+  .games-view {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 18px 14px;
+    overflow: hidden;
+  }
+  .games-pick-head,
+  .games-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .games-pick-head h2,
+  .games-head h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 800;
+  }
+  .game-spacer {
+    flex: 1;
+  }
+
+  /* who plays */
+  .game-players {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 2px;
+  }
+  .game-players-label {
+    flex: none;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: 4px;
+  }
+
+  /* picker */
+  .games-grid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    overflow-y: auto;
+    align-content: start;
+    padding: 2px;
+  }
+  .game-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 12px 12px 14px;
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    text-align: left;
+    color: var(--text);
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.2s ease;
+  }
+  .game-card:active {
+    transform: scale(0.97);
+  }
+  .game-card:hover {
+    box-shadow: var(--shadow);
+  }
+  .game-art {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    border-radius: calc(var(--radius) - 6px);
+    background: color-mix(in srgb, var(--text) 5%, var(--surface));
+    display: grid;
+    place-items: center;
+    margin-bottom: 6px;
+    overflow: hidden;
+  }
+  .game-art svg {
+    width: 88%;
+    height: 88%;
+  }
+  .game-card-name {
+    font-size: 1.05rem;
+    font-weight: 800;
+  }
+  .game-card-note {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+  .game-card-best {
+    margin-top: 6px;
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  /* previews */
+  .a-open {
+    fill: color-mix(in srgb, var(--text) 8%, transparent);
+  }
+  .a-closed {
+    fill: #6366f1;
+    opacity: 0.75;
+  }
+  .a-n1,
+  .a-n2,
+  .a-flag {
+    font:
+      800 12px system-ui,
+      sans-serif;
+    text-anchor: middle;
+  }
+  .a-n1 {
+    fill: #0ea5e9;
+  }
+  .a-n2 {
+    fill: #10b981;
+  }
+  .a-flag {
+    fill: #f43f5e;
+  }
+  .a-tile {
+    fill: var(--surface);
+    stroke: var(--line-strong);
+  }
+  .a-tile-side {
+    fill: color-mix(in srgb, var(--text) 18%, transparent);
+  }
+  .a-dot.d0 {
+    fill: #f43f5e;
+  }
+  .a-dot.d1 {
+    fill: #f59e0b;
+  }
+  .a-dot.d2 {
+    fill: #10b981;
+  }
+  .a-dot.d3 {
+    fill: #0ea5e9;
+  }
+  .a-dot.d4 {
+    fill: #8b5cf6;
+  }
+  .a-gem.g0 {
+    fill: #f43f5e;
+  }
+  .a-gem.g1 {
+    fill: #f59e0b;
+  }
+  .a-gem.g2 {
+    fill: #10b981;
+  }
+  .a-gem.g3 {
+    fill: #0ea5e9;
+  }
+  .a-gem.g4 {
+    fill: #8b5cf6;
+  }
+  .a-gem.g5 {
+    fill: #ec4899;
+  }
+  .a-field {
+    fill: #1e1b4b;
+  }
+  .a-net {
+    stroke: rgba(255, 255, 255, 0.25);
+    stroke-dasharray: 3 3;
+  }
+  .a-left {
+    fill: #fb923c;
+  }
+  .a-right {
+    fill: #0ea5e9;
+  }
+  .a-ball {
+    fill: #fff;
+  }
+
+  /* locked (opening hours, time limit) */
+  .games-locked {
+    display: grid;
+    place-items: center;
+  }
+  .games-locked-box {
+    max-width: 420px;
+    text-align: center;
+    padding: 24px;
+  }
+  .games-locked-icon {
+    font-size: 3.4rem;
+  }
+  .games-locked-box h2 {
+    margin: 10px 0 6px;
+    font-size: 1.25rem;
+  }
+
+  /* ---------------------------------------------------------------- inside a game */
+  .game {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .game-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .game-stat {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .game-stat.big {
+    font-size: 1.2rem;
+  }
+  .game-stat.warn {
+    color: var(--danger);
+  }
+  .game-stat.muted {
+    font-weight: 700;
+    font-size: 0.82rem;
+  }
+  .game-combo {
+    font-weight: 900;
+    color: var(--accent);
+    animation: game-pulse 0.4s ease;
+  }
+  .game-hint {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+  }
+  .game-stage {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+    container-type: size;
+  }
+  .game-flag.on {
+    background: color-mix(in srgb, #f43f5e 20%, var(--surface));
+    border-color: #f43f5e;
+  }
+  .game-banner {
+    position: absolute;
+    left: 50%;
+    bottom: 10px;
+    transform: translateX(-50%);
+    z-index: 600;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 8px 8px 16px;
+    border-radius: 999px;
+    background: var(--sheet, var(--surface));
+    box-shadow: var(--shadow);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .game-result {
+    position: absolute;
+    inset: 0;
+    z-index: 700;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    animation: game-in 0.3s ease both;
+  }
+  .game-result-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 240px;
+    padding: 22px 26px;
+    border-radius: var(--radius);
+    background: var(--sheet, var(--surface));
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .game-result-icon {
+    font-size: 2.6rem;
+  }
+  .game-result-card h3 {
+    margin: 0;
+    font-size: 1.3rem;
+  }
+  .game-result-card p {
+    margin: 0 0 6px;
+    color: var(--muted);
+  }
+  .game-result-card .game-record {
+    color: var(--accent);
+    font-weight: 800;
+  }
+  @keyframes game-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes game-pulse {
+    50% {
+      transform: scale(1.3);
+    }
+  }
+
+  /* ---------------------------------------------------------------- minefield */
+  .mines-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--w), 1fr);
+    gap: 3px;
+    width: min(100cqw, calc(100cqh * var(--w) / var(--h)));
+    aspect-ratio: var(--w) / var(--h);
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .mines-cell {
+    display: grid;
+    place-items: center;
+    border-radius: 18%;
+    background: color-mix(in srgb, #6366f1 55%, var(--surface));
+    box-shadow: inset 0 -3px 0 color-mix(in srgb, #1a1846 22%, transparent);
+    color: var(--text);
+    font-weight: 900;
+    font-size: min(3.2cqh, 2.4cqw);
+    -webkit-touch-callout: none;
+  }
+  .mines-cell.open {
+    background: color-mix(in srgb, var(--text) 6%, var(--surface));
+    box-shadow: none;
+  }
+  .mines-cell.flag {
+    color: #fff;
+    background: color-mix(in srgb, #f43f5e 70%, var(--surface));
+  }
+  .mines-cell.mine {
+    background: color-mix(in srgb, #f43f5e 35%, var(--surface));
+  }
+  .mines-cell.n1 {
+    color: #0ea5e9;
+  }
+  .mines-cell.n2 {
+    color: #10b981;
+  }
+  .mines-cell.n3 {
+    color: #f43f5e;
+  }
+  .mines-cell.n4 {
+    color: #8b5cf6;
+  }
+  .mines-cell.n5 {
+    color: #f59e0b;
+  }
+  .mines-cell.n6 {
+    color: #14b8a6;
+  }
+  .mines-cell.n7,
+  .mines-cell.n8 {
+    color: var(--text);
+  }
+
+  /* ---------------------------------------------------------------- tile pairs */
+  .tiles-board {
+    position: relative;
+  }
+  .tile {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 14%/11%;
+    background: linear-gradient(180deg, #fffdf8, #f3efe6);
+    border: 1px solid rgba(26, 24, 70, 0.18);
+    box-shadow:
+      3px 4px 0 #c9c1ad,
+      4px 6px 10px rgba(0, 0, 0, 0.25);
+    transition:
+      filter 0.15s ease,
+      transform 0.15s ease;
+  }
+  .tile .sym {
+    width: 62%;
+    height: 62%;
+  }
+  .tile.blocked {
+    filter: brightness(0.82) saturate(0.75);
+    cursor: default;
+  }
+  .tile.free:hover {
+    transform: translateY(-2px);
+  }
+  .tile.on {
+    background: linear-gradient(180deg, #ffe7c2, #ffd08a);
+    border-color: #fb923c;
+    transform: translateY(-3px);
+  }
+  .tile.hint {
+    animation: tile-hint 0.9s ease-in-out 2;
+  }
+  @keyframes tile-hint {
+    50% {
+      transform: translateY(-5px);
+      box-shadow:
+        0 0 0 3px #fb923c,
+        4px 6px 10px rgba(0, 0, 0, 0.25);
+    }
+  }
+
+  /* ---------------------------------------------------------------- gems */
+  .gems-board {
+    position: relative;
+    width: min(100cqw, 100cqh);
+    aspect-ratio: 1;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--text) 5%, var(--surface));
+    box-shadow: inset 0 0 0 1px var(--line);
+    touch-action: none;
+    overflow: hidden;
+  }
+  .gem {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 12.5%;
+    height: 12.5%;
+    padding: 6%;
+    border-radius: 22%;
+    transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%));
+    transition:
+      transform 0.18s cubic-bezier(0.3, 0.7, 0.4, 1),
+      opacity 0.2s ease;
+  }
+  .gem-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.25));
+    transition: transform 0.2s ease;
+  }
+  .gem.on {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+  .gem.on .gem-svg {
+    transform: scale(1.12);
+  }
+  .gem.pop .gem-svg {
+    transform: scale(0);
+    transition-duration: 0.22s;
+  }
+  .gem.fresh {
+    animation: gem-drop 0.32s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+  }
+  .gem.hint .gem-svg {
+    animation: gem-wiggle 0.6s ease-in-out 3;
+  }
+  @keyframes gem-drop {
+    from {
+      transform: translate(calc(var(--x) * 100%), calc((var(--y) - 4) * 100%));
+      opacity: 0;
+    }
+  }
+  @keyframes gem-wiggle {
+    25% {
+      transform: rotate(-12deg) scale(1.08);
+    }
+    75% {
+      transform: rotate(12deg) scale(1.08);
+    }
+  }
+
+  /* ---------------------------------------------------------------- paddle duel */
+  .paddle-stage {
+    --field: #1e1b4b;
+    --field-line: rgba(255, 255, 255, 0.18);
+    --field-score: rgba(255, 255, 255, 0.1);
+    --ball: #ffffff;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: pointer;
+    place-items: stretch;
+  }
+  .paddle-canvas {
+    display: block;
+  }
+  .paddle-start {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    gap: 6px;
+    text-align: center;
+    color: #fff;
+    pointer-events: none;
+  }
+  .paddle-start span {
+    font-size: 1.4rem;
+    font-weight: 800;
+  }
+  .paddle-start small {
+    opacity: 0.75;
+  }
+}

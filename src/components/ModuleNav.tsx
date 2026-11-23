@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
+import { useGamesSettings } from '../games/store';
 import { Icon } from './Icon';
 import { arrayOf, persisted, usePersisted } from '../lib/persisted';
 import { isNative } from '../native/launcher';
 import { t } from '../i18n';
 
-export type ModuleId = 'dashboard' | 'calendar' | 'timetable' | 'todos' | 'shopping' | 'weather' | 'frame' | 'apps';
+export type ModuleId = 'dashboard' | 'calendar' | 'timetable' | 'todos' | 'shopping' | 'weather' | 'frame' | 'games' | 'apps';
 
 /**
  * The dashboard always comes first; the others can be reordered by drag & drop.
@@ -18,6 +19,7 @@ const MODULE_ICONS: [ModuleId, string][] = [
   ['shopping', '🛒'],
   ['weather', '⛅'],
   ['frame', '🖼️'],
+  ['games', '🎲'],
   ...(isNative ? [['apps', '📱'] as [ModuleId, string]] : []),
 ];
 
@@ -60,6 +62,7 @@ interface Drag {
 /** App switcher: side rail on tablets, bottom bar on phones. Long press (touch) or drag (mouse) reorders. */
 export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (id: ModuleId) => void }) {
   const order = usePersisted(orderStore);
+  const games = useGamesSettings();
   const [dragging, setDragging] = useState<ModuleId | null>(null);
   const drag = useRef<Drag | null>(null);
   const navRef = useRef<HTMLElement>(null);
@@ -156,7 +159,8 @@ export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (i
     if (next.join() !== order.join()) setOrder(next);
   };
 
-  const list = [MODULES[0], ...order.map((id) => MODULES.find((m) => m.id === id)!)];
+  // the games corner only appears when it is switched on for this device
+  const list = [MODULES[0], ...order.map((id) => MODULES.find((m) => m.id === id)!)].filter((m) => m.id !== 'games' || games.enabled);
 
   return (
     <nav ref={navRef} className={`module-nav ${dragging ? 'sorting' : ''}`} aria-label={t('app.sections')}>

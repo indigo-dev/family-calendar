@@ -46,6 +46,14 @@ const PATHS = {
       <path d="M8 20h9.5a3.5 3.5 0 0 0 .3-7 5 5 0 0 0-9.6 1.2A2.9 2.9 0 0 0 8 20z" />
     </>
   ),
+  games: (
+    <>
+      <rect x="2.5" y="7" width="19" height="11" rx="5.5" />
+      <path d="M7.5 10.5v4M5.5 12.5h4" />
+      <circle cx="15.5" cy="11" r="1" />
+      <circle cx="17.5" cy="14" r="1" />
+    </>
+  ),
   apps: (
     <>
       <rect x="4" y="4" width="6" height="6" rx="1.5" />
