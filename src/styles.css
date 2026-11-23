@@ -276,6 +276,54 @@
     font-size: 0.9rem;
   }
 
+  /* calendar: the person filter and the view switch share the row under the title */
+  .cal-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .cal-bar > .filterbar {
+    flex: 1;
+    min-width: 0;
+  }
+  .cal-bar > .nav {
+    flex: none;
+    margin-left: auto;
+  }
+  .cal-bar > .segmented {
+    flex: none;
+  }
+  /* a little tighter, so filter, paging and views fit one row on a landscape tablet */
+  .cal-bar > .segmented > button,
+  .cal-bar > .segmented > .seg-days {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  /* phones: the title gets a line of its own above navigation and tools */
+  @media (max-width: 640px) {
+    .cal-topbar {
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+    .cal-topbar .topbar-left {
+      display: contents;
+    }
+    .cal-topbar .title {
+      order: -1;
+      flex: 1 0 100%;
+      font-size: 1.2rem;
+      white-space: normal;
+    }
+    /* phones page by swiping – the arrows would only crowd the person filter */
+    .cal-bar > .nav .icon-btn {
+      display: none;
+    }
+    .cal-topbar .topbar-right {
+      margin-left: auto;
+    }
+  }
+
   /* ------------------------------------------------------------ filter */
   .filterbar {
     display: flex;
@@ -1658,6 +1706,9 @@
     .topbar {
       flex-wrap: wrap;
     }
+    .cal-bar {
+      flex-wrap: wrap;
+    }
     .segmented:not(.small) {
       order: 3;
       width: 100%;
@@ -2488,8 +2539,15 @@
 
   /* ---------------------------------------------------------------- Übergänge zwischen den Bereichen */
   /* Only the module area animates; the navigation (root) switches without animation. */
-  html[data-vt] .shell > .app {
+  html[data-vt]:not([data-vt-scope]) .shell > .app {
     view-transition-name: module;
+  }
+  /* inside an area: the marked section (calendar view, weather day, …) or single items (to-dos, …) */
+  html[data-vt-scope='section'] [data-vt-section] {
+    view-transition-name: section;
+  }
+  html[data-vt-scope='items'] .vt-item {
+    view-transition-name: var(--vtn);
   }
   html[data-vt]::view-transition-old(root),
   html[data-vt]::view-transition-new(root) {
@@ -2512,6 +2570,25 @@
     --vt-in: scale(0.96);
     --vt-out: scale(1.03);
   }
+  /* sideways inside an area (next week, next day) */
+  html[data-vt='slide'][data-vt-axis='x'][data-vt-dir='fwd'] {
+    --vt-in: translateX(36px);
+    --vt-out: translateX(-24px);
+  }
+  html[data-vt='slide'][data-vt-axis='x'][data-vt-dir='back'] {
+    --vt-in: translateX(-36px);
+    --vt-out: translateX(24px);
+  }
+  /* how a single item leaves or arrives */
+  html[data-vt] {
+    --vt-item: none;
+  }
+  html[data-vt='zoom'] {
+    --vt-item: scale(0.86);
+  }
+  html[data-vt='slide'] {
+    --vt-item: translateY(-14px);
+  }
   @media (max-width: 640px) {
     /* phones: the bar is at the bottom, so pages move sideways */
     html[data-vt='slide'][data-vt-dir='fwd'] {
@@ -2527,11 +2604,40 @@
     animation-duration: 0.32s;
     overflow: hidden;
   }
-  ::view-transition-old(module) {
+  ::view-transition-old(module),
+  ::view-transition-old(section) {
     animation: vt-out 0.22s cubic-bezier(0.4, 0, 1, 1) both;
   }
-  ::view-transition-new(module) {
+  ::view-transition-new(module),
+  ::view-transition-new(section) {
     animation: vt-in 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) 0.04s both;
+  }
+  ::view-transition-group(section) {
+    animation-duration: 0.32s;
+    overflow: hidden;
+  }
+  /* items: the others glide to their new place (group), a leaving item fades away, a new one fades in */
+  html[data-vt-scope='items']::view-transition-group(*) {
+    animation-duration: 0.36s;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  html[data-vt-scope='items']::view-transition-old(*):only-child {
+    animation: vt-item-out 0.26s cubic-bezier(0.4, 0, 1, 1) both;
+  }
+  html[data-vt-scope='items']::view-transition-new(*):only-child {
+    animation: vt-item-in 0.34s cubic-bezier(0.2, 0.8, 0.2, 1) 0.06s both;
+  }
+  @keyframes vt-item-out {
+    to {
+      opacity: 0;
+      transform: var(--vt-item);
+    }
+  }
+  @keyframes vt-item-in {
+    from {
+      opacity: 0;
+      transform: var(--vt-item);
+    }
   }
   @keyframes vt-out {
     to {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { softly } from '../lib/transition';
 import { dateFormat, dayKey, fmt, hourLabel } from '../lib/dates';
 import { locale, t } from '../i18n';
 import { Modal } from '../components/Modal';
@@ -74,10 +75,15 @@ export function Forecast({ data, now }: { data: WeatherData; now: Date }) {
   const fallback = dayIdx === 0 ? hours[0] : (hours.find((h) => hourOf(h.time) === 12) ?? hours[0]);
   const hour = hours.find((h) => h.time === hourSel) ?? fallback;
   const isNow = dayIdx === 0 && hour === hours[0];
-
   const pickDay = (i: number) => {
-    setDayIdx(i);
-    setHourSel(null);
+    if (i === dayIdx) return;
+    softly(
+      () => {
+        setDayIdx(i);
+        setHourSel(null);
+      },
+      { dir: i > dayIdx ? 1 : -1, axis: 'x' },
+    );
   };
 
   if (!day || !hour) return null;

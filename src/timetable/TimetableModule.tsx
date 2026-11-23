@@ -131,9 +131,8 @@ export function TimetableModule({ onSettings }: { onSettings: () => void }) {
               {t('timetable.edit')}
             </button>
           ))}
-      </div>
-
-      <main className={`view tt-view ${shown.length > 1 ? 'multi' : ''}`}>
+      </div>{' '}
+      <main className={`view tt-view ${shown.length > 1 ? 'multi' : ''}`} data-vt-section>
         <div className="tt-sheets">
           {shown.map((k) => (
             <TimetableGrid
@@ -151,7 +150,6 @@ export function TimetableModule({ onSettings }: { onSettings: () => void }) {
           ))}
         </div>
       </main>
-
       {editing && active && (
         <Palette
           subjects={subjectsFor(active.timetable!.schoolType, school, paintColor)}

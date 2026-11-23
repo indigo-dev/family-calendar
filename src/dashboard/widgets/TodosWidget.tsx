@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { softly, vtItem } from '../../lib/transition';
 import { useStore } from '../../store';
 import { addDays, dayKey, fmt } from '../../lib/dates';
 import type { Todo } from '../../lib/todos';
@@ -31,8 +32,13 @@ export function TodosWidget({ size }: WidgetProps) {
   const check = (todo: Todo) => {
     setLeaving((l) => [...l, todo.id]);
     setTimeout(() => {
-      todos.toggleDone(todo.id);
-      setLeaving((l) => l.filter((x) => x !== todo.id));
+      softly(
+        () => {
+          todos.toggleDone(todo.id);
+          setLeaving((l) => l.filter((x) => x !== todo.id));
+        },
+        { items: true },
+      );
       setUndo({ label: t('dashboard.todoDone', { text: todo.text }), fn: () => todos.toggleDone(todo.id) });
     }, 350);
   };
@@ -58,7 +64,11 @@ export function TodosWidget({ size }: WidgetProps) {
           const ms = todo.memberIds.map((id) => memberById.get(id)!).filter(Boolean);
           const due = dueLabel(todo.due, now);
           return (
-            <div key={todo.id} className={`dw-todo ${leaving.includes(todo.id) ? 'leaving' : ''}`}>
+            <div
+              key={todo.id}
+              className={`dw-todo vt-item ${leaving.includes(todo.id) ? 'leaving' : ''}`}
+              style={vtItem(`dw-todo-${todo.id}`)}
+            >
               <button
                 className="dw-check"
                 style={{ borderColor: ms[0]?.color }}

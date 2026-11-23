@@ -1,7 +1,7 @@
 import { flushSync } from 'react-dom';
 import { t } from '../i18n';
 
-/** How the app animates when switching between the main areas (modules). */
+/** How the app animates – between the main areas and inside them (setting "Übergänge"). */
 export type ModuleTransition = 'fade' | 'slide' | 'zoom' | 'none';
 
 export const MODULE_TRANSITIONS: { id: ModuleTransition; label: string; note: string }[] = (['fade', 'slide', 'zoom', 'none'] as const).map(
@@ -26,6 +26,12 @@ interface VT {
 type VTDocument = Document & { startViewTransition?: (cb: () => Promise<void> | void) => VT };
 let current: VT | null = null;
 
+/** the chosen transition – set by the app shell whenever the setting changes */
+let chosen: ModuleTransition = 'fade';
+export function setTransitionKind(kind: ModuleTransition) {
+  chosen = kind;
+}
+
 /** waits (max. ~400 ms) until a lazily loaded module has replaced its loading placeholder */
 function moduleReady(): Promise<void> {
   return new Promise((resolve) => {
@@ -40,38 +46,67 @@ function moduleReady(): Promise<void> {
 }
 
 /**
+ * What moves:
+ * - 'module'  the whole area (switching between calendar, weather, …)
+ * - 'section' the element marked `data-vt-section` (another calendar view, another day, a filter)
+ * - 'items'   single elements marked `vt-item` with a `--vtn` name (a to-do is ticked off: it leaves,
+ *             the others glide to their new places)
+ */
+type Scope = 'module' | 'section' | 'items';
+
+interface Options {
+  scope: Scope;
+  dir?: 1 | -1;
+  /** direction of 'slide': down the rail (y, default) or sideways (x, e.g. the next week) */
+  axis?: 'x' | 'y';
+  /** async part of the update (a module that is still loading) */
+  wait?: () => Promise<void>;
+}
+
+function run(update: () => void, kind: ModuleTransition, { scope, dir = 1, axis = 'y', wait }: Options): boolean {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const doc = document as VTDocument;
+  // hidden page (screen off, other tab): nobody sees it, and the browser would stall the transition.
+  // A transition that is still running is not interrupted by a small one inside the area.
+  if (kind === 'none' || reduce || document.visibilityState !== 'visible' || !doc.startViewTransition) return false;
+  if (current && scope !== 'module') return false;
+  const root = document.documentElement;
+  root.dataset.vt = kind;
+  root.dataset.vtDir = dir > 0 ? 'fwd' : 'back';
+  root.dataset.vtAxis = axis;
+  if (scope === 'module') delete root.dataset.vtScope;
+  else root.dataset.vtScope = scope;
+  const vt = doc.startViewTransition(async () => {
+    flushSync(update);
+    await wait?.();
+  });
+  // a quick second tap skips the running transition – that is fine, not an error
+  vt.ready.catch(() => {});
+  vt.updateCallbackDone.catch(() => {});
+  vt.finished
+    .catch(() => {})
+    .finally(() => {
+      // a newer transition may already have set its own kind
+      if (current === vt) {
+        current = null;
+        delete root.dataset.vt;
+        delete root.dataset.vtDir;
+        delete root.dataset.vtAxis;
+        delete root.dataset.vtScope;
+      }
+    });
+  current = vt;
+  return true;
+}
+
+/**
  * Runs `update` (the module switch) with the chosen animation. Uses the View Transitions API
  * (old and new page cross over); older browsers get a short fade-in of the new page.
  */
 export function switchModule(update: () => void, kind: ModuleTransition, dir: 1 | -1) {
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // hidden page (screen off, other tab): nobody sees it, and the browser would stall the transition
-  if (kind === 'none' || reduce || document.visibilityState !== 'visible') return update();
-  const root = document.documentElement;
-  const doc = document as VTDocument;
-  if (doc.startViewTransition) {
-    root.dataset.vt = kind;
-    root.dataset.vtDir = dir > 0 ? 'fwd' : 'back';
-    const t = doc.startViewTransition(async () => {
-      flushSync(update);
-      await moduleReady();
-    });
-    // a quick second tap skips the running transition – that is fine, not an error
-    t.ready.catch(() => {});
-    t.updateCallbackDone.catch(() => {});
-    t.finished
-      .catch(() => {})
-      .finally(() => {
-        // a newer transition may already have set its own kind
-        if (current === t) {
-          delete root.dataset.vt;
-          delete root.dataset.vtDir;
-        }
-      });
-    current = t;
-    return;
-  }
+  if (run(update, kind, { scope: 'module', dir, wait: moduleReady })) return;
   update();
+  if (kind === 'none' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const app = document.querySelector<HTMLElement>('.shell > .app');
   const from = kind === 'zoom' ? 'scale(0.97)' : kind === 'fade' ? 'none' : `translateY(${dir * 24}px)`;
   app?.animate(
@@ -85,3 +120,14 @@ export function switchModule(update: () => void, kind: ModuleTransition, dir: 1 
     },
   );
 }
+
+/**
+ * A change inside an area with the chosen animation: the part marked `data-vt-section` (default) or
+ * the single elements marked `vt-item` (`items: true`). Without support it simply happens.
+ */
+export function softly(update: () => void, opts: { items?: boolean; dir?: 1 | -1; axis?: 'x' | 'y' } = {}) {
+  if (!run(update, chosen, { scope: opts.items ? 'items' : 'section', dir: opts.dir, axis: opts.axis })) update();
+}
+
+/** style for an element that animates on its own in `softly(…, { items: true })` (name must be unique) */
+export const vtItem = (name: string) => ({ ['--vtn' as string]: `vt-${name.replace(/[^a-zA-Z0-9_-]/g, '-')}` });

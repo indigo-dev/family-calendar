@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { softly } from '../lib/transition';
 import { useTapOrLongPress } from '../lib/hooks';
 import type { Member, ViewMode } from '../types';
 import { fmt, fmtTime } from '../lib/dates';
@@ -24,66 +25,89 @@ interface Props {
   onRefresh: () => void;
   onSettings: () => void;
   onWeather: () => void;
+  /** person filter – shares the second row with paging and the view switch, so the title gets the first row */
+  filter?: ReactNode;
+  /** today is outside the visible range – then "Heute" is the one action that glows */
+  away?: boolean;
 }
 
-export function Header({ title, view, loading, multiDays, onMultiDays, onView, onStep, onToday, onRefresh, onSettings, onWeather }: Props) {
+export function Header({
+  title,
+  view,
+  loading,
+  multiDays,
+  onMultiDays,
+  onView,
+  onStep,
+  onToday,
+  onRefresh,
+  onSettings,
+  onWeather,
+  filter,
+  away = false,
+}: Props) {
   return (
-    <header className="topbar">
-      <div className="topbar-left">
+    <>
+      <header className="topbar cal-topbar">
+        <div className="topbar-left">
+          <Title text={title} />
+        </div>
+        <div className="topbar-right">
+          <WeatherChip onClick={onWeather} />
+          <Clock />
+          <button className={`icon-btn ${loading ? 'spin' : ''}`} onClick={onRefresh} aria-label={t('common.refresh')}>
+            <GlyphIcon glyph="⟳" name="refresh" />
+          </button>
+          <button className="icon-btn" onClick={onSettings} aria-label={t('common.settings')}>
+            <GlyphIcon glyph="⚙" name="settings" />
+          </button>
+        </div>
+      </header>
+      <div className="cal-bar">
+        {filter}
         <div className="nav">
           <button className="icon-btn" onClick={() => onStep(-1)} aria-label={t('common.back')}>
             <GlyphIcon glyph="‹" name="back" />
           </button>
-          <button className="btn" onClick={onToday}>
+          <button className={`btn ${away ? 'away' : ''}`} onClick={onToday}>
             {t('common.today')}
           </button>
           <button className="icon-btn" onClick={() => onStep(1)} aria-label={t('common.forward')}>
             <GlyphIcon glyph="›" name="forward" />
           </button>
         </div>
-        <Title text={title} />
-      </div>
-      <div className="segmented" role="tablist">
-        {VIEWS.map((v) =>
-          v === 'days' && view === 'days' ? (
-            // active N-days tab: − / + change the number of days
-            <span key={v} role="tab" aria-selected className="active seg-days">
-              <button
-                className="seg-step"
-                onClick={() => onMultiDays(multiDays - 1)}
-                disabled={multiDays <= 2}
-                aria-label={t('calendar.fewerDays')}
-              >
-                −
+        <div className="segmented" role="tablist">
+          {VIEWS.map((v) =>
+            v === 'days' && view === 'days' ? (
+              // active N-days tab: − / + change the number of days
+              <span key={v} role="tab" aria-selected className="active seg-days">
+                <button
+                  className="seg-step"
+                  onClick={() => onMultiDays(multiDays - 1)}
+                  disabled={multiDays <= 2}
+                  aria-label={t('calendar.fewerDays')}
+                >
+                  −
+                </button>
+                <span>{t('calendar.nDays', { n: multiDays })}</span>
+                <button
+                  className="seg-step"
+                  onClick={() => onMultiDays(multiDays + 1)}
+                  disabled={multiDays >= 6}
+                  aria-label={t('calendar.moreDays')}
+                >
+                  +
+                </button>
+              </span>
+            ) : (
+              <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'active' : ''} onClick={() => onView(v)}>
+                {v === 'days' ? t('calendar.nDays', { n: multiDays }) : t(`calendar.views.${v}`)}
               </button>
-              <span>{t('calendar.nDays', { n: multiDays })}</span>
-              <button
-                className="seg-step"
-                onClick={() => onMultiDays(multiDays + 1)}
-                disabled={multiDays >= 6}
-                aria-label={t('calendar.moreDays')}
-              >
-                +
-              </button>
-            </span>
-          ) : (
-            <button key={v} role="tab" aria-selected={view === v} className={view === v ? 'active' : ''} onClick={() => onView(v)}>
-              {v === 'days' ? t('calendar.nDays', { n: multiDays }) : t(`calendar.views.${v}`)}
-            </button>
-          ),
-        )}
+            ),
+          )}
+        </div>
       </div>
-      <div className="topbar-right">
-        <WeatherChip onClick={onWeather} />
-        <Clock />
-        <button className={`icon-btn ${loading ? 'spin' : ''}`} onClick={onRefresh} aria-label={t('common.refresh')}>
-          <GlyphIcon glyph="⟳" name="refresh" />
-        </button>
-        <button className="icon-btn" onClick={onSettings} aria-label={t('common.settings')}>
-          <GlyphIcon glyph="⚙" name="settings" />
-        </button>
-      </div>
-    </header>
+    </>
   );
 }
 
@@ -183,7 +207,8 @@ export function MemberFilter({ issues, onIssue }: { issues: Record<string, strin
   const all = selectedIds.size === 0;
   return (
     <nav className="filterbar" aria-label={t('calendar.memberFilter')}>
-      <button className={`chip all ${all ? 'on' : ''}`} aria-pressed={all} onClick={showAll}>
+      {' '}
+      <button className={`chip all ${all ? 'on' : ''}`} aria-pressed={all} onClick={() => softly(showAll)}>
         {t('common.all')}
       </button>
       {members.map((m) => {
@@ -195,8 +220,8 @@ export function MemberFilter({ issues, onIssue }: { issues: Record<string, strin
               member={m}
               active={active}
               dimmed={!all && !active}
-              onTap={() => selectOnly(m.id)}
-              onLongPress={() => toggleSelected(m.id)}
+              onTap={() => softly(() => selectOnly(m.id))}
+              onLongPress={() => softly(() => toggleSelected(m.id))}
             />
             {issue && (
               <button className="warn-badge error" title={issue} onClick={() => onIssue(t('calendar.notLoaded', { name: m.name, issue }))}>

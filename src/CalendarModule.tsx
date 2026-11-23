@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { softly } from './lib/transition';
 import type { CalEvent, ViewMode } from './types';
 import { useStore } from './store';
 import { rangeFor, startOfDay, stepDate, titleFor } from './lib/dates';
@@ -100,13 +101,13 @@ export function CalendarModule({ reloadKey, settingsOpen, onSettings, onWeather 
   }, [today]);
   // the views show the current time (now line, past events)
   const now = useMinute();
-
-  const step = useCallback((dir: 1 | -1) => setDate((d) => stepDate(view, d, dir, nDays)), [view, nDays]);
+  const step = useCallback((dir: 1 | -1) => softly(() => setDate((d) => stepDate(view, d, dir, nDays)), { dir, axis: 'x' }), [view, nDays]);
   const swipe = useSwipe(step);
-
   const open = useCallback((v: ViewMode, d: Date) => {
-    setView(v);
-    setDate(startOfDay(d));
+    softly(() => {
+      setView(v);
+      setDate(startOfDay(d));
+    });
   }, []);
 
   const visible = useMemo(
@@ -131,6 +132,18 @@ export function CalendarModule({ reloadKey, settingsOpen, onSettings, onWeather 
     [nDays, updateSettings],
   );
 
+  // is today on screen? (month: the month itself, not the leading/trailing days of the grid)
+  const today0 = startOfDay(now);
+  const showsToday =
+    view === 'month'
+      ? date.getFullYear() === today0.getFullYear() && date.getMonth() === today0.getMonth()
+      : view === 'year'
+        ? date.getFullYear() === today0.getFullYear()
+        : (() => {
+            const r = rangeFor(view, date, settings.weekStartsOn, nDays);
+            return today0 >= r.start && today0 < r.end;
+          })();
+
   const viewProps = { date, now, events: visible, onEvent: setSelected, onOpen: open, marks };
 
   return (
@@ -141,20 +154,24 @@ export function CalendarModule({ reloadKey, settingsOpen, onSettings, onWeather 
         multiDays={nDays}
         onMultiDays={(n) => setDayCount(clampDays(n))}
         loading={loading}
-        onView={setView}
+        onView={(v) => v !== view && softly(() => setView(v))}
         onStep={step}
-        onToday={() => setDate(startOfDay(new Date()))}
+        onToday={() => {
+          const today = startOfDay(new Date());
+          softly(() => setDate(today), { dir: date < today ? 1 : -1, axis: 'x' });
+        }}
         onRefresh={() => setNonce((n) => n + 1)}
         onSettings={onSettings}
         onWeather={onWeather}
+        filter={<MemberFilter issues={memberIssues} onIssue={setBanner} />}
+        away={!showsToday}
       />
-      <MemberFilter issues={memberIssues} onIssue={setBanner} />
       {banner && (
         <div className="banner error" onClick={() => setBanner(undefined)}>
           {banner} <span className="muted">{t('common.tapToClose')}</span>
         </div>
-      )}
-      <main className="view" {...swipe}>
+      )}{' '}
+      <main className="view" data-vt-section {...swipe}>
         {/* one slot for all time-grid views so a pinch gesture survives switching between them */}
         {(view === 'day' || view === 'days' || view === 'week') && (
           <TimeGridView {...viewProps} days={view === 'day' ? 1 : view === 'week' ? 7 : nDays} onDayCount={setDayCount} />

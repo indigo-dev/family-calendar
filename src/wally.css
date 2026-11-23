@@ -194,13 +194,38 @@
       48px 0 var(--sky),
       64px 0 var(--violet);
   }
+  /* The five logo colours are the overview's (the brand moment). Every other area shows one bar in its
+     own colour – the same colour as its button in the rail – so the logo is not repeated next to itself. */
+  [data-style='wally'] .shell {
+    --area: var(--indigo);
+  }
+  [data-style='wally'] .shell[data-module='calendar'] {
+    --area: var(--rose);
+  }
+  [data-style='wally'] .shell[data-module='timetable'] {
+    --area: var(--amber);
+  }
+  [data-style='wally'] .shell[data-module='todos'] {
+    --area: var(--violet);
+  }
+  [data-style='wally'] .shell[data-module='shopping'] {
+    --area: var(--emerald);
+  }
+  [data-style='wally'] .shell[data-module='weather'] {
+    --area: var(--sky);
+  }
+  [data-style='wally'] .shell[data-module='frame'] {
+    --area: var(--pink);
+  }
+  [data-style='wally'] .shell:not([data-module='dashboard']) .topbar .title::before {
+    width: 28px;
+    background: var(--area);
+    box-shadow: none;
+  }
+  /* the year stays quiet: the date span is what matters */
   [data-style='wally'] .title-year {
-    font-weight: 800;
-    background: var(--grad-text);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    -webkit-text-fill-color: transparent;
+    font-weight: 600;
+    color: var(--muted);
   }
   [data-style='wally'] .clock-time {
     font-weight: 800;
@@ -226,7 +251,7 @@
     transform: scale(0.96);
   }
   [data-style='wally'] .btn.primary,
-  [data-style='wally'] .nav .btn {
+  [data-style='wally'] .nav .btn.away {
     background: var(--grad-warm);
     border-color: transparent;
     color: var(--ink);
@@ -300,11 +325,17 @@
     box-shadow: var(--shadow);
     font-weight: 700;
   }
+  /* "Alle" is a state, not an action: neutral like the active view in the switch */
   [data-style='wally'] .chip.all.on {
-    background: var(--grad-warm);
+    background: var(--ink);
     border-color: transparent;
+    color: #fff;
+    box-shadow: 0 4px 12px -4px rgba(26, 24, 70, 0.45);
+  }
+  [data-style='wally'][data-mode='dark'] .chip.all.on {
+    background: #fff;
     color: var(--ink);
-    box-shadow: 0 8px 22px -10px var(--glow);
+    box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.5);
   }
   [data-style='wally'] .badge {
     font-weight: 700;

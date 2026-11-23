@@ -1,4 +1,5 @@
 import type { Member } from '../types';
+import { vtItem } from '../lib/transition';
 import type { Todo } from '../lib/todos';
 import { AvatarStack } from '../components/Avatar';
 
@@ -28,8 +29,8 @@ export function Note({
   const len = Math.max(todo.text.length, longestWord > 15 ? 91 : longestWord > 11 ? 46 : 0);
   return (
     <div
-      className={`note ${todo.done ? 'done' : ''} ${due?.tone === 'late' ? 'late' : ''}`}
-      style={{ ...noteStyle(members), zoom: size }}
+      className={`note vt-item ${todo.done ? 'done' : ''} ${due?.tone === 'late' ? 'late' : ''}`}
+      style={{ ...noteStyle(members), ...vtItem(`note-${todo.id}`), zoom: size }}
       onClick={onOpen}
     >
       <div className="note-head">

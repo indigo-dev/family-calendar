@@ -1,11 +1,11 @@
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useStore } from './store';
 import { oneOf, persisted, usePersisted } from './lib/persisted';
 import { useWakeLock } from './lib/hooks';
 import { onMinute, useMinute } from './lib/clock';
 import { MemberFilter, ModuleHeader } from './components/Header';
 import { MODULES, ModuleNav, navIndex, type ModuleId } from './components/ModuleNav';
-import { switchModule } from './lib/transition';
+import { setTransitionKind, switchModule } from './lib/transition';
 import type { SettingsTab } from './settings/SettingsPanel';
 import type { FrameMode } from './frame/PhotoFrame';
 import { useFrameSettings, usePhotos } from './lib/frame';
@@ -71,6 +71,24 @@ export function App() {
   const frameIds = (photos ?? []).filter((p) => frameCfg.selected.includes(p.id)).map((p) => p.id);
 
   useWakeLock(settings.keepAwake);
+  // changes inside the areas animate the same way as switching areas
+  useEffect(() => setTransitionKind(settings.moduleTransition), [settings.moduleTransition]);
+
+  /** switches the area with the transition chosen in the settings (rail, widgets, voice, links) */
+  const goModule = useCallback(
+    (id: ModuleId) => {
+      if (id === module) return;
+      switchModule(
+        () => {
+          setModule(id);
+          setDashEditing(false);
+        },
+        settings.moduleTransition,
+        navIndex(id) >= navIndex(module) ? 1 : -1,
+      );
+    },
+    [module, settings.moduleTransition],
+  );
   useEffect(() => preloadWhenIdle(LAZY), []);
 
   // theme
@@ -141,9 +159,9 @@ export function App() {
           setSettingsOpen(false);
           setReloadKey((n) => n + 1);
         } else if (dashEditing) setDashEditing(false);
-        else setModule('dashboard');
+        else goModule('dashboard');
       }),
-    [frame, settingsOpen, dashEditing],
+    [frame, settingsOpen, dashEditing, goModule],
   );
 
   const openSettings = (tab?: SettingsTab) => {
@@ -152,21 +170,8 @@ export function App() {
   };
 
   return (
-    <div className="shell">
-      <ModuleNav
-        active={module}
-        onSelect={(id) => {
-          if (id === module) return;
-          switchModule(
-            () => {
-              setModule(id);
-              setDashEditing(false);
-            },
-            settings.moduleTransition,
-            navIndex(id) >= navIndex(module) ? 1 : -1,
-          );
-        }}
-      />
+    <div className="shell" data-module={module}>
+      <ModuleNav active={module} onSelect={goModule} />
       <div className="app">
         <ErrorBoundary label={MODULES.find((m) => m.id === module)?.label ?? t('app.module')} resetKey={module}>
           <Suspense fallback={<div className="module-loading" aria-busy="true" />}>
@@ -193,10 +198,10 @@ export function App() {
                   reloadKey={reloadKey}
                   editing={dashEditing}
                   onEditing={setDashEditing}
-                  openModule={setModule}
+                  openModule={goModule}
                   startFrame={(startId) => setFrame({ mode: 'manual', startId })}
                   // nothing to show yet (no photos, no clock face): open the photo frame to set it up
-                  startScreensaver={() => (canFrame ? setFrame({ mode: 'screensaver' }) : setModule('frame'))}
+                  startScreensaver={() => (canFrame ? setFrame({ mode: 'screensaver' }) : goModule('frame'))}
                   openSettings={openSettings}
                 />
               </>
@@ -206,7 +211,7 @@ export function App() {
                 reloadKey={reloadKey}
                 settingsOpen={settingsOpen}
                 onSettings={() => openSettings()}
-                onWeather={() => setModule('weather')}
+                onWeather={() => goModule('weather')}
               />
             )}
             {module === 'weather' && (
@@ -250,13 +255,7 @@ export function App() {
         </ErrorBoundary>
       </div>
       <ErrorBoundary label={t('titles.voice')} fallback={null} retrySec={0}>
-        <VoiceButton
-          onOpenModule={(id) => {
-            setModule(id);
-            setDashEditing(false);
-          }}
-          onSettings={() => openSettings('voice')}
-        />
+        <VoiceButton onOpenModule={goModule} onSettings={() => openSettings('voice')} />
       </ErrorBoundary>
       {frame && canFrame && (
         <ErrorBoundary label={t('titles.frame')} fallback={null} retrySec={0} onError={() => setFrame(null)}>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { softly } from '../lib/transition';
 
 import { activeAlerts, deg, refresh, setActivePlace, useWeather, useWeatherSettings, type Place } from '../lib/weather';
 import { WxIcon } from './WxIcon';
@@ -63,9 +64,8 @@ export function WeatherModule() {
             ⟳
           </button>
         </div>
-      </div>
-
-      <div className="wx-scroll">
+      </div>{' '}
+      <div className="wx-scroll" data-vt-section>
         {data ? (
           <Forecast key={place.id} data={data} now={now} />
         ) : (
@@ -83,7 +83,6 @@ export function WeatherModule() {
           {t('weather.credit3')}
         </p>
       </div>
-
       {sheet && <PlacesSheet onClose={() => setSheet(false)} />}
     </div>
   );
@@ -92,7 +91,12 @@ export function WeatherModule() {
 function PlacePill({ place, home, active }: { place: Place; home: boolean; active: boolean }) {
   const { data } = useWeather(place);
   return (
-    <button role="tab" aria-selected={active} className={`wx-pill ${active ? 'on' : ''}`} onClick={() => setActivePlace(place.id)}>
+    <button
+      role="tab"
+      aria-selected={active}
+      className={`wx-pill ${active ? 'on' : ''}`}
+      onClick={() => !active && softly(() => setActivePlace(place.id))}
+    >
       {home && <span aria-label={t('weather.home')}>🏠</span>}
       <span className="wx-pill-name">{place.name}</span>
       {data && (

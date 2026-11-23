@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { softly, vtItem } from '../lib/transition';
 import { BUILTIN, CATEGORIES, EMOJI_CHOICES, norm, useShopping, type CategoryId, type ListEntry, type ShopItem } from '../lib/shopping';
 import { useTapOrLongPress } from '../lib/hooks';
 import { Sym } from '../components/Sym';
@@ -58,6 +59,8 @@ function CategoryChip({
 }
 
 const catColor = new Map(CATEGORIES.map((c) => [c.id, c.color]));
+/** long names get a smaller font instead of a break in the middle of the word (not every device hyphenates German) */
+const nameSize = (name: string) => (name.length > 13 ? 'xlong' : name.length > 10 ? 'long' : '');
 const catIcon = new Map(CATEGORIES.map((c) => [c.id, c.icon]));
 
 /** item picture in the chosen symbol style; the department icon stands in if the style lacks it */
@@ -99,6 +102,16 @@ export function ShoppingModule() {
       .sort((a, b) => order.get(a.item.cat)! - order.get(b.item.cat)! || a.entry.addedAt - b.entry.addedAt);
   }, [shop.list, itemById]);
   const listCount = listed.length;
+  // the list by department, in the order of the store (CATEGORIES)
+  const listGroups = useMemo(() => {
+    const groups: { cat: (typeof CATEGORIES)[number]; rows: typeof listed }[] = [];
+    for (const row of listed) {
+      const last = groups[groups.length - 1];
+      if (last?.cat.id === row.item.cat) last.rows.push(row);
+      else groups.push({ cat: CATEGORIES.find((c) => c.id === row.item.cat) ?? CATEGORIES[CATEGORIES.length - 1], rows: [row] });
+    }
+    return groups;
+  }, [listed]);
 
   const q = norm(query);
   // "Sonstiges" only gets a chip once it has items
@@ -127,12 +140,17 @@ export function ShoppingModule() {
     if (leaving.has(entry.itemId)) return;
     setLeaving((s) => new Set(s).add(entry.itemId));
     window.setTimeout(() => {
-      shop.check(entry.itemId);
-      setLeaving((s) => {
-        const n = new Set(s);
-        n.delete(entry.itemId);
-        return n;
-      });
+      softly(
+        () => {
+          shop.check(entry.itemId);
+          setLeaving((s) => {
+            const n = new Set(s);
+            n.delete(entry.itemId);
+            return n;
+          });
+        },
+        { items: true },
+      );
       window.clearTimeout(undoTimer.current);
       setUndo({ entry, name: item.name });
       undoTimer.current = window.setTimeout(() => setUndo(null), UNDO_MS);
@@ -144,7 +162,7 @@ export function ShoppingModule() {
       if (confirm(t(item.custom ? 'shopping.confirmDelete' : 'shopping.confirmHide', { name: item.name }))) shop.removeItem(item);
       return;
     }
-    shop.add(item.id);
+    softly(() => shop.add(item.id), { items: true });
   };
 
   return (
@@ -182,26 +200,40 @@ export function ShoppingModule() {
             ) : (
               <>
                 <div className="shop-group-head shop-list-hint">{t('shopping.tapToCheck')}</div>
-                <div className="shop-grid big">
-                  {listed.map(({ entry, item }) => (
-                    <button
-                      key={item.id}
-                      className={`shop-tile on-list ${leaving.has(item.id) ? 'leaving' : ''}`}
-                      style={tileStyle(item, paint)}
-                      onClick={() => checkOff(entry, item)}
-                      aria-label={
-                        entry.qty > 1 ? t('shopping.checkQty', { name: item.name, n: entry.qty }) : t('shopping.check', { name: item.name })
-                      }
-                    >
-                      <ItemSym item={item} />
-                      <span className="shop-name">{item.name}</span>
-                      {entry.qty > 1 && <span className="shop-qty">×{entry.qty}</span>}
-                      <span className="shop-check" aria-hidden>
-                        ✓
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                {listGroups.map(({ cat, rows }) => (
+                  <div
+                    key={cat.id}
+                    className="shop-group shop-list-group vt-item"
+                    style={{ ['--cat' as string]: paint(cat.color), ...vtItem(`shop-group-${cat.id}`) }}
+                  >
+                    <div className="shop-group-head">
+                      <Sym emoji={cat.icon} className="shop-head-sym" /> {cat.label}
+                      <span className="shop-group-n">{rows.length}</span>
+                    </div>
+                    <div className="shop-grid big">
+                      {rows.map(({ entry, item }) => (
+                        <button
+                          key={item.id}
+                          className={`shop-tile on-list vt-item ${leaving.has(item.id) ? 'leaving' : ''}`}
+                          style={{ ...tileStyle(item, paint), ...vtItem(`shop-${item.id}`) }}
+                          onClick={() => checkOff(entry, item)}
+                          aria-label={
+                            entry.qty > 1
+                              ? t('shopping.checkQty', { name: item.name, n: entry.qty })
+                              : t('shopping.check', { name: item.name })
+                          }
+                        >
+                          <ItemSym item={item} />
+                          <span className={`shop-name ${nameSize(item.name)}`}>{item.name}</span>
+                          {entry.qty > 1 && <span className="shop-qty">×{entry.qty}</span>}
+                          <span className="shop-check" aria-hidden>
+                            ✓
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </>
             )}
           </div>
@@ -286,7 +318,7 @@ export function ShoppingModule() {
                       qty={qtyById.get(item.id) ?? 0}
                       editMode={false}
                       onTap={tapPantry}
-                      onLess={shop.setQty}
+                      onLess={(id, qty) => softly(() => shop.setQty(id, qty), { items: true })}
                     />
                   ))}
                 </div>
@@ -313,7 +345,7 @@ export function ShoppingModule() {
                       qty={qtyById.get(item.id) ?? 0}
                       editMode={editMode}
                       onTap={tapPantry}
-                      onLess={shop.setQty}
+                      onLess={(id, qty) => softly(() => shop.setQty(id, qty), { items: true })}
                     />
                   ))}
                   {!q && (
@@ -388,7 +420,7 @@ function PantryTile({
         }
       >
         <ItemSym item={item} />
-        <span className="shop-name">{item.name}</span>
+        <span className={`shop-name ${nameSize(item.name)}`}>{item.name}</span>
         {!editMode && qty > 0 && <span className="shop-qty">{qty > 1 ? `×${qty}` : '✓'}</span>}
         {editMode && (
           <span className="shop-remove" aria-hidden>

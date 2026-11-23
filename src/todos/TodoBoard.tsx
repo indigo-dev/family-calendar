@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { softly } from '../lib/transition';
 import type { Member } from '../types';
 import { useStore } from '../store';
 import { startOfDay } from '../lib/dates';
@@ -40,10 +41,20 @@ export function TodoBoard() {
     <>
       <div className="board-toolbar">
         <div className="segmented small" role="tablist">
-          <button role="tab" aria-selected={tab === 'open'} className={tab === 'open' ? 'active' : ''} onClick={() => setTab('open')}>
+          <button
+            role="tab"
+            aria-selected={tab === 'open'}
+            className={tab === 'open' ? 'active' : ''}
+            onClick={() => softly(() => setTab('open'), { dir: -1, axis: 'x' })}
+          >
             {t('todos.open', { n: openVisible.length })}
           </button>
-          <button role="tab" aria-selected={tab === 'done'} className={tab === 'done' ? 'active' : ''} onClick={() => setTab('done')}>
+          <button
+            role="tab"
+            aria-selected={tab === 'done'}
+            className={tab === 'done' ? 'active' : ''}
+            onClick={() => softly(() => setTab('done'), { dir: 1, axis: 'x' })}
+          >
             {t('todos.done', { n: done.length })}
           </button>
         </div>
@@ -52,13 +63,15 @@ export function TodoBoard() {
           <button
             className="btn"
             title={t('todos.tidyHint')}
-            onClick={() => patchMany(Object.fromEntries(open.map((x) => [x.id, { x: undefined, y: undefined }])))}
+            onClick={() =>
+              softly(() => patchMany(Object.fromEntries(open.map((x) => [x.id, { x: undefined, y: undefined }]))), { items: true })
+            }
           >
             {t('todos.tidy')}
           </button>
         )}
         {tab === 'done' && done.length > 0 && (
-          <button className="btn danger" onClick={() => confirm(t('todos.confirmClear')) && clearDone()}>
+          <button className="btn danger" onClick={() => confirm(t('todos.confirmClear')) && softly(clearDone, { items: true })}>
             {t('todos.clear')}
           </button>
         )}
@@ -66,7 +79,7 @@ export function TodoBoard() {
           {t('todos.newNote')}
         </button>
       </div>
-      <main className="view todo-view">
+      <main className="view todo-view" data-vt-section>
         {members.length === 0 ? (
           <div className="todo-empty">{t('todos.noFamily')}</div>
         ) : tab === 'open' ? (
@@ -76,7 +89,7 @@ export function TodoBoard() {
             membersOf={membersOf}
             today={today}
             onOpen={setEditing}
-            onToggle={(x) => toggleDone(x.id)}
+            onToggle={(x) => softly(() => toggleDone(x.id), { items: true })}
             onNew={startNew}
             patchMany={patchMany}
           />
@@ -90,7 +103,7 @@ export function TodoBoard() {
                 todo={x}
                 members={membersOf(x)}
                 today={today}
-                onToggle={() => toggleDone(x.id)}
+                onToggle={() => softly(() => toggleDone(x.id), { items: true })}
                 onOpen={() => setEditing(x)}
               />
             ))}
@@ -107,7 +120,7 @@ export function TodoBoard() {
             setEditing(null);
           }}
           onDelete={() => {
-            remove(editing.id);
+            softly(() => remove(editing.id), { items: true });
             setEditing(null);
           }}
           onClose={() => setEditing(null)}

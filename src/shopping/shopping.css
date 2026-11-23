@@ -123,6 +123,25 @@
     -webkit-hyphens: auto;
     hyphens: auto;
   }
+  .shop-name.long {
+    font-size: 0.74rem;
+  }
+  .shop-name.xlong {
+    font-size: 0.66rem;
+  }
+  /* the list, by department: icon, name, number of items */
+  .shop-list-group + .shop-list-group {
+    margin-top: 14px;
+  }
+  .shop-group-n {
+    margin-left: 6px;
+    padding: 0 7px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: color-mix(in srgb, var(--cat, var(--muted)) 80%, var(--text));
+    background: color-mix(in srgb, var(--cat, var(--muted)) 16%, transparent);
+  }
   .shop-tile.picked {
     border-color: var(--cat);
     background: color-mix(in srgb, var(--cat) 30%, var(--surface));

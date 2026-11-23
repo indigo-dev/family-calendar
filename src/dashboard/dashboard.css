@@ -261,12 +261,28 @@
     font-size: 1rem;
     text-transform: none;
   }
+  /* titles may take two lines (they wrap between words, never inside one) */
   .dw-head-title {
     flex: 1;
     min-width: 0;
-    white-space: nowrap;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
     overflow: hidden;
-    text-overflow: ellipsis;
+    line-height: 1.15;
+  }
+  /* narrow widgets: the title needs the room more than its icon */
+  .dw-inner {
+    container: dw / inline-size;
+  }
+  @container dw (max-width: 200px) {
+    .dw-head-icon {
+      display: none !important;
+    }
+    .dw-head {
+      gap: 6px;
+    }
   }
   .dw-head-meta {
     text-transform: none;

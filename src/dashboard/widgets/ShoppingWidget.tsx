@@ -1,4 +1,5 @@
 import { useMemo, useState, type CSSProperties } from 'react';
+import { softly, vtItem } from '../../lib/transition';
 import { useStore } from '../../store';
 import { BUILTIN, CATEGORIES, type ListEntry, type ShopItem } from '../../lib/shopping';
 import { Head, stop, useDash, useUndo, type WidgetProps } from './shared';
@@ -28,8 +29,13 @@ export function ShoppingWidget({ size }: WidgetProps) {
   const check = (entry: ListEntry, item: ShopItem) => {
     setLeaving((l) => [...l, entry.itemId]);
     setTimeout(() => {
-      shopping.check(entry.itemId);
-      setLeaving((l) => l.filter((x) => x !== entry.itemId));
+      softly(
+        () => {
+          shopping.check(entry.itemId);
+          setLeaving((l) => l.filter((x) => x !== entry.itemId));
+        },
+        { items: true },
+      );
       setUndo({ label: `${item.emoji} ${item.name}`, fn: () => shopping.restore(entry) });
     }, 350);
   };
@@ -62,8 +68,8 @@ export function ShoppingWidget({ size }: WidgetProps) {
           return (
             <button
               key={e.itemId}
-              className={`dw-shop-item ${leaving.includes(e.itemId) ? 'leaving' : ''}`}
-              style={{ '--cat': color } as CSSProperties}
+              className={`dw-shop-item vt-item ${leaving.includes(e.itemId) ? 'leaving' : ''}`}
+              style={{ '--cat': color, ...vtItem(`dw-shop-${e.itemId}`) } as CSSProperties}
               onClick={(ev) => {
                 stop(ev);
                 check(e, item);
