@@ -11,7 +11,8 @@ import { applyCommand, findMembers, joinAnd, type Applied } from './apply';
 import { EventsAnswer, WeatherAnswer } from './answers';
 import { DEFAULT_MODEL, updateVoiceSettings, useVoiceSettings } from './settings';
 import './voice.css';
-import { t, locale, getLanguage } from '../i18n';
+import { t } from '../i18n';
+import { speak as speakAloud, stopSpeaking } from '../native/speech';
 
 type Phase =
   | { s: 'idle' }
@@ -23,17 +24,6 @@ type Phase =
 
 /** how long a result stays open without being touched */
 const RESULT_MS = 15_000;
-
-function speakText(text: string, enabled: boolean) {
-  if (!enabled || typeof speechSynthesis === 'undefined' || !text) return;
-  const u = new SpeechSynthesisUtterance(text);
-  // read aloud in the app language (a German voice would mangle English answers and vice versa)
-  u.lang = locale();
-  const voices = speechSynthesis.getVoices();
-  const voice = voices.find((v) => v.lang === u.lang) ?? voices.find((v) => v.lang.startsWith(getLanguage()));
-  if (voice) u.voice = voice;
-  speechSynthesis.speak(u);
-}
 
 const MicIcon = () => (
   <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
@@ -56,13 +46,18 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
   const abort = useRef<AbortController | null>(null);
   const [touched, setTouched] = useState(0);
 
-  const speak = useCallback((t: string) => speakText(t, voice.speak), [voice.speak]);
+  const speak = useCallback(
+    (text: string) => {
+      if (voice.speak) speakAloud(text);
+    },
+    [voice.speak],
+  );
 
   const close = useCallback(() => {
     rec.current?.cancel();
     rec.current = null;
     abort.current?.abort();
-    if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+    stopSpeaking();
     setPhase({ s: 'idle' });
     setTyped('');
   }, []);
@@ -140,7 +135,7 @@ export function VoiceButton({ onOpenModule, onSettings }: { onOpenModule: (id: M
   };
 
   const listen = async () => {
-    if (typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
+    stopSpeaking();
     if (!micSupported()) {
       setPhase({ s: 'typing' });
       return;
