@@ -1,3 +1,8 @@
+/** Records of the demo family (people, to-dos, places, photos) carry ids with this prefix. */
+export const DEMO_PREFIX = 'demo-';
+export const demoId = (): string => DEMO_PREFIX + uid();
+export const isDemoId = (id: string): boolean => id.startsWith(DEMO_PREFIX);
+
 /**
  * A random unique id (UUID v4). `crypto.randomUUID()` only exists in secure contexts (https, localhost) –
  * the dev server opened over the home network is plain http, so fall back to `getRandomValues()`.

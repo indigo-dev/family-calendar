@@ -255,9 +255,11 @@ export interface ListEntry {
   itemId: string;
   qty: number;
   addedAt: number;
+  /** put on the list by the demo family */
+  demo?: true;
 }
 
-interface State {
+export interface ShoppingState {
   list: ListEntry[];
   custom: ShopItem[];
   /** built-in items the family does not need */
@@ -266,12 +268,12 @@ interface State {
   bought: Record<string, number>;
 }
 
-const EMPTY: State = { list: [], custom: [], hidden: [], bought: {} };
+const EMPTY: ShoppingState = { list: [], custom: [], hidden: [], bought: {} };
 
 const isEntry = (e: unknown): e is ListEntry => isRecord(e) && typeof e.itemId === 'string' && typeof e.qty === 'number';
 const isItem = (i: unknown): i is ShopItem => isRecord(i) && typeof i.id === 'string' && typeof i.name === 'string';
 
-function parseState(raw: unknown): State {
+function parseState(raw: unknown): ShoppingState {
   if (!isRecord(raw)) return EMPTY;
   const bought: Record<string, number> = {};
   if (isRecord(raw.bought)) for (const [k, v] of Object.entries(raw.bought)) if (typeof v === 'number') bought[k] = v;
@@ -283,7 +285,8 @@ function parseState(raw: unknown): State {
   };
 }
 
-const shopping = persisted<State>(KEY, parseState);
+/** the stored list and pantry (demo data and resets use it directly; components use `useShopping`) */
+export const shopping = persisted<ShoppingState>(KEY, parseState);
 
 /* actions – module functions, so they are stable for React */
 

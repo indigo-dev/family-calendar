@@ -26,7 +26,8 @@ export interface Todo {
 const isTodo = (t: unknown): t is Todo =>
   isRecord(t) && typeof t.id === 'string' && typeof t.text === 'string' && Array.isArray(t.memberIds);
 
-const todos = persisted<Todo[]>(KEY, (raw) => arrayOf(raw, isTodo));
+/** the stored to-dos (demo data and resets use it directly; components use `useTodos`) */
+export const todos = persisted<Todo[]>(KEY, (raw) => arrayOf(raw, isTodo));
 
 export function newTodo(memberIds: string[]): Todo {
   return { id: uid(), text: '', memberIds, done: false, createdAt: Date.now() };

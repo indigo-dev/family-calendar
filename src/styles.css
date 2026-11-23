@@ -936,6 +936,27 @@
     justify-content: flex-end;
     margin-top: 12px;
   }
+  .confirm-dialog {
+    width: min(480px, 100%);
+    padding: 20px 24px;
+  }
+  .confirm-dialog h2 {
+    font-size: 1.3rem;
+    margin: 0 0 10px;
+  }
+  .confirm-body p {
+    margin: 8px 0;
+  }
+  .confirm-actions {
+    gap: 8px;
+  }
+  .demo-parts {
+    margin: 0;
+    padding-left: 1.2em;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
 
   /* ------------------------------------------------------------ settings */
   .settings {

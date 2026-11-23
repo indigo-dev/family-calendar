@@ -32,7 +32,8 @@ export const storage = {
   },
   keys(): string[] {
     try {
-      return Object.keys(localStorage);
+      // via key(i): works for the real Storage and the in-memory one of the tests
+      return Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i)).filter((k): k is string => k !== null);
     } catch {
       return [];
     }

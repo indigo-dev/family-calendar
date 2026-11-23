@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import { uid } from './id';
+import { demoId, isDemoId, uid } from './id';
 import { arrayOf, isRecord, isString, oneOf, persisted, usePersisted } from './persisted';
 import { t } from '../i18n';
 
@@ -269,11 +269,11 @@ async function scale(blob: Blob, edge: number, quality: number): Promise<{ blob:
   return { blob: out, width, height };
 }
 
-async function store(source: Blob, meta: Pick<Photo, 'source' | 'credit' | 'motifId'>, select: boolean): Promise<Photo> {
+async function store(source: Blob, meta: Pick<Photo, 'source' | 'credit' | 'motifId'>, select: boolean, demo = false): Promise<Photo> {
   const full = await scale(source, FULL_EDGE, 0.88);
   const thumb = await scale(full.blob, THUMB_EDGE, 0.8);
   const photo: Photo = {
-    id: uid(),
+    id: demo ? demoId() : uid(),
     ...meta,
     addedAt: Date.now(),
     width: full.width,
@@ -331,12 +331,54 @@ export async function fetchMotifs(page: number): Promise<Motif[]> {
 export const motifThumb = (m: Motif) => `https://picsum.photos/id/${m.id}/360/240`;
 
 /** Downloads a motif once; afterwards it works offline like an own photo. */
-export async function addMotif(m: Motif): Promise<Photo> {
+export async function addMotif(m: Motif, demo = false): Promise<Photo> {
   await ensureLoaded();
   const f = Math.min(1, FULL_EDGE / Math.max(m.width, m.height));
   const res = await fetch(`https://picsum.photos/id/${m.id}/${Math.round(m.width * f)}/${Math.round(m.height * f)}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return store(await res.blob(), { source: 'picsum', credit: m.author, motifId: m.id }, true);
+  return store(await res.blob(), { source: 'picsum', credit: m.author, motifId: m.id }, true, demo);
+}
+
+/* ------------------------------------------------------------------ demo photos and reset */
+
+/**
+ * Downloads picsum motifs as demo photos (ids marked with the demo prefix) and selects them for the
+ * slideshow. Motifs already on the device are skipped; without network the frame just gets fewer.
+ */
+export async function addDemoPhotos(motifIds: string[]): Promise<number> {
+  await ensureLoaded();
+  const have = new Set(photos.map((p) => p.motifId));
+  let ok = 0;
+  for (const id of motifIds.filter((x) => !have.has(x))) {
+    try {
+      const res = await fetch(`https://picsum.photos/id/${id}/info`);
+      if (!res.ok) continue;
+      const info = (await res.json()) as Motif;
+      await addMotif({ id, author: info.author, width: info.width, height: info.height }, true);
+      ok++;
+    } catch {
+      /* offline or unreadable – skip */
+    }
+  }
+  return ok;
+}
+
+/** Deletes the demo photos, keeps the family's own. */
+export async function removeDemoPhotos(): Promise<void> {
+  await ensureLoaded();
+  const ids = photos.filter((p) => isDemoId(p.id)).map((p) => p.id);
+  if (ids.length) await removePhotos(ids);
+}
+
+/** Deletes the whole photo database of this device (factory reset). */
+export async function deletePhotoDatabase(): Promise<void> {
+  const open = dbPromise && (await dbPromise.catch(() => null));
+  open?.close();
+  dbPromise = null;
+  await new Promise<void>((resolve) => {
+    const req = indexedDB.deleteDatabase(DB);
+    req.onsuccess = req.onerror = req.onblocked = () => resolve();
+  });
 }
 
 export function shuffle<T>(list: T[]): T[] {

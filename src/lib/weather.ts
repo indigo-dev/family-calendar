@@ -117,7 +117,7 @@ const RETRY_MS = 3 * 60_000;
 const isPlace = (p: unknown): p is Place =>
   isRecord(p) && typeof p.id === 'string' && typeof p.name === 'string' && typeof p.lat === 'number' && typeof p.lon === 'number';
 
-const weatherSettings = persisted<WeatherSettings>(KEY, (raw) => {
+export const weatherSettings = persisted<WeatherSettings>(KEY, (raw) => {
   const v = isRecord(raw) ? raw : {};
   const places = arrayOf(v.places, isPlace);
   return { places, activeId: places.some((p) => p.id === v.activeId) ? (v.activeId as string) : places[0]?.id };

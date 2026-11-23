@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react';
 import type { Member } from '../types';
 import { useStore } from '../store';
-import { demoMembers, EMOJIS, imageFileToAvatar, newMember } from '../lib/config';
+import { EMOJIS, imageFileToAvatar, newMember } from '../lib/config';
+import { loadDemo } from '../lib/demoData';
 import { Avatar } from '../components/Avatar';
 import { newTimetable, SCHOOL_TYPES } from '../lib/school';
 import { PALETTE, paletteColors } from '../lib/colors';
 import { t } from '../i18n';
 
 export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
-  const { members, calendars, upsertMember, replaceConfig, config } = useStore();
+  const { members, calendars, upsertMember } = useStore();
   const [selected, setSelected] = useState<string | null>(members[0]?.id ?? null);
   const current = members.find((m) => m.id === selected) ?? null;
 
@@ -44,8 +45,7 @@ export function FamilyTab({ onGoCalendars }: { onGoCalendars: () => void }) {
           <button
             className="btn ghost"
             onClick={() => {
-              const demo = demoMembers();
-              replaceConfig({ ...config, members: demo });
+              const { members: demo } = loadDemo();
               setSelected(demo[0].id);
             }}
           >

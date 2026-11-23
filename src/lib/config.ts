@@ -4,7 +4,7 @@ import { DEFAULT_PERIODS, parseSchool, parseTimetable } from './school';
 import { DEFAULT_SYMBOL_SET, isSymbolSet } from './symbols';
 import { DEFAULT_WEATHER_ICONS, isWeatherIconSet } from './weatherIcons';
 import { DEFAULT_CORE_COLOR, PALETTE, PALETTES } from './colors';
-import { uid } from './id';
+import { demoId, uid } from './id';
 import { persisted } from './persisted';
 import { isLanguageSetting, t } from '../i18n';
 
@@ -178,10 +178,10 @@ const DEMO_TIMETABLES: Record<'Lena' | 'Max', Timetable> = {
 export function demoMembers(): Member[] {
   const timetable = (name: keyof typeof DEMO_TIMETABLES): Timetable => structuredClone(DEMO_TIMETABLES[name]);
   return [
-    { id: uid(), name: t('demo.members.dad'), color: '#3b82f6', avatar: { type: 'emoji', value: '👨' }, demo: true },
-    { id: uid(), name: t('demo.members.mum'), color: '#e8613c', avatar: { type: 'emoji', value: '👩' }, demo: true },
-    { id: uid(), name: 'Lena', color: '#a855f7', avatar: { type: 'emoji', value: '🦄' }, demo: true, timetable: timetable('Lena') },
-    { id: uid(), name: 'Max', color: '#22a06b', avatar: { type: 'emoji', value: '🦖' }, demo: true, timetable: timetable('Max') },
+    { id: demoId(), name: t('demo.members.dad'), color: '#3b82f6', avatar: { type: 'emoji', value: '👨' }, demo: true },
+    { id: demoId(), name: t('demo.members.mum'), color: '#e8613c', avatar: { type: 'emoji', value: '👩' }, demo: true },
+    { id: demoId(), name: 'Lena', color: '#a855f7', avatar: { type: 'emoji', value: '🦄' }, demo: true, timetable: timetable('Lena') },
+    { id: demoId(), name: 'Max', color: '#22a06b', avatar: { type: 'emoji', value: '🦖' }, demo: true, timetable: timetable('Max') },
   ];
 }
 
