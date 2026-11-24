@@ -30,8 +30,8 @@ import { useToday } from '../lib/clock';
 import { t } from '../i18n';
 import { launchApp } from '../native/launcher';
 import { AppPicker } from '../apps/AppPicker';
+import { GAP, gridGeometry } from './geometry';
 
-const GAP = 12;
 const LONG_PRESS_MS = 550;
 
 interface Props {
@@ -43,11 +43,6 @@ interface Props {
   /** tap on the clock: the screensaver exactly as set up in the photo frame */
   startScreensaver: () => void;
   openSettings: (tab?: SettingsTab) => void;
-}
-
-/** columns by available width: iPad landscape 6, portrait 4, phone 2 */
-function columnsFor(width: number) {
-  return width >= 960 ? 6 : width >= 560 ? 4 : 2;
 }
 
 export function Dashboard({ reloadKey, editing, onEditing, openModule, startFrame, startScreensaver, openSettings }: Props) {
@@ -103,10 +98,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
   );
 
   /* ---------------- grid geometry */
-  const cols = columnsFor(size.width);
-  const cellW = (size.width - GAP * (cols - 1)) / cols;
-  const targetRows = cols === 6 ? 3 : cols === 4 ? 5 : 0;
-  const rowH = Math.round(targetRows ? Math.max(118, (size.height - GAP * (targetRows - 1)) / targetRows) : Math.max(130, cellW * 0.95));
+  const { cols, cellW, rowH } = gridGeometry(size.width, size.height);
 
   /* ---------------- long press, drag & drop */
   const press = useRef<{

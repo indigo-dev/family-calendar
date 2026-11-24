@@ -65,7 +65,8 @@ export function WeatherWidget({ size }: WidgetProps) {
           ))}
         </div>
       )}
-      {(size === 'l' || size === 'xl') && (
+      {/* on a medium tile the days only appear if it is high enough (CSS) */}
+      {size !== 's' && (
         <div className="dw-days">
           {days.map((d) => {
             const date = new Date(d.date + 'T12:00');

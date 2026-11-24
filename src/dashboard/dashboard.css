@@ -456,6 +456,22 @@
   .dw-weather.s {
     justify-content: center;
   }
+  /* a tall tile keeps its content together (centred below a warning) instead of pushing the hours down */
+  .dw-weather:not(.s) > .dw-weather-now {
+    margin-top: auto;
+  }
+  .dw-weather:not(.s) > :last-child {
+    margin-bottom: auto;
+  }
+  .dw-weather:not(.s) {
+    gap: clamp(8px, 4cqh, 20px);
+  }
+  /* the days of a medium tile only when there is room for them */
+  @container dw (max-height: 299px) {
+    .dw-weather.m > .dw-days {
+      display: none;
+    }
+  }
   .dw-alert {
     flex: none;
     margin: -4px -4px 0;
@@ -486,7 +502,7 @@
     position: relative;
   }
   .dw-weather-icon {
-    font-size: 2.6rem;
+    font-size: clamp(2.6rem, 14cqmin, 4.2rem);
     line-height: 1;
   }
   .dw-weather.s .dw-weather-now {
@@ -495,7 +511,7 @@
     gap: 4px;
   }
   .dw-weather-temp {
-    font-size: 2rem;
+    font-size: clamp(2rem, 11cqmin, 3.4rem);
     font-weight: 750;
     line-height: 1;
     letter-spacing: -0.02em;
@@ -520,7 +536,6 @@
     display: flex;
     justify-content: space-between;
     gap: 4px;
-    margin-top: auto;
   }
   .dw-hour,
   .dw-day {
@@ -539,7 +554,7 @@
   }
   .dw-hour-i,
   .dw-day-i {
-    font-size: 1.6rem;
+    font-size: clamp(1.6rem, 7cqmin, 2.2rem);
   }
   .dw-hour-v,
   .dw-day-max {
@@ -586,12 +601,12 @@
     min-width: 34%;
   }
   .dw-uv-val {
-    width: 48px;
-    height: 48px;
+    width: clamp(48px, 26cqmin, 76px);
+    height: clamp(48px, 26cqmin, 76px);
     border-radius: 50%;
     display: grid;
     place-items: center;
-    font-size: 1.4rem;
+    font-size: clamp(1.4rem, 12cqmin, 2.2rem);
     font-weight: 800;
     color: #fff;
     background: #8bc34a;
@@ -993,7 +1008,7 @@
     text-overflow: ellipsis;
   }
   .dw-cd-num {
-    font-size: 3rem;
+    font-size: clamp(3rem, 34cqmin, 6.5rem);
     font-weight: 800;
     line-height: 1;
     letter-spacing: -0.03em;
