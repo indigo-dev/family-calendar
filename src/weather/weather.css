@@ -164,11 +164,17 @@
     }
   }
   @container wx (min-width: 1000px) {
-    /* landscape tablet: the board fills the screen, the lower row takes what is left */
+    /* landscape: the board fills the screen. The tiles get what is left below the top row, but at most
+       two rows of square tiles (like the dashboard); on a tall screen the rest goes to the top row, where
+       the now card and the hour chart can use it. --tile is the width of one tile (3 of them in 2 of the
+       3 columns). */
     .wx-board {
-      flex: 1 0 auto;
+      --tile: calc(((100cqw - 28px) * 2 / 3 - 12px) / 3);
+      /* exactly the height that is there (not the content's), but never so low that the tiles get squashed */
+      flex: 1 0 0;
+      min-height: 560px;
       grid-template-columns: minmax(300px, 4fr) minmax(0, 4fr) minmax(0, 4fr);
-      grid-template-rows: auto minmax(0, 1fr);
+      grid-template-rows: minmax(auto, 1fr) minmax(0, calc(2 * var(--tile) + 12px));
       grid-template-areas:
         'now tl tl'
         'tiles tiles week';
@@ -178,6 +184,10 @@
     }
     .wx-now {
       grid-area: now;
+    }
+    /* a taller now card: the sky in the middle, the next two hours at the bottom */
+    .wx-now > .wx-now-main {
+      flex: 1;
     }
     .wx-tl {
       grid-area: tl;
