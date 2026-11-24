@@ -33,54 +33,57 @@ export function WeatherWidget({ size }: WidgetProps) {
           {alerts.length > 1 && ` (+${alerts.length - 1})`}
         </div>
       )}
-      <div className="dw-weather-now">
-        <WxIcon code={data.current.code} isDay={data.current.isDay} className="dw-weather-icon" />
-        <div>
-          <div className="dw-weather-temp">
-            {deg(data.current.temp)}
-            {alerts.length > 0 && size === 's' && (
-              <span className="dw-alert-dot" title={alerts[0].event}>
-                ⚠️
-              </span>
+      {/* everything below the warning, kept together and centred in the space left */}
+      <div className="dw-weather-body">
+        <div className="dw-weather-now">
+          <WxIcon code={data.current.code} isDay={data.current.isDay} className="dw-weather-icon" />
+          <div>
+            <div className="dw-weather-temp">
+              {deg(data.current.temp)}
+              {alerts.length > 0 && size === 's' && (
+                <span className="dw-alert-dot" title={alerts[0].event}>
+                  ⚠️
+                </span>
+              )}
+            </div>
+            <div className="dw-weather-text">{cur.text}</div>
+            {today && (
+              <div className="dw-weather-range">
+                ↑ {deg(today.max)} ↓ {deg(today.min)}
+                {size !== 's' && today.rainProb > 0 && <span> · 💧 {today.rainProb} %</span>}
+              </div>
             )}
           </div>
-          <div className="dw-weather-text">{cur.text}</div>
-          {today && (
-            <div className="dw-weather-range">
-              ↑ {deg(today.max)} ↓ {deg(today.min)}
-              {size !== 's' && today.rainProb > 0 && <span> · 💧 {today.rainProb} %</span>}
-            </div>
-          )}
+          {size !== 's' && <div className="dw-weather-place">{place.name}</div>}
         </div>
-        {size !== 's' && <div className="dw-weather-place">{place.name}</div>}
-      </div>
-      {size !== 's' && (
-        <div className="dw-hours">
-          {hours.map((h) => (
-            <div key={h.time} className="dw-hour">
-              <span className="dw-hour-t">{hourLabel(Number(h.time.slice(11, 13)))}</span>
-              <WxIcon code={h.code} isDay={h.isDay} className="dw-hour-i" />
-              <span className="dw-hour-v">{deg(h.temp)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-      {/* on a medium tile the days only appear if it is high enough (CSS) */}
-      {size !== 's' && (
-        <div className="dw-days">
-          {days.map((d) => {
-            const date = new Date(d.date + 'T12:00');
-            return (
-              <div key={d.date} className="dw-day">
-                <span className="dw-day-name">{fmt(date, { weekday: 'short' })}</span>
-                <WxIcon code={d.code} className="dw-day-i" />
-                <span className="dw-day-max">{deg(d.max)}</span>
-                <span className="dw-day-min">{deg(d.min)}</span>
+        {size !== 's' && (
+          <div className="dw-hours">
+            {hours.map((h) => (
+              <div key={h.time} className="dw-hour">
+                <span className="dw-hour-t">{hourLabel(Number(h.time.slice(11, 13)))}</span>
+                <WxIcon code={h.code} isDay={h.isDay} className="dw-hour-i" />
+                <span className="dw-hour-v">{deg(h.temp)}</span>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+        {/* on a medium tile the days only appear if it is high enough (CSS) */}
+        {size !== 's' && (
+          <div className="dw-days">
+            {days.map((d) => {
+              const date = new Date(d.date + 'T12:00');
+              return (
+                <div key={d.date} className="dw-day">
+                  <span className="dw-day-name">{fmt(date, { weekday: 'short' })}</span>
+                  <WxIcon code={d.code} className="dw-day-i" />
+                  <span className="dw-day-max">{deg(d.max)}</span>
+                  <span className="dw-day-min">{deg(d.min)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

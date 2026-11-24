@@ -293,7 +293,7 @@
       border-radius: 999px;
       font-size: 0.7rem;
     }
-    .dw-weather > .dw-alert ~ .dw-weather-now .dw-weather-place {
+    .dw-weather > .dw-alert ~ .dw-weather-body .dw-weather-place {
       display: none;
     }
   }
@@ -453,22 +453,19 @@
     gap: 8px;
     padding: 14px 16px;
   }
-  .dw-weather.s {
+  /* a tall tile keeps its content together, centred in the space below a warning,
+     instead of spreading it over the whole height */
+  .dw-weather-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
     justify-content: center;
+    gap: clamp(8px, 3.5cqh, 18px);
   }
-  /* a tall tile keeps its content together (centred below a warning) instead of pushing the hours down */
-  .dw-weather:not(.s) > .dw-weather-now {
-    margin-top: auto;
-  }
-  .dw-weather:not(.s) > :last-child {
-    margin-bottom: auto;
-  }
-  .dw-weather:not(.s) {
-    gap: clamp(8px, 4cqh, 20px);
-  }
-  /* the days of a medium tile only when there is room for them */
+  /* the days of a medium tile only when there is room for them (warning + now + hours + days) */
   @container dw (max-height: 299px) {
-    .dw-weather.m > .dw-days {
+    .dw-weather.m .dw-days {
       display: none;
     }
   }
