@@ -81,6 +81,19 @@ export interface WidgetInstance {
   size: WidgetSize;
   /** only for type 'app' */
   app?: AppLink;
+  /** cell placed by hand, per column count ('6', '4', '2'); without one the widget fills the first free place */
+  pos?: Record<string, { x: number; y: number }>;
+}
+
+const isCell = (c: unknown): c is { x: number; y: number } =>
+  isRecord(c) && Number.isInteger(c.x) && Number.isInteger(c.y) && (c.x as number) >= 0 && (c.y as number) >= 0;
+
+/** keeps only valid hand-placed cells */
+function cleanPos(w: WidgetInstance): WidgetInstance {
+  if (w.pos === undefined) return w;
+  const pos = isRecord(w.pos) ? Object.fromEntries(Object.entries(w.pos).filter(([, c]) => isCell(c))) : {};
+  const { pos: _, ...rest } = w;
+  return Object.keys(pos).length ? { ...rest, pos: pos as WidgetInstance['pos'] } : rest;
 }
 
 const isAppLink = (a: unknown): a is AppLink =>
@@ -113,7 +126,7 @@ const isWidget = (w: unknown): w is WidgetInstance =>
   (w.type !== 'app' || isAppLink(w.app));
 
 /** nothing stored yet = the default layout */
-const layout = persisted<WidgetInstance[]>(KEY, (raw) => (Array.isArray(raw) ? arrayOf(raw, isWidget) : defaults()));
+const layout = persisted<WidgetInstance[]>(KEY, (raw) => (Array.isArray(raw) ? arrayOf(raw, isWidget).map(cleanPos) : defaults()));
 
 export function useLayout(): WidgetInstance[] {
   return usePersisted(layout);
@@ -147,6 +160,22 @@ export function moveWidget(id: string, targetId: string) {
     const [w] = next.splice(from, 1);
     next.splice(to, 0, w);
     return next;
+  });
+}
+
+/**
+ * Fixes the cells of the given widgets for this column count (after moving one by hand). The list is
+ * sorted into reading order, so the other column counts follow the new arrangement roughly.
+ */
+export function setPositions(cols: number, cells: Record<string, { x: number; y: number }>) {
+  layout.set((l) => {
+    const key = String(cols);
+    const placed = l.map((w) => (cells[w.id] ? { ...w, pos: { ...w.pos, [key]: cells[w.id] } } : w));
+    const rank = (w: WidgetInstance) => (cells[w.id] ? cells[w.id].y * 1000 + cells[w.id].x : Infinity);
+    return placed
+      .map((w, i) => ({ w, i }))
+      .sort((a, b) => rank(a.w) - rank(b.w) || a.i - b.i)
+      .map(({ w }) => w);
   });
 }
 

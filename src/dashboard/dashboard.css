@@ -97,6 +97,16 @@
       outline-offset: 2px;
     }
   }
+  /* a free place while editing */
+  .dash-hole {
+    border-radius: var(--radius);
+    border: 2px dashed color-mix(in srgb, var(--text) 16%, transparent);
+    background: color-mix(in srgb, var(--text) 3%, transparent);
+    pointer-events: none;
+  }
+  .dash.dragging .dash-hole {
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  }
   .dw.placeholder {
     background: transparent;
     box-shadow: none;

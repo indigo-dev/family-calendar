@@ -9,7 +9,7 @@ import { useShopping } from '../lib/shopping';
 import {
   addWidget,
   addAppTile,
-  moveWidget,
+  setPositions,
   removeWidget,
   resetLayout,
   resizeWidget,
@@ -31,8 +31,11 @@ import { t } from '../i18n';
 import { launchApp } from '../native/launcher';
 import { AppPicker } from '../apps/AppPicker';
 import { GAP, gridGeometry } from './geometry';
+import { arrange, fitsAt, freeCells, rowsOf, type Cell } from './pack';
 
 const LONG_PRESS_MS = 550;
+/** how long a dragged widget rests over a place before it moves there */
+const DWELL_MS = 220;
 
 interface Props {
   reloadKey: number;
@@ -99,6 +102,24 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
 
   /* ---------------- grid geometry */
   const { cols, cellW, rowH } = gridGeometry(size.width, size.height);
+  // where every widget sits (hand-placed ones keep their cell), and the free cells in between
+  const boxes = useMemo(() => layout.map((w) => ({ w: Math.min(SIZES[w.size].w, cols), h: SIZES[w.size].h })), [layout, cols]);
+  const cells = useMemo(
+    () =>
+      arrange(
+        layout.map((w, i) => ({ ...boxes[i], pos: w.pos?.[String(cols)] })),
+        cols,
+      ),
+    [layout, boxes, cols],
+  );
+  const rows = rowsOf(boxes, cells);
+  // while editing one empty row more at the bottom, to move a widget there
+  const free = editing ? freeCells(boxes, cells, cols, rows + 1) : [];
+  // the drag handler is set up once; it reads the current arrangement from here
+  const geo = useRef({ layout, boxes, cells, cols, cellW, rowH });
+  useLayoutEffect(() => {
+    geo.current = { layout, boxes, cells, cols, cellW, rowH };
+  });
 
   /* ---------------- long press, drag & drop */
   const press = useRef<{
@@ -112,6 +133,11 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
   const suppressClick = useRef(false);
   const [drag, setDrag] = useState<{ id: string; x: number; y: number; offX: number; offY: number; w: number; h: number } | null>(null);
   const lastTarget = useRef<string | null>(null);
+  /** where the finger holds the dragged widget (set once the drag has started) */
+  const dragOff = useRef<{ x: number; y: number } | null>(null);
+  const dragId = useRef<string | null>(null);
+  /** timer until the dragged widget takes the place it rests over */
+  const dwell = useRef(0);
 
   // while armed/dragging, iOS must not scroll the page
   useEffect(() => {
@@ -138,28 +164,67 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
         if (dist > 10) endPress(); // a scroll, not a long press
         return;
       }
-      setDrag((d) => {
-        if (d) return { ...d, x: e.clientX, y: e.clientY };
-        if (dist < 6) return d;
+      if (!dragOff.current) {
+        if (dist < 6) return;
         const el = document.querySelector<HTMLElement>(`[data-wid="${p.id}"]`);
-        if (!el) return d;
+        if (!el) return;
         const r = el.getBoundingClientRect();
         suppressClick.current = true;
         lastTarget.current = null;
-        return { id: p.id, x: e.clientX, y: e.clientY, offX: p.x - r.left, offY: p.y - r.top, w: r.width, h: r.height };
-      });
-      // swap with the widget under the finger
-      const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-wid]');
-      const target = hit?.dataset.wid ?? null;
-      if (target === p.id) lastTarget.current = null;
-      else if (target && target !== lastTarget.current) {
-        lastTarget.current = target;
-        moveWidget(p.id, target);
+        dragOff.current = { x: p.x - r.left, y: p.y - r.top };
+        dragId.current = p.id;
+        setDrag({ id: p.id, x: e.clientX, y: e.clientY, offX: p.x - r.left, offY: p.y - r.top, w: r.width, h: r.height });
+      } else setDrag((d) => d && { ...d, x: e.clientX, y: e.clientY });
+      // the cell under the dragged widget's top-left corner: free → it moves there,
+      // a widget of the same size → the two swap places
+      const g = geo.current;
+      const grid = gridRef.current;
+      const idx = g.layout.findIndex((w) => w.id === p.id);
+      if (!grid || idx < 0) return;
+      const box = grid.getBoundingClientRect();
+      const pad = parseFloat(getComputedStyle(grid).paddingLeft) || 0;
+      const off = dragOff.current;
+      const gx = e.clientX - off.x - box.left - pad;
+      const gy = e.clientY - off.y - box.top - pad + grid.scrollTop;
+      const cell: Cell = {
+        x: Math.max(0, Math.min(g.cols - g.boxes[idx].w, Math.round(gx / (g.cellW + GAP)))),
+        y: Math.max(0, Math.round(gy / (g.rowH + GAP))),
+      };
+      const key = `${cell.x},${cell.y}`;
+      if (key === lastTarget.current) return;
+      lastTarget.current = key;
+      // only when the widget rests over a place for a moment – passing over others must not reshuffle them
+      window.clearTimeout(dwell.current);
+      dwell.current = window.setTimeout(() => place(p.id, cell), DWELL_MS);
+    };
+    /** moves the dragged widget to `cell` if it is free, or swaps it with a widget of the same size there */
+    const place = (id: string, cell: Cell) => {
+      const g = geo.current;
+      const idx = g.layout.findIndex((w) => w.id === id);
+      if (idx < 0) return;
+      const cur = g.cells[idx];
+      if (cur.x === cell.x && cur.y === cell.y) return;
+      const fixed = Object.fromEntries(g.layout.map((w, i) => [w.id, g.cells[i]]));
+      if (fitsAt(g.boxes, g.cells, idx, cell, g.cols)) {
+        setPositions(g.cols, { ...fixed, [id]: cell });
+        return;
       }
+      const other = g.cells.findIndex(
+        (c, i) => i !== idx && c.x === cell.x && c.y === cell.y && g.boxes[i].w === g.boxes[idx].w && g.boxes[i].h === g.boxes[idx].h,
+      );
+      if (other >= 0) setPositions(g.cols, { ...fixed, [id]: cell, [g.layout[other].id]: cur });
     };
     const onUp = (e: PointerEvent) => {
       if (press.current && e.pointerId !== press.current.pointerId) return;
       endPress();
+      // let go over a place: it counts at once
+      if (dwell.current && dragOff.current && lastTarget.current) {
+        window.clearTimeout(dwell.current);
+        const [x, y] = lastTarget.current.split(',').map(Number);
+        if (dragId.current) place(dragId.current, { x, y });
+      }
+      dwell.current = 0;
+      dragOff.current = null;
       setDrag(null);
     };
     window.addEventListener('pointermove', onMove);
@@ -170,7 +235,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);
     };
-  }, []);
+  }, [gridRef]);
 
   const onPointerDown = (w: WidgetInstance) => (e: RPointerEvent) => {
     if (e.button !== 0 || (e.target as HTMLElement).closest('.dw-edit-btn')) return;
@@ -214,12 +279,12 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
   const menuWidget = sizeMenu && layout.find((w) => w.id === sizeMenu.id);
 
   /* ---------------- smooth layout changes (FLIP): widgets glide from their old place and size */
-  const boxes = useRef(new Map<string, { x: number; y: number; w: number; h: number; size: WidgetSize }>());
+  const flipBoxes = useRef(new Map<string, { x: number; y: number; w: number; h: number; size: WidgetSize }>());
   useLayoutEffect(() => {
     const grid = gridRef.current;
     if (!grid) return;
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const prev = boxes.current;
+    const prev = flipBoxes.current;
     const next = new Map<string, { x: number; y: number; w: number; h: number; size: WidgetSize }>();
     grid.querySelectorAll<HTMLElement>(':scope > [data-wid]').forEach((el) => {
       const id = el.dataset.wid!;
@@ -259,7 +324,7 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
         el.querySelector('.dw-inner')?.animate([{ opacity: 0 }, { opacity: 0, offset: 0.4 }, { opacity: 1 }], { duration: 380 });
       }
     });
-    boxes.current = next;
+    flipBoxes.current = next;
   }, [layout, cols, rowH, size.width, gridRef]);
 
   const dragged = drag && layout.find((w) => w.id === drag.id);
@@ -300,7 +365,14 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
                 data-wid={w.id}
                 data-size={w.size}
                 className={`dw dw-${w.type} size-${w.size} ${drag?.id === w.id ? 'placeholder' : ''} ${sizeMenu?.id === w.id ? 'menu-open' : ''}`}
-                style={{ gridColumn: `span ${span}`, gridRow: `span ${s.h}`, '--i': i, '--wig': `${wig.toFixed(3)}deg` } as CSSProperties}
+                style={
+                  {
+                    gridColumn: `${cells[i].x + 1} / span ${span}`,
+                    gridRow: `${cells[i].y + 1} / span ${s.h}`,
+                    '--i': i,
+                    '--wig': `${wig.toFixed(3)}deg`,
+                  } as CSSProperties
+                }
                 onPointerDown={onPointerDown(w)}
                 onPointerUp={endPress}
                 onClick={onClick(w)}
@@ -344,6 +416,16 @@ export function Dashboard({ reloadKey, editing, onEditing, openModule, startFram
               </section>
             );
           })}
+        {/* free places while editing: a widget can be moved into any of them */}
+        {size.width > 0 &&
+          free.map((c) => (
+            <div
+              key={`hole-${c.x}-${c.y}`}
+              className="dash-hole"
+              aria-hidden
+              style={{ gridColumn: `${c.x + 1} / span 1`, gridRow: `${c.y + 1} / span 1` }}
+            />
+          ))}
         {size.width > 0 && layout.length === 0 && (
           <div className="dash-empty">
             <p>{t('dashboard.empty')}</p>
