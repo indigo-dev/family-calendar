@@ -1,7 +1,7 @@
 import { CATEGORIES, norm, type CategoryId, type ListEntry, type ShopItem } from '../lib/shopping';
 import { newTodo, type Todo } from '../lib/todos';
 import type { Member } from '../types';
-import type { ShopRequest, TodoRequest } from './command';
+import { EVERYONE, type CheckTodoRequest, type Command } from './command';
 import { t, locale } from '../i18n';
 import { fmt } from '../lib/dates';
 
@@ -15,7 +15,12 @@ export interface ApplyDeps {
   add: (itemId: string) => void;
   createItem: (name: string, emoji: string, cat: CategoryId) => ShopItem;
   removeItem: (item: ShopItem) => void;
+  /** bought: off the list */
+  check: (itemId: string) => void;
+  /** undo of check */
+  restore: (entry: ListEntry) => void;
   members: Member[];
+  todos: Todo[];
   upsertTodo: (t: Todo) => void;
   removeTodo: (id: string) => void;
 }
@@ -34,7 +39,7 @@ export interface Applied {
 
 const capitalize = (s: string) => s.charAt(0).toLocaleUpperCase(locale()) + s.slice(1);
 /** 1–10 as a word for speaking ("drei Äpfel", "three apples") */
-const numberWord = (n: number) => t('voice.numbers').split(',')[n - 1] ?? String(n);
+export const numberWord = (n: number) => t('voice.numbers').split(',')[n - 1] ?? String(n);
 
 /** finds a pantry item by name: exact (ignoring case and umlauts), else the only one that starts with it */
 export function findItem(items: ShopItem[], name: string): ShopItem | undefined {
@@ -57,14 +62,60 @@ export function findMembers(members: Member[], names: string[]): Member[] {
   return out;
 }
 
-export function applyCommand(cmd: { shopping: ShopRequest[]; todos: TodoRequest[] }, deps: ApplyDeps): Applied {
+/** names as the model gave them → members; EVERYONE = the whole family */
+export function whoOf(members: Member[], names: string[]): Member[] {
+  return names.includes(EVERYONE) ? members : findMembers(members, names);
+}
+
+const WHO_PARTS = ['addTodos', 'askTodos', 'askTimetable'] as const;
+
+/** true if a request about people names nobody of the family – then the app asks "für wen?" */
+export function missingWho(cmd: Command, members: Member[]): boolean {
+  return members.length > 0 && WHO_PARTS.some((p) => cmd[p].some((r) => whoOf(members, r.members).length === 0));
+}
+
+/** the answer to "für wen?": these names for every request that had nobody */
+export function fillWho(cmd: Command, members: Member[], names: string[]): Command {
+  const fill = <T extends { members: string[] }>(rs: T[]) =>
+    rs.map((r) => (whoOf(members, r.members).length ? r : { ...r, members: names }));
+  return { ...cmd, addTodos: fill(cmd.addTodos), askTodos: fill(cmd.askTodos), askTimetable: fill(cmd.askTimetable) };
+}
+
+const words = (s: string) =>
+  s
+    .split(/[^\p{L}\p{N}]+/u)
+    .map(norm)
+    .filter((w) => w.length > 2);
+
+/** the open to-do meant by a spoken text: same text, else the one sharing most words (only if it is the clear best) */
+export function findTodo(todos: Todo[], req: CheckTodoRequest, members: Member[]): Todo | undefined {
+  const who = whoOf(members, req.members);
+  const open = todos.filter((x) => !x.done && (!who.length || x.memberIds.some((id) => who.some((m) => m.id === id))));
+  const n = norm(req.text);
+  const exact = open.find((x) => norm(x.text) === n);
+  if (exact) return exact;
+  const want = words(req.text);
+  const scored = open
+    .map((x) => {
+      const have = words(x.text);
+      return { x, hits: want.filter((w) => have.some((h) => h.startsWith(w) || w.startsWith(h))).length };
+    })
+    .filter((s) => s.hits > 0)
+    .sort((a, b) => b.hits - a.hits);
+  if (!scored.length || (scored[1] && scored[1].hits === scored[0].hits)) return undefined;
+  return scored[0].x;
+}
+
+type Changes = Pick<Command, 'addShopping' | 'checkShopping' | 'addTodos' | 'checkTodos'>;
+
+export function applyCommand(cmd: Changes, deps: ApplyDeps): Applied {
   const lines: Line[] = [];
   const speech: string[] = [];
   const undos: (() => void)[] = [];
 
   /* shopping list */
   const shopped: string[] = [];
-  for (const req of cmd.shopping) {
+  for (const req of cmd.addShopping) {
     let item = findItem(deps.items, req.name);
     let created = false;
     if (!item) {
@@ -88,24 +139,57 @@ export function applyCommand(cmd: { shopping: ShopRequest[]; todos: TodoRequest[
     lines.push({ icon: item.emoji, text: prev ? t('voice.nowQty', { text: label, n: qty }) : label });
     shopped.push(req.qty > 1 ? `${numberWord(req.qty)} ${item.name}` : item.name);
   }
-  if (shopped.length) speech.push(t('voice.onList', { items: joinAnd(shopped), n: shopped.length > 1 || cmd.shopping[0].qty > 1 ? 2 : 1 }));
+  if (shopped.length)
+    speech.push(t('voice.onList', { items: joinAnd(shopped), n: shopped.length > 1 || cmd.addShopping[0].qty > 1 ? 2 : 1 }));
+
+  /* bought */
+  const bought: string[] = [];
+  for (const name of cmd.checkShopping) {
+    const onList = deps.items.filter((i) => deps.list.some((e) => e.itemId === i.id));
+    const item = findItem(onList, name);
+    const entry = item && deps.list.find((e) => e.itemId === item.id);
+    if (!item || !entry) {
+      lines.push({ icon: '🤷', text: t('voice.notOnList', { name: capitalize(name) }) });
+      continue;
+    }
+    deps.check(item.id);
+    deps.list = deps.list.filter((e) => e !== entry);
+    undos.push(() => deps.restore(entry));
+    lines.push({ icon: '✅', text: t('voice.checkedItem', { name: item.name }) });
+    bought.push(item.name);
+  }
+  if (bought.length) speech.push(t('voice.boughtSpeech', { items: joinAnd(bought), n: bought.length }));
 
   /* to-dos */
-  for (const req of cmd.todos) {
+  for (const req of cmd.addTodos) {
     if (deps.members.length === 0) {
       lines.push({ icon: '⚠️', text: t('voice.noFamily', { text: req.text }) });
       continue;
     }
-    const who = findMembers(deps.members, req.members);
+    const who = whoOf(deps.members, req.members);
     const todo: Todo = { ...newTodo((who.length ? who : deps.members).map((m) => m.id)), text: req.text, due: req.due };
     deps.upsertTodo(todo);
     undos.push(() => deps.removeTodo(todo.id));
     const due = req.due
       ? t('voice.until', { date: fmt(new Date(`${req.due}T00:00`), { weekday: 'short', day: 'numeric', month: 'numeric' }) })
       : '';
-    const forWho = who.length ? t('voice.forWhom', { names: joinAnd(who.map((m) => m.name)) }) : '';
+    const forWho = who.length && who.length < deps.members.length ? t('voice.forWhom', { names: joinAnd(who.map((m) => m.name)) }) : '';
     lines.push({ icon: '📌', text: t('voice.todoLine', { text: req.text, who: forWho, due }) });
     speech.push(t('voice.todoNoted', { text: req.text }));
+  }
+
+  /* done to-dos */
+  for (const req of cmd.checkTodos) {
+    const todo = findTodo(deps.todos, req, deps.members);
+    if (!todo) {
+      lines.push({ icon: '🤷', text: t('voice.todoNotFound', { text: req.text }) });
+      continue;
+    }
+    deps.upsertTodo({ ...todo, done: true, doneAt: Date.now() });
+    deps.todos = deps.todos.filter((x) => x.id !== todo.id);
+    undos.push(() => deps.upsertTodo(todo));
+    lines.push({ icon: '✅', text: t('voice.todoChecked', { text: todo.text }) });
+    speech.push(t('voice.todoDone', { text: todo.text }));
   }
 
   return {

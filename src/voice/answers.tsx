@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../store';
 import { proxyOf, useEvents } from '../lib/events';
 import { addDays, fmt, fmtTime, startOfDay } from '../lib/dates';
 import { describe, useWeather, useWeatherSettings } from '../lib/weather';
-import { norm } from '../lib/shopping';
-import type { EventsRequest, WeatherRequest } from './command';
-import { findMembers, joinAnd } from './apply';
+import { BUILTIN, norm, useShopping } from '../lib/shopping';
+import { useTodos } from '../lib/todos';
+import { schoolHours, subjectMap } from '../lib/school';
+import { EVERYONE, type EventsRequest, type TimetableQuestion, type TodosQuestion, type WeatherRequest } from './command';
+import { findMembers, joinAnd, numberWord, whoOf } from './apply';
 import { t } from '../i18n';
 
 /* Answers to questions: they load their data like the modules do and speak once it is there. */
@@ -124,6 +126,156 @@ export function EventsAnswer({ req, speak }: { req: EventsRequest; speak: (t: st
           {list.length > 8 && <li className="muted">{t('voice.moreItems', { n: list.length - 8 })}</li>}
         </ul>
       )}
+    </div>
+  );
+}
+
+/** at most this many entries are read aloud, the rest is counted */
+const SPOKEN = 8;
+const spokenList = (xs: string[]) =>
+  // "und 1 weitere" would be silly: cut only if at least two are left over
+  joinAnd(xs.length > SPOKEN + 1 ? [...xs.slice(0, SPOKEN), t('voice.nMore', { n: xs.length - SPOKEN })] : xs);
+
+/** "heute", "morgen", "am Freitag, 27. November" */
+function onDay(date: Date): string {
+  const diff = Math.round((startOfDay(date).getTime() - startOfDay(new Date()).getTime()) / 86_400_000);
+  return diff >= -1 && diff <= 2 ? dayLabel(date) : t('voice.onDay', { day: dayLabel(date) });
+}
+
+/** "Was steht auf der Einkaufsliste?" */
+export function ShoppingAnswer({ speak }: { speak: (t: string) => void }) {
+  const shop = useShopping();
+  const items = new Map([...BUILTIN, ...shop.custom].map((i) => [i.id, i]));
+  const rows = [...shop.list]
+    .sort((a, b) => a.addedAt - b.addedAt)
+    .flatMap((e) => {
+      const item = items.get(e.itemId);
+      return item ? [{ item, qty: e.qty }] : [];
+    });
+  // the list as it was when asked; ticking things off meanwhile must not start speaking again
+  const [text] = useState(() =>
+    rows.length
+      ? t('voice.shoppingLine', {
+          n: rows.length,
+          list: spokenList(rows.map((r) => (r.qty > 1 ? `${numberWord(r.qty)} ${r.item.name}` : r.item.name))),
+        })
+      : t('voice.shoppingEmpty'),
+  );
+  useSpeakOnce(text, speak);
+
+  return (
+    <div className="voice-answer events">
+      <div className="voice-answer-head">
+        <span className="voice-line-icon" aria-hidden>
+          🛒
+        </span>
+        <span>{rows.length ? t('voice.shoppingHead', { n: rows.length }) : t('voice.shoppingEmpty')}</span>
+      </div>
+      {rows.length > 0 && (
+        <ul className="voice-events">
+          {rows.slice(0, 12).map(({ item, qty }) => (
+            <li key={item.id}>
+              <span className="voice-event-time">{item.emoji}</span>
+              <span className="voice-event-title">{item.name}</span>
+              <span className="voice-event-who">{qty > 1 ? `× ${qty}` : ''}</span>
+            </li>
+          ))}
+          {rows.length > 12 && <li className="muted">{t('voice.moreItems', { n: rows.length - 12 })}</li>}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** "Welche Aufgaben hat Jan?" */
+export function TodosAnswer({ req, speak }: { req: TodosQuestion; speak: (t: string) => void }) {
+  const { members } = useStore();
+  const { todos } = useTodos();
+  const who = whoOf(members, req.members);
+  const ids = new Set(who.map((m) => m.id));
+  const forWho = who.length === members.length ? t('voice.family') : joinAnd(who.map((m) => m.name));
+  const open = todos
+    .filter((x) => !x.done && x.memberIds.some((id) => ids.has(id)))
+    .sort((a, b) => (a.due ?? '9999').localeCompare(b.due ?? '9999') || a.createdAt - b.createdAt);
+  const names = (memberIds: string[]) =>
+    memberIds.length === members.length ? t('voice.everyone') : joinAnd(members.filter((m) => memberIds.includes(m.id)).map((m) => m.name));
+  const due = (d?: string) => (d ? fmt(fromYmd(d), { weekday: 'short', day: 'numeric', month: 'numeric' }) : '');
+
+  // as it was when asked; checking one off meanwhile must not start speaking again
+  const [text] = useState(() =>
+    open.length
+      ? t('voice.todosLine', { n: open.length, who: forWho, list: spokenList(open.map((x) => x.text)) })
+      : t('voice.noTodos', { who: forWho }),
+  );
+  useSpeakOnce(text, speak);
+
+  return (
+    <div className="voice-answer events">
+      <div className="voice-answer-head">
+        <span className="voice-line-icon" aria-hidden>
+          📌
+        </span>
+        <span>{open.length ? t('voice.todosHead', { n: open.length, who: forWho }) : t('voice.noTodos', { who: forWho })}</span>
+      </div>
+      {open.length > 0 && (
+        <ul className="voice-events">
+          {open.slice(0, 10).map((x) => (
+            <li key={x.id}>
+              <span className="voice-event-time">{due(x.due)}</span>
+              <span className="voice-event-title">{x.text}</span>
+              <span className="voice-event-who">{who.length > 1 ? names(x.memberIds) : ''}</span>
+            </li>
+          ))}
+          {open.length > 10 && <li className="muted">{t('voice.moreItems', { n: open.length - 10 })}</li>}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** "Was hat Jan morgen?" – the lessons of one school day per child */
+export function TimetableAnswer({ req, speak }: { req: TimetableQuestion; speak: (t: string) => void }) {
+  const { members, school, paint, settings } = useStore();
+  const who = whoOf(members, req.members);
+  const date = fromYmd(req.date);
+  const day = (date.getDay() + 6) % 7; // 0 = Monday
+  const when = onDay(date);
+  const subjects = subjectMap(school, paint);
+
+  const rows = who.map((m) => {
+    const tt = m.timetable;
+    if (!tt) return { m, text: t('voice.noTimetable', { name: m.name }) };
+    const hours = day < 5 ? schoolHours(tt, day) : null;
+    if (!hours) return { m, text: t('voice.noLessons', { name: m.name, when }) };
+    const cells = (tt.cells[day] ?? []).filter((c): c is string => !!c);
+    // a double lesson is read once
+    const names = cells.map((id) => subjects.get(id)?.name ?? id).filter((n, i, xs) => n !== xs[i - 1]);
+    return {
+      m,
+      text: t('voice.lessonsLine', { name: m.name, when, n: cells.length, start: hours.start, end: hours.end, list: joinAnd(names) }),
+    };
+  });
+  // asked for the whole family: only the school children
+  const shown = req.members.includes(EVERYONE) ? rows.filter((r) => r.m.timetable) : rows;
+  const lines = !settings.schoolEnabled ? [t('voice.schoolOff')] : shown.length ? shown.map((r) => r.text) : [t('voice.noSchoolKids')];
+  const [text] = useState(() => lines.join(' '));
+  useSpeakOnce(text, speak);
+
+  return (
+    <div className="voice-answer events">
+      <div className="voice-answer-head">
+        <span className="voice-line-icon" aria-hidden>
+          🎒
+        </span>
+        <span>{cap(when)}</span>
+      </div>
+      <ul className="voice-events">
+        {lines.map((l, i) => (
+          <li key={i} className="voice-text-row">
+            {l}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

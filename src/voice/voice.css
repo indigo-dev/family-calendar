@@ -186,6 +186,16 @@
     border-radius: 10px;
     background: var(--surface-2);
   }
+  .voice-events li.voice-text-row {
+    display: block;
+    line-height: 1.4;
+  }
+  .voice-who {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
   .voice-event-time {
     color: var(--muted);
     font-variant-numeric: tabular-nums;

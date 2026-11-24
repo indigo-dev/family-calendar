@@ -14,6 +14,7 @@ import { MonthView } from './views/MonthView';
 import { YearView } from './views/YearView';
 import { AgendaView } from './views/AgendaView';
 import { onMinute, useMinute, useToday } from './lib/clock';
+import { onCalendarRequest } from './lib/calendarNav';
 import { fmtTime } from './lib/dates';
 import { t } from './i18n';
 
@@ -88,6 +89,20 @@ export function CalendarModule({ reloadKey, settingsOpen, onSettings, onWeather 
         setDate(startOfDay(new Date()));
       }),
     [settings.idleResetMinutes, settings.defaultView, settingsOpen],
+  );
+
+  // the voice control: "geh in die Wochenansicht", "zeig mir den nächsten Monat"
+  useEffect(
+    () =>
+      onCalendarRequest((r) => {
+        lastInteraction.current = Date.now();
+        softly(() => {
+          setSelected(null);
+          if (r.view) setView(r.view);
+          if (r.date) setDate(startOfDay(r.date));
+        });
+      }),
+    [],
   );
 
   // date rollover at midnight: keep "today" current if the user is looking at today

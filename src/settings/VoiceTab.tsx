@@ -98,13 +98,14 @@ export function VoiceTab() {
         </div>
       </Group>
 
-      <Group title={t('settings.voice.examples')}>
+      <Group title={t('settings.voice.examples')} note={t('settings.voice.examplesNote')}>
         <ul className="help" style={{ margin: 0, paddingLeft: 18, lineHeight: 1.6 }}>
           <li>{t('settings.voice.example1')}</li>
           <li>{t('settings.voice.example2')}</li>
           <li>{t('settings.voice.example3')}</li>
           <li>{t('settings.voice.example4')}</li>
           <li>{t('settings.voice.example5')}</li>
+          <li>{t('settings.voice.example6')}</li>
         </ul>
       </Group>
     </div>

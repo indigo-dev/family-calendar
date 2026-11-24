@@ -15,22 +15,25 @@ const Speech = registerPlugin<SpeechPlugin>('Speech');
 
 const browser = () => (typeof speechSynthesis === 'undefined' ? null : speechSynthesis);
 
-export function speak(text: string) {
-  if (!text) return;
+/** Queues the text; resolves when it has been spoken (or could not be). */
+export function speak(text: string): Promise<void> {
+  if (!text) return Promise.resolve();
   if (isNative) {
     // no voice installed for the language etc.: stay silent, the card shows the answer anyway
-    Speech.speak({ text, lang: locale() }).catch(() => {});
-    return;
+    return Speech.speak({ text, lang: locale() }).catch(() => {});
   }
   const synth = browser();
-  if (!synth) return;
+  if (!synth) return Promise.resolve();
   const u = new SpeechSynthesisUtterance(text);
   // read aloud in the app language (a German voice would mangle English answers and vice versa)
   u.lang = locale();
   const voices = synth.getVoices();
   const voice = voices.find((v) => v.lang === u.lang) ?? voices.find((v) => v.lang.startsWith(getLanguage()));
   if (voice) u.voice = voice;
-  synth.speak(u);
+  return new Promise((resolve) => {
+    u.onend = u.onerror = () => resolve();
+    synth.speak(u);
+  });
 }
 
 export function stopSpeaking() {

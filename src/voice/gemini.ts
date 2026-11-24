@@ -65,16 +65,19 @@ async function call(url: string, init: RequestInit): Promise<Response> {
  * `model` in the result says which one answered, so the caller can remember it.
  */
 export async function understand(
-  input: VoiceInput,
+  input: VoiceInput | VoiceInput[],
   ctx: VoiceContext,
   cfg: GeminiConfig & { fallbackModel?: string },
   signal?: AbortSignal,
 ): Promise<{ cmd: Command; model: string }> {
   if (!cfg.apiKey) throw new VoiceError(t('voice.errors.noKey'), true);
-  const part = input.kind === 'audio' ? { inlineData: { mimeType: input.mime, data: input.base64 } } : { text: input.text };
+  // several parts: a follow-up ("für wen?") is sent together with the first request
+  const parts = (Array.isArray(input) ? input : [input]).map((p) =>
+    p.kind === 'audio' ? { inlineData: { mimeType: p.mime, data: p.base64 } } : { text: p.text },
+  );
   const request = (model: string, thinking: boolean) => ({
     systemInstruction: { parts: [{ text: buildPrompt(ctx) }] },
-    contents: [{ role: 'user', parts: [part] }],
+    contents: [{ role: 'user', parts }],
     generationConfig: {
       temperature: 0,
       responseMimeType: 'application/json',

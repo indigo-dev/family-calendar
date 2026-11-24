@@ -42,11 +42,7 @@ public class SpeechPlugin extends Plugin {
                 queued = new ArrayList<>(waiting);
                 waiting.clear();
             }
-            // only the latest request matters: earlier ones would be cut off by it anyway
-            for (int i = 0; i < queued.size(); i++) {
-                if (i < queued.size() - 1) queued.get(i).resolve();
-                else say(queued.get(i));
-            }
+            for (PluginCall call : queued) say(call);
         });
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override
@@ -111,8 +107,8 @@ public class SpeechPlugin extends Plugin {
             id = "u" + (nextId++);
             running.put(id, call);
         }
-        // QUEUE_FLUSH: a new answer replaces what is still being read
-        if (tts.speak(call.getString("text"), TextToSpeech.QUEUE_FLUSH, new Bundle(), id) != TextToSpeech.SUCCESS) {
+        // QUEUE_ADD: several answers of one command are read one after the other (stop() clears the queue)
+        if (tts.speak(call.getString("text"), TextToSpeech.QUEUE_ADD, new Bundle(), id) != TextToSpeech.SUCCESS) {
             PluginCall c = take(id);
             if (c != null) c.reject("Speech output failed");
         }
