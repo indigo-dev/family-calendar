@@ -984,7 +984,6 @@
     display: flex;
     gap: 16px;
     padding: 14px 16px;
-    background: linear-gradient(150deg, color-mix(in srgb, #ffb84d 22%, var(--surface)), var(--surface) 70%);
   }
   .dw-cd-main {
     display: flex;
