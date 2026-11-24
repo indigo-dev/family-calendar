@@ -1,4 +1,3 @@
-import { isModuleTransition } from './transition';
 import type { AppConfig, CalendarSource, HolidaySettings, Member, Settings, Timetable, UiStyle } from '../types';
 import { DEFAULT_PERIODS, parseSchool, parseTimetable } from './school';
 import { DEFAULT_SYMBOL_SET, isSymbolSet } from './symbols';
@@ -106,7 +105,6 @@ export const DEFAULT_SETTINGS: Settings = {
   style: 'wally',
   symbols: DEFAULT_SYMBOL_SET,
   weatherIcons: DEFAULT_WEATHER_ICONS,
-  moduleTransition: 'fade',
 };
 
 const STYLE_IDS: UiStyle[] = ['wally', 'classic', 'clear', 'flow', 'aurora', 'nodes', 'minimal'];
@@ -233,7 +231,6 @@ export function parseConfig(raw: unknown): AppConfig {
   if (!isLanguageSetting(settings.language)) settings.language = DEFAULT_SETTINGS.language;
   if (!isSymbolSet(settings.symbols)) settings.symbols = DEFAULT_SETTINGS.symbols;
   if (!isWeatherIconSet(settings.weatherIcons)) settings.weatherIcons = DEFAULT_SETTINGS.weatherIcons;
-  if (!isModuleTransition(settings.moduleTransition)) settings.moduleTransition = DEFAULT_SETTINGS.moduleTransition;
 
   return { schemaVersion: 3, settings, members, calendars, school: parseSchool(o.school) };
 }

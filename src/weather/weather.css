@@ -1063,9 +1063,18 @@
     z-index: 900;
     display: grid;
     place-items: center;
-    padding: 20px;
+    padding: var(--sheet-gap, 20px);
     background: rgba(0, 0, 0, 0.35);
     animation: wx-fade 0.2s ease both;
+  }
+  @media (max-height: 500px) {
+    .wx-sheet-backdrop {
+      --sheet-gap: 8px;
+    }
+    .wx-sheet {
+      padding: 14px 16px;
+      gap: 10px;
+    }
   }
   @keyframes wx-fade {
     from {
@@ -1074,8 +1083,11 @@
   }
   .wx-sheet {
     width: min(520px, 100%);
-    max-height: min(760px, 100%);
+    /* the screen height, not 100 % of the layer (that does not resolve): on a phone held sideways the
+       sheet is taller than the screen and must scroll, or the search field ends up outside it */
+    max-height: min(760px, calc(100dvh - 2 * var(--sheet-gap, 20px)));
     overflow-y: auto;
+    overscroll-behavior: contain;
     display: flex;
     flex-direction: column;
     gap: 14px;

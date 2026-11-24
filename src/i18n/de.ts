@@ -868,7 +868,7 @@ export const de = {
       calendars: 'Abo-Links und Zuordnung zu Personen',
       holidays: 'Bundesland, Feiertage, Schulferien',
       school: 'Klingelzeiten und Fächer',
-      design: 'Stil, Wetter- und Einkaufs-Symbole, Übergänge',
+      design: 'Stil, Wetter- und Einkaufs-Symbole',
       view: 'Startansicht, Wochenbeginn, Tageszeiten',
       device: 'Sprache, Aktualisierung, Ruhezustand',
       voice: 'Gemini-Key, Modell, Vorlesen',
@@ -1068,7 +1068,6 @@ export const de = {
       style: 'Stil',
       weatherIcons: 'Wetter-Symbole',
       shoppingIcons: 'Einkaufs-Symbole',
-      motion: 'Übergänge',
       lightDark: 'Hell / Dunkel',
       themes: {
         auto: 'Automatisch',
@@ -1078,7 +1077,6 @@ export const de = {
         dark: 'Dunkel',
         darkNote: 'immer dunkel',
       },
-      motionNote: 'Wie die Bereiche beim Wechseln ineinander übergehen.',
       weatherNote: 'Für das Wetter-Modul, die Übersicht, den Kalender und den Bildschirmschoner. Die Meteocons bewegen sich leicht.',
       shoppingTitle: 'Symbole der Einkaufsliste',
       symbolsOf: 'Symbole: {group}',
@@ -1117,12 +1115,6 @@ export const de = {
     aurora: { label: 'Glas · Aurora', note: 'Farbverläufe, Leuchten' },
     nodes: { label: 'Workflow · Knoten', note: 'Knoten auf Punktraster' },
     minimal: { label: 'Minimal · Funktional', note: 'Reduziert, warme Grautöne' },
-  },
-  transitions: {
-    none: { label: 'Sofort', note: 'ohne Animation' },
-    fade: { label: 'Überblenden', note: 'ruhig und weich' },
-    slide: { label: 'Gleiten', note: 'folgt der Leiste' },
-    zoom: { label: 'Zoomen', note: 'wie auf dem Tablet' },
   },
   symbolGroups: {
     color: 'Farbig',

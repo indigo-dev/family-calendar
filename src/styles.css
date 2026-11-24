@@ -1186,7 +1186,9 @@
     padding: 10px 0;
     flex-wrap: wrap;
   }
-  .set-row + .set-row,
+  .set-row + .set-row {
+    border-top: 1px solid var(--line);
+  }
   .set-row-label {
     display: flex;
     flex-direction: column;
@@ -1709,25 +1711,25 @@
     .cal-bar {
       flex-wrap: wrap;
     }
-    .segmented:not(.small) {
+    .cal-bar > .segmented {
       order: 3;
       width: 100%;
     }
-    .segmented:not(.small) > button,
-    .segmented:not(.small) > .seg-days {
+    .cal-bar > .segmented > button,
+    .cal-bar > .segmented > .seg-days {
       flex: 1;
     }
-    .segmented:not(.small) > button {
+    .cal-bar > .segmented > button {
       padding: 0 8px;
     }
   }
   @media (max-width: 520px) {
     /* six view tabs have to fit on a phone */
-    .segmented:not(.small) {
+    .cal-bar > .segmented {
       gap: 0;
     }
-    .segmented:not(.small) > button,
-    .segmented:not(.small) > .seg-days {
+    .cal-bar > .segmented > button,
+    .cal-bar > .segmented > .seg-days {
       padding: 0 3px;
       font-size: 0.82rem;
       flex: 1 1 auto;
@@ -2558,47 +2560,9 @@
     --vt-out: none;
     --vt-op: 0;
   }
-  html[data-vt='slide'][data-vt-dir='fwd'] {
-    --vt-in: translateY(28px);
-    --vt-out: translateY(-18px);
-  }
-  html[data-vt='slide'][data-vt-dir='back'] {
-    --vt-in: translateY(-28px);
-    --vt-out: translateY(18px);
-  }
-  html[data-vt='zoom'] {
-    --vt-in: scale(0.96);
-    --vt-out: scale(1.03);
-  }
-  /* sideways inside an area (next week, next day) */
-  html[data-vt='slide'][data-vt-axis='x'][data-vt-dir='fwd'] {
-    --vt-in: translateX(36px);
-    --vt-out: translateX(-24px);
-  }
-  html[data-vt='slide'][data-vt-axis='x'][data-vt-dir='back'] {
-    --vt-in: translateX(-36px);
-    --vt-out: translateX(24px);
-  }
   /* how a single item leaves or arrives */
   html[data-vt] {
     --vt-item: none;
-  }
-  html[data-vt='zoom'] {
-    --vt-item: scale(0.86);
-  }
-  html[data-vt='slide'] {
-    --vt-item: translateY(-14px);
-  }
-  @media (max-width: 640px) {
-    /* phones: the bar is at the bottom, so pages move sideways */
-    html[data-vt='slide'][data-vt-dir='fwd'] {
-      --vt-in: translateX(28px);
-      --vt-out: translateX(-18px);
-    }
-    html[data-vt='slide'][data-vt-dir='back'] {
-      --vt-in: translateX(-28px);
-      --vt-out: translateX(18px);
-    }
   }
   ::view-transition-group(module) {
     animation-duration: 0.32s;
@@ -2656,98 +2620,6 @@
       background-color 0.25s,
       color 0.25s,
       box-shadow 0.25s;
-  }
-
-  /* mini previews of the transitions (Einstellungen → Design) */
-  .tr-thumb {
-    width: 100%;
-    height: 72px;
-    border-radius: 9px;
-    background: var(--surface-2);
-    display: flex;
-    gap: 5px;
-    padding: 6px;
-    overflow: hidden;
-    --tr-in: none;
-    --tr-out: none;
-    --tr-op: 0;
-  }
-  .tr-rail {
-    width: 10px;
-    border-radius: 4px;
-    background: var(--line);
-  }
-  .tr-stage {
-    position: relative;
-    flex: 1;
-    overflow: hidden;
-    border-radius: 5px;
-  }
-  .tr-stage i {
-    position: absolute;
-    inset: 0;
-    border-radius: 5px;
-    animation: 3.2s infinite;
-  }
-  .tr-a {
-    background:
-      linear-gradient(var(--accent), var(--accent)) 6px 6px / 40% 10px no-repeat,
-      linear-gradient(var(--line), var(--line)) 6px 22px / 40% 60% no-repeat,
-      linear-gradient(var(--line), var(--line)) right 6px top 22px / 40% 60% no-repeat,
-      var(--surface);
-    animation-name: tr-a;
-  }
-  .tr-b {
-    background:
-      repeating-linear-gradient(90deg, transparent 0 18%, var(--line) 18% 20%),
-      linear-gradient(var(--accent), var(--accent)) 30% 40% / 16% 30% no-repeat,
-      var(--surface);
-    animation-name: tr-b;
-  }
-  .tr-slide {
-    --tr-in: translateY(30%);
-    --tr-out: translateY(-20%);
-  }
-  .tr-zoom {
-    --tr-in: scale(0.85);
-    --tr-out: scale(1.1);
-  }
-  .tr-none .tr-stage i {
-    animation-timing-function: steps(1, end);
-  }
-  @keyframes tr-a {
-    0%,
-    40%,
-    100% {
-      opacity: 1;
-      transform: none;
-    }
-    50%,
-    90% {
-      opacity: var(--tr-op);
-      transform: var(--tr-out);
-    }
-  }
-  @keyframes tr-b {
-    0%,
-    40%,
-    100% {
-      opacity: 0;
-      transform: var(--tr-in);
-    }
-    50%,
-    90% {
-      opacity: 1;
-      transform: none;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .tr-stage i {
-      animation: none;
-    }
-    .tr-b {
-      opacity: 0;
-    }
   }
 
   /* Einstellungen → Design: sub-sections as tabs */

@@ -4,6 +4,7 @@ import { LEVELS, emptyField, isLost, isWon, layMines, open, type Field, type Lev
 import { clockTime, submitResult, useRecords } from './store';
 import { Result } from './shared';
 import { nowMs } from './time';
+import { useSize } from '../lib/hooks';
 
 const HOLD_MS = 420;
 
@@ -17,6 +18,14 @@ export function Minefield({ player }: { player: string }) {
   const [end, setEnd] = useState<{ won: boolean; seconds: number; record: boolean } | null>(null);
   const hold = useRef<{ timer: number; fired: boolean } | null>(null);
   const records = useRecords();
+  const [stageRef, stage] = useSize<HTMLDivElement>();
+  /** size of the running game (fixed at the first tap, so turning the device never breaks a game) */
+  const [gameDims, setGameDims] = useState({ w: LEVELS[0].w, h: LEVELS[0].h });
+  // on a portrait screen a wide field is turned upright: the same fields, but much larger to tap
+  const portrait = stage.height > stage.width * 1.15;
+  const want = portrait && level.w > level.h ? { w: level.h, h: level.w } : { w: level.w, h: level.h };
+  // before the first tap all fields are alike (same count either way), so the field may follow the screen
+  const dims = started === null ? want : gameDims;
   const key = `mines:${level.id}`;
   const best = records[key]?.[player];
 
@@ -54,11 +63,12 @@ export function Minefield({ player }: { player: string }) {
     if (f.flag || f.open) return;
     if (started === null) {
       // the first tap is always safe: the mines are laid now
-      const laid = layMines(level.w, level.h, level.mines, i);
+      const laid = layMines(dims.w, dims.h, level.mines, i);
+      setGameDims(dims);
       setStarted(nowMs());
-      return finish(open(laid, level.w, level.h, i));
+      return finish(open(laid, dims.w, dims.h, i));
     }
-    finish(open(fields, level.w, level.h, i));
+    finish(open(fields, dims.w, dims.h, i));
   };
 
   const toggleFlag = (i: number) => {
@@ -93,10 +103,10 @@ export function Minefield({ player }: { player: string }) {
         <span className="game-stat">⏱ {clockTime(seconds)}</span>
         {best !== undefined && <span className="game-stat muted">{t('games.bestTime', { time: clockTime(best) })}</span>}
       </div>
-      <div className="game-stage">
+      <div className="game-stage" ref={stageRef}>
         <div
           className="mines-grid"
-          style={{ '--w': level.w, '--h': level.h } as CSSProperties}
+          style={{ '--w': dims.w, '--h': dims.h } as CSSProperties}
           role="grid"
           aria-label={t('games.mines.name')}
           onContextMenu={(e) => e.preventDefault()}

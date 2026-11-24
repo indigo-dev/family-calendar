@@ -8,15 +8,13 @@ import { SYMBOL_SETS, type SymbolSet } from '../lib/symbols';
 import { WEATHER_ICON_SETS, type WeatherIconSet, type WeatherKey } from '../lib/weatherIcons';
 import { WxIcon } from '../weather/WxIcon';
 import { Group } from './controls';
-import { MODULE_TRANSITIONS } from '../lib/transition';
 
-type DesignSection = 'style' | 'weather' | 'shopping' | 'motion';
+type DesignSection = 'style' | 'weather' | 'shopping';
 
 const SECTIONS: { id: DesignSection; label: () => string }[] = [
   { id: 'style', label: () => t('settings.design.style') },
   { id: 'weather', label: () => t('settings.design.weatherIcons') },
   { id: 'shopping', label: () => t('settings.design.shoppingIcons') },
-  { id: 'motion', label: () => t('settings.design.motion') },
 ];
 
 /** the last opened section (per device), so the settings open where you left them */
@@ -103,33 +101,6 @@ export function DesignTab() {
             </div>
           </Group>
         </>
-      )}
-
-      {section === 'motion' && (
-        <Group title={t('settings.design.motion')} note={t('settings.design.motionNote')}>
-          <div className="pick-grid" role="radiogroup" aria-label={t('settings.design.motion')}>
-            {MODULE_TRANSITIONS.map((tr) => (
-              <button
-                key={tr.id}
-                role="radio"
-                aria-checked={settings.moduleTransition === tr.id}
-                className={`pick-card ${settings.moduleTransition === tr.id ? 'on' : ''}`}
-                onClick={() => updateSettings({ moduleTransition: tr.id })}
-              >
-                {/* two mini pages that swap back and forth with this animation */}
-                <span className={`tr-thumb tr-${tr.id}`} aria-hidden>
-                  <i className="tr-rail" />
-                  <span className="tr-stage">
-                    <i className="tr-a" />
-                    <i className="tr-b" />
-                  </span>
-                </span>
-                <span className="pick-label">{tr.label}</span>
-                <span className="pick-note">{tr.note}</span>
-              </button>
-            ))}
-          </div>
-        </Group>
       )}
 
       {section === 'weather' && (

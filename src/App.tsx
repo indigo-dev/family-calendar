@@ -6,7 +6,7 @@ import { useWakeLock } from './lib/hooks';
 import { onMinute, useMinute } from './lib/clock';
 import { MemberFilter, ModuleHeader } from './components/Header';
 import { MODULES, ModuleNav, navIndex, type ModuleId } from './components/ModuleNav';
-import { setTransitionKind, switchModule } from './lib/transition';
+import { switchModule } from './lib/transition';
 import type { SettingsTab } from './settings/SettingsPanel';
 import type { FrameMode } from './frame/PhotoFrame';
 import { useFrameSettings, usePhotos } from './lib/frame';
@@ -79,10 +79,8 @@ export function App() {
   useEffect(() => {
     if (module === 'games' && !games.enabled) setModule('dashboard');
   }, [module, games.enabled]);
-  // changes inside the areas animate the same way as switching areas
-  useEffect(() => setTransitionKind(settings.moduleTransition), [settings.moduleTransition]);
 
-  /** switches the area with the transition chosen in the settings (rail, widgets, voice, links) */
+  /** switches the area with the cross-fade (rail, widgets, voice, links) */
   const goModule = useCallback(
     (id: ModuleId) => {
       if (id === module) return;
@@ -91,11 +89,10 @@ export function App() {
           setModule(id);
           setDashEditing(false);
         },
-        settings.moduleTransition,
         navIndex(id) >= navIndex(module) ? 1 : -1,
       );
     },
-    [module, settings.moduleTransition],
+    [module],
   );
   useEffect(() => preloadWhenIdle(LAZY), []);
 

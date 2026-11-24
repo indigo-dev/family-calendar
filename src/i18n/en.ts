@@ -866,7 +866,7 @@ export const en: Messages = {
       calendars: 'Subscription links and who they belong to',
       holidays: 'Federal state, public and school holidays',
       school: 'Bell times and subjects',
-      design: 'Style, weather and shopping symbols, transitions',
+      design: 'Style, weather and shopping symbols',
       view: 'Start view, first day of the week, hours',
       device: 'Language, refresh, sleep',
       voice: 'Gemini key, model, read aloud',
@@ -1064,7 +1064,6 @@ export const en: Messages = {
       style: 'Style',
       weatherIcons: 'Weather symbols',
       shoppingIcons: 'Shopping symbols',
-      motion: 'Transitions',
       lightDark: 'Light / Dark',
       themes: {
         auto: 'Automatic',
@@ -1074,7 +1073,6 @@ export const en: Messages = {
         dark: 'Dark',
         darkNote: 'always dark',
       },
-      motionNote: 'How the sections blend into each other when you switch.',
       weatherNote: 'For the weather module, the overview, the calendar and the screensaver. The Meteocons move slightly.',
       shoppingTitle: 'Shopping list symbols',
       symbolsOf: 'Symbols: {group}',
@@ -1113,12 +1111,6 @@ export const en: Messages = {
     aurora: { label: 'Glass · Aurora', note: 'Gradients, glow' },
     nodes: { label: 'Workflow · Nodes', note: 'Nodes on a dot grid' },
     minimal: { label: 'Minimal · Functional', note: 'Reduced, warm greys' },
-  },
-  transitions: {
-    none: { label: 'Instant', note: 'no animation' },
-    fade: { label: 'Fade', note: 'calm and soft' },
-    slide: { label: 'Slide', note: 'follows the bar' },
-    zoom: { label: 'Zoom', note: 'like on a tablet' },
   },
   symbolGroups: {
     color: 'Colour',

@@ -7,6 +7,12 @@
     right: 0;
     bottom: 0;
     left: 0;
+    /* iPadOS as a home-screen app (landscape) can make 'bottom: 0' end short of the screen edge and leave
+       a strip. Take the largest viewport height explicitly and reach into the safe areas. */
+    height: 100vh;
+    height: max(100%, 100lvh);
+    min-height: calc(100lvh + env(safe-area-inset-bottom));
+    margin-bottom: calc(-1 * env(safe-area-inset-bottom));
     z-index: 1000;
     background: #000;
     overflow: hidden;
@@ -14,6 +20,11 @@
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+  }
+  /* behind the frame the page is black too – nothing light can show at any edge */
+  html:has(.pf),
+  html:has(.pf) body {
+    background: #000 !important;
   }
   .pf.pf-controls-on {
     cursor: default;

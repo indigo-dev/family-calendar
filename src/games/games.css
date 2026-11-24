@@ -323,7 +323,9 @@
   /* ---------------------------------------------------------------- minefield */
   .mines-grid {
     display: grid;
-    grid-template-columns: repeat(var(--w), 1fr);
+    /* fixed rows as well as columns: rows sized by their content (open vs. closed fields) became rectangles */
+    grid-template-columns: repeat(var(--w), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--h), minmax(0, 1fr));
     gap: 3px;
     width: min(100cqw, calc(100cqh * var(--w) / var(--h)));
     aspect-ratio: var(--w) / var(--h);
@@ -332,6 +334,9 @@
     user-select: none;
   }
   .mines-cell {
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
     display: grid;
     place-items: center;
     border-radius: 18%;
@@ -440,7 +445,10 @@
     top: 0;
     width: 12.5%;
     height: 12.5%;
-    padding: 6%;
+    /* no % padding here: it would be taken from the width of the whole board and leave only a dot */
+    padding: 0;
+    display: grid;
+    place-items: center;
     border-radius: 22%;
     transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%));
     transition:
@@ -449,8 +457,8 @@
   }
   .gem-svg {
     display: block;
-    width: 100%;
-    height: 100%;
+    width: 80%;
+    height: 80%;
     filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.25));
     transition: transform 0.2s ease;
   }

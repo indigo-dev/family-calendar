@@ -1,4 +1,3 @@
-import type { ModuleTransition } from './lib/transition';
 import type { SymbolSet } from './lib/symbols';
 import type { WeatherIconSet } from './lib/weatherIcons';
 import type { LanguageSetting } from './i18n';
@@ -91,7 +90,6 @@ export interface Settings {
   weatherIcons: WeatherIconSet;
   /** how people, subjects and departments are coloured */
   /** animation when switching modules */
-  moduleTransition: ModuleTransition;
 }
 
 export type UiStyle = 'wally' | 'classic' | 'clear' | 'flow' | 'aurora' | 'nodes' | 'minimal';

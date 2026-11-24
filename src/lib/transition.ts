@@ -1,22 +1,5 @@
 import { flushSync } from 'react-dom';
-import { t } from '../i18n';
-
-/** How the app animates – between the main areas and inside them (setting "Übergänge"). */
-export type ModuleTransition = 'fade' | 'slide' | 'zoom' | 'none';
-
-export const MODULE_TRANSITIONS: { id: ModuleTransition; label: string; note: string }[] = (['fade', 'slide', 'zoom', 'none'] as const).map(
-  (id) => ({
-    id,
-    get label() {
-      return t(`transitions.${id}.label`);
-    },
-    get note() {
-      return t(`transitions.${id}.note`);
-    },
-  }),
-);
-
-export const isModuleTransition = (v: unknown): v is ModuleTransition => MODULE_TRANSITIONS.some((t) => t.id === v);
+/** The app always cross-fades – between the areas and inside them ("Bewegung reduzieren" switches it off). */
 
 interface VT {
   ready: Promise<void>;
@@ -25,12 +8,6 @@ interface VT {
 }
 type VTDocument = Document & { startViewTransition?: (cb: () => Promise<void> | void) => VT };
 let current: VT | null = null;
-
-/** the chosen transition – set by the app shell whenever the setting changes */
-let chosen: ModuleTransition = 'fade';
-export function setTransitionKind(kind: ModuleTransition) {
-  chosen = kind;
-}
 
 /** waits (max. ~400 ms) until a lazily loaded module has replaced its loading placeholder */
 function moduleReady(): Promise<void> {
@@ -63,15 +40,15 @@ interface Options {
   wait?: () => Promise<void>;
 }
 
-function run(update: () => void, kind: ModuleTransition, { scope, dir = 1, axis = 'y', wait }: Options): boolean {
+function run(update: () => void, { scope, dir = 1, axis = 'y', wait }: Options): boolean {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const doc = document as VTDocument;
   // hidden page (screen off, other tab): nobody sees it, and the browser would stall the transition.
   // A transition that is still running is not interrupted by a small one inside the area.
-  if (kind === 'none' || reduce || document.visibilityState !== 'visible' || !doc.startViewTransition) return false;
+  if (reduce || document.visibilityState !== 'visible' || !doc.startViewTransition) return false;
   if (current && scope !== 'module') return false;
   const root = document.documentElement;
-  root.dataset.vt = kind;
+  root.dataset.vt = 'fade';
   root.dataset.vtDir = dir > 0 ? 'fwd' : 'back';
   root.dataset.vtAxis = axis;
   if (scope === 'module') delete root.dataset.vtScope;
@@ -103,22 +80,15 @@ function run(update: () => void, kind: ModuleTransition, { scope, dir = 1, axis 
  * Runs `update` (the module switch) with the chosen animation. Uses the View Transitions API
  * (old and new page cross over); older browsers get a short fade-in of the new page.
  */
-export function switchModule(update: () => void, kind: ModuleTransition, dir: 1 | -1) {
-  if (run(update, kind, { scope: 'module', dir, wait: moduleReady })) return;
+export function switchModule(update: () => void, dir: 1 | -1) {
+  if (run(update, { scope: 'module', dir, wait: moduleReady })) return;
   update();
-  if (kind === 'none' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const app = document.querySelector<HTMLElement>('.shell > .app');
-  const from = kind === 'zoom' ? 'scale(0.97)' : kind === 'fade' ? 'none' : `translateY(${dir * 24}px)`;
-  app?.animate(
-    [
-      { opacity: 0, transform: from },
-      { opacity: 1, transform: 'none' },
-    ],
-    {
-      duration: 280,
-      easing: 'cubic-bezier(.2,.8,.2,1)',
-    },
-  );
+  app?.animate([{ opacity: 0 }, { opacity: 1 }], {
+    duration: 280,
+    easing: 'cubic-bezier(.2,.8,.2,1)',
+  });
 }
 
 /**
@@ -126,7 +96,7 @@ export function switchModule(update: () => void, kind: ModuleTransition, dir: 1 
  * the single elements marked `vt-item` (`items: true`). Without support it simply happens.
  */
 export function softly(update: () => void, opts: { items?: boolean; dir?: 1 | -1; axis?: 'x' | 'y' } = {}) {
-  if (!run(update, chosen, { scope: opts.items ? 'items' : 'section', dir: opts.dir, axis: opts.axis })) update();
+  if (!run(update, { scope: opts.items ? 'items' : 'section', dir: opts.dir, axis: opts.axis })) update();
 }
 
 /** style for an element that animates on its own in `softly(…, { items: true })` (name must be unique) */
