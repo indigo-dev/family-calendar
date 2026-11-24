@@ -131,7 +131,8 @@ function rawSubjectMap(school: SchoolConfig): Map<string, Subject> {
 /** All subjects for display: colours mapped to the chosen palette, lookup by id. Cheap – no memo needed. */
 export function subjectMap(school: SchoolConfig, paint: Paint): Map<string, Subject> {
   const map = rawSubjectMap(school);
-  for (const [id, s] of map) map.set(id, { ...s, color: paint(s.color) });
+  // subjects keep their own shade (paint() would snap some of them onto the same palette slot)
+  for (const [id, s] of map) map.set(id, { ...s, color: paint.shade(s.color) });
   return map;
 }
 

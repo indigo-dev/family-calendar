@@ -22,9 +22,15 @@ describe('painter', () => {
     PALETTE.forEach((c, i) => expect(paint(c)).toBe(paletteColors('wally')[i]));
   });
 
-  it('maps other colours by hue into the HomeWally spectrum', () => {
+  it('keeps other colours (subjects) apart instead of snapping them to twelve slots', () => {
     const paint = painter(colorScheme('wally'));
-    expect(paletteColors('wally')).toContain(paint('#1e90ff'));
+    expect(paint('#1e90ff')).toBe('#1e90ff');
+    // German, Spanish and History used to become the same orange/red
+    for (const p of ['vivid', 'muted', 'wally'] as const) {
+      const pt = painter(colorScheme(p));
+      const out = ['#ef4444', '#f97316', '#b45309', '#92400e', '#a16207', '#c084fc', '#a855f7'].map((c) => pt(c));
+      expect(new Set(out).size).toBe(out.length);
+    }
   });
 
   it('greys out colours in the muted palette', () => {

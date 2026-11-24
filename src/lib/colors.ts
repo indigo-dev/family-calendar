@@ -4,7 +4,8 @@ import type { UiStyle } from '../types';
  * Colour palettes. There is no palette setting: every UI style draws with its own palette.
  * Stored colours (people, subjects, shopping departments) stay unchanged in the config; `painter()` maps
  * them to the palette of the style when they are drawn. Colours from the base palette keep their slot
- * (Papa stays "the first colour"), other colours are mapped by hue.
+ * (Papa stays "the first colour"). Other colours (subjects, departments) keep their own shade – snapping them
+ * to twelve slots made different subjects look the same – and are only greyed in the muted palette.
  */
 
 /** base palette – the vivid colours people pick from */
@@ -101,26 +102,6 @@ function hslToHex([h, s, l]: Hsl): string {
   return `#${x(f(0))}${x(f(8))}${x(f(4))}`;
 }
 
-const hueDist = (a: number, b: number) => {
-  const d = Math.abs(a - b) % 360;
-  return d > 180 ? 360 - d : d;
-};
-
-/** slot of the base palette that is closest in hue (greys go to the grey slot) */
-function nearestSlot(hsl: Hsl): number {
-  if (hsl[1] < 12) return PALETTE.length - 1;
-  let best = 0;
-  let bestD = Infinity;
-  PALETTE.slice(0, -1).forEach((c, i) => {
-    const d = hueDist(hexToHsl(c)![0], hsl[0]);
-    if (d < bestD) {
-      bestD = d;
-      best = i;
-    }
-  });
-  return best;
-}
-
 /* ---------------------------------------------------------------- schemes and painting */
 
 /** A palette resolved to its twelve colours. Objects are cached, so equal settings give the same scheme. */
@@ -133,6 +114,11 @@ export interface ColorScheme {
 export interface Paint {
   (color: string): string;
   (color: string | undefined): string | undefined;
+  /**
+   * For colours that are not picked from the palette (subjects): never snaps to a palette slot, so two
+   * shades stay two shades – only the muted palette greys them.
+   */
+  shade(color: string): string;
 }
 
 /** the twelve colours of a palette */
@@ -151,16 +137,16 @@ export function colorScheme(palette: ColorPalette): ColorScheme {
   return s;
 }
 
-function mapColor(scheme: ColorScheme, color: string): string {
+function mapColor(scheme: ColorScheme, color: string, slots: boolean): string {
   if (scheme.palette === 'vivid') return color;
-  const slot = PALETTE.indexOf(color.toLowerCase());
+  const slot = slots ? PALETTE.indexOf(color.toLowerCase()) : -1;
   if (slot >= 0) return scheme.colors[slot];
+  // HomeWally's spectrum is in the same family as the subject colours: they keep their shade
+  if (scheme.palette === 'wally') return color;
   const hsl = hexToHsl(color);
   if (!hsl) return color;
-  // muted: greyed, calmer and with medium lightness; wally: the nearest slot of the spectrum
-  return scheme.palette === 'muted'
-    ? hslToHex([hsl[0], Math.min(hsl[1] * 0.55, 48), 40 + (hsl[2] - 40) * 0.45])
-    : scheme.colors[nearestSlot(hsl)];
+  // muted: greyed, calmer and with medium lightness – every colour stays apart from the others
+  return hslToHex([hsl[0], Math.min(hsl[1] * 0.55, 48), 40 + (hsl[2] - 40) * 0.45]);
 }
 
 const painters = new WeakMap<ColorScheme, Paint>();
@@ -173,16 +159,17 @@ export function painter(scheme: ColorScheme): Paint {
   let p = painters.get(scheme);
   if (!p) {
     const cache = new Map<string, string>();
-    p = ((color: string | undefined) => {
-      if (!color) return color;
-      const key = color.toLowerCase();
+    const cached = (color: string, slots: boolean) => {
+      const key = (slots ? 's' : 'h') + color.toLowerCase();
       let out = cache.get(key);
       if (out === undefined) {
-        out = mapColor(scheme, color);
+        out = mapColor(scheme, color, slots);
         cache.set(key, out);
       }
       return out;
-    }) as Paint;
+    };
+    p = ((color: string | undefined) => (color ? cached(color, true) : color)) as Paint;
+    p.shade = (color: string) => cached(color, false);
     painters.set(scheme, p);
   }
   return p;
