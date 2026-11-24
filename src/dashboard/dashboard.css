@@ -276,27 +276,6 @@
   .dw-inner {
     container: dw / size;
   }
-  /* a short weather tile with a warning (phone, 2 × 1): the warning becomes a small pill in the corner
-     instead of a full line, so the hours below stay complete */
-  @container dw (max-height: 200px) {
-    .dw-weather {
-      position: relative;
-    }
-    .dw-weather > .dw-alert {
-      position: absolute;
-      top: 10px;
-      right: 12px;
-      z-index: 1;
-      max-width: 58%;
-      margin: 0;
-      padding: 3px 10px;
-      border-radius: 999px;
-      font-size: 0.7rem;
-    }
-    .dw-weather > .dw-alert ~ .dw-weather-body .dw-weather-place {
-      display: none;
-    }
-  }
   @container dw (max-width: 200px) {
     .dw-head-icon {
       display: none !important;
@@ -446,126 +425,424 @@
     color: var(--accent);
   }
 
-  /* ---------------- Wetter */
-  .dw-weather {
+  /* ---------------- Wetter
+     The sky of the weather section's "now" card. s/m: the whole tile is the sky; l/xl: the sky is a card
+     inside the tile, hours and days next to it on the normal surface. */
+  .dw-wx {
+    --sky-a: #3d8bf0;
+    --sky-b: #8cc3fb;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    min-width: 0;
+  }
+  .dw-wx.s,
+  .dw-wx.m,
+  .dw-wx .dw-sky {
+    color: #fff;
+    background: linear-gradient(150deg, var(--sky-a), var(--sky-b));
+  }
+  .dw-wx.s,
+  .dw-wx.m {
     padding: 14px 16px;
   }
-  /* a tall tile keeps its content together, centred in the space below a warning,
-     instead of spreading it over the whole height */
-  .dw-weather-body {
-    flex: 1;
-    min-height: 0;
+  .dw-wx.s .dw-sky,
+  .dw-wx.m .dw-sky {
+    background: none;
+  }
+  .dw-wx.l,
+  .dw-wx.xl {
+    padding: 10px;
+  }
+  .dw-wx.xl {
+    flex-direction: row;
+  }
+  [data-mode='dark'] .dw-wx.s,
+  [data-mode='dark'] .dw-wx.m,
+  [data-mode='dark'] .dw-wx .dw-sky {
+    filter: brightness(0.88) saturate(0.95);
+  }
+  .sky-cloudy {
+    --sky-a: #5f7fa6;
+    --sky-b: #a9bed6;
+  }
+  .sky-rain {
+    --sky-a: #43566f;
+    --sky-b: #7c93ad;
+  }
+  .sky-storm {
+    --sky-a: #2c2f4a;
+    --sky-b: #5d5b84;
+  }
+  .sky-snow {
+    --sky-a: #7d9bbb;
+    --sky-b: #c9d9ea;
+  }
+  .sky-fog {
+    --sky-a: #7b8590;
+    --sky-b: #b8c0c8;
+  }
+  .sky-night {
+    --sky-a: #0f1d3d;
+    --sky-b: #2f4778;
+  }
+
+  /* the sky card */
+  .dw-sky {
+    position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: clamp(8px, 3.5cqh, 18px);
+    gap: clamp(6px, 3cqh, 14px);
+    min-width: 0;
+    min-height: 0;
   }
-  /* the days of a medium tile only when there is room for them (warning + now + hours + days) */
-  @container dw (max-height: 299px) {
-    .dw-weather.m .dw-days {
-      display: none;
-    }
-  }
-  .dw-alert {
+  .dw-wx.l .dw-sky,
+  .dw-wx.xl .dw-sky {
     flex: none;
-    margin: -4px -4px 0;
-    padding: 6px 10px;
-    border-radius: 10px;
-    font-size: 0.8rem;
+    padding: 12px 14px;
+    border-radius: calc(var(--radius) - 6px);
+  }
+  .dw-wx.xl .dw-sky {
+    width: 38%;
+  }
+  .dw-wx.s .dw-sky,
+  .dw-wx.m .dw-sky {
+    flex: 1;
+  }
+  .dw-sky-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 0;
+    font-size: 0.72rem;
     font-weight: 700;
-    background: color-mix(in srgb, #f2c200 25%, var(--surface));
+  }
+  .dw-sky-top:empty {
+    display: none;
+  }
+  .dw-sky-place {
+    opacity: 0.85;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .dw-alert.sev-moderate {
-    background: color-mix(in srgb, #ff8a00 28%, var(--surface));
+  .dw-sky-alert {
+    flex: none;
+    max-width: 70%;
+    margin-left: auto;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
-  .dw-alert.sev-severe,
-  .dw-alert.sev-extreme {
-    background: color-mix(in srgb, var(--danger) 30%, var(--surface));
+  .dw-wx.s .dw-sky-alert {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    padding: 0;
+    background: none;
+    box-shadow: none;
   }
-  .dw-alert-dot {
-    font-size: 0.9rem;
-    margin-left: 4px;
+  .dw-wx.s .dw-sky-alert-text {
+    display: none;
   }
-  .dw-weather-now {
+  .dw-sky-main {
     display: flex;
     align-items: center;
     gap: 12px;
-    position: relative;
+    min-width: 0;
   }
-  .dw-weather-icon {
-    font-size: clamp(2.6rem, 14cqmin, 4.2rem);
-    line-height: 1;
-  }
-  .dw-weather.s .dw-weather-now {
+  .dw-wx.s .dw-sky-main {
+    flex: 1;
     flex-direction: column;
     align-items: flex-start;
+    justify-content: center;
     gap: 4px;
   }
-  .dw-weather-temp {
-    font-size: clamp(2rem, 11cqmin, 3.4rem);
-    font-weight: 750;
-    line-height: 1;
-    letter-spacing: -0.02em;
+  .dw-sky-icon {
+    flex: none;
+    font-size: clamp(2.6rem, 16cqmin, 4.4rem);
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.16));
   }
-  .dw-weather-text {
-    font-size: 0.85rem;
-    font-weight: 600;
+  .dw-sky-icon.wxi-mask {
+    background: #fff;
   }
-  .dw-weather-range {
-    font-size: 0.8rem;
-    color: var(--muted);
+  .dw-sky-read {
+    min-width: 0;
   }
-  .dw-weather-place {
-    position: absolute;
-    top: 0;
-    right: 0;
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-weight: 600;
-  }
-  .dw-hours {
-    display: flex;
-    justify-content: space-between;
-    gap: 4px;
-  }
-  .dw-hour,
-  .dw-day {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    font-size: 0.8rem;
+  .dw-sky-temp {
+    font-size: clamp(2.2rem, 15cqmin, 3.9rem);
+    font-weight: 300;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
     font-variant-numeric: tabular-nums;
   }
-  .dw-hour-t,
-  .dw-day-name {
-    color: var(--muted);
-    font-size: 0.72rem;
-    font-weight: 600;
+  .dw-sky-text {
+    margin-top: 2px;
+    font-size: 0.95rem;
+    font-weight: 750;
   }
-  .dw-hour-i,
-  .dw-day-i {
-    font-size: clamp(1.6rem, 7cqmin, 2.2rem);
-  }
-  .dw-hour-v,
-  .dw-day-max {
-    font-weight: 700;
-  }
-  .dw-day-min {
-    color: var(--muted);
-  }
-  .dw-days {
+  .dw-sky-sub {
     display: flex;
-    justify-content: space-between;
-    gap: 4px;
-    padding-top: 8px;
+    flex-wrap: wrap;
+    gap: 0 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    opacity: 0.9;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* the next two hours */
+  .dw-nc {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    padding: 7px 11px 8px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.16);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  }
+  .dw-nc-title {
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.8;
+  }
+  .dw-nc-text {
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  .dw-nc-bars {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    align-items: end;
+    gap: 3px;
+    height: 18px;
+    margin-top: 5px;
+  }
+  .dw-nc-bars i {
+    height: calc(3px + var(--v) * 15px);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+  .dw-nc-bars i.wet {
+    background: #fff;
+  }
+  .dw-nc-bars i.snow {
+    background: #dbeafe;
+  }
+  /* medium: sky on the left, the next two hours on the right, the hours below across the whole tile */
+  .dw-wx.m .dw-sky {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    align-items: center;
+    column-gap: 14px;
+  }
+  .dw-wx.m .dw-sky-top {
+    grid-column: 1 / -1;
+  }
+  .dw-wx.m .dw-nc {
+    align-self: center;
+  }
+
+  /* the next hours: time, icon, temperature on a small curve */
+  .dw-hrs {
+    position: relative;
+    flex: none;
+    display: grid;
+    grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+    min-width: 0;
+  }
+  .dw-hrs-curve {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    /* the band between icon and rain chance (see .dw-hr rows) */
+    top: calc(14px + 2px + 1.6rem + 4px);
+    height: 40px;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .dw-hrs-curve polyline {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
+    opacity: 0.55;
+  }
+  .dw-hrs.light .dw-hrs-curve polyline {
+    stroke: #fff;
+    opacity: 0.6;
+  }
+  .dw-hr {
+    display: grid;
+    grid-template-rows: 14px 1.6rem 40px 12px;
+    row-gap: 2px;
+    justify-items: center;
+    min-width: 0;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .dw-hr-t {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .dw-hr-i {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+  .dw-hr-band {
+    position: relative;
+    width: 100%;
+  }
+  .dw-hr-v {
+    position: absolute;
+    left: 50%;
+    top: var(--y);
+    transform: translate(-50%, -125%);
+    font-weight: 750;
+    white-space: nowrap;
+    padding: 0 2px;
+  }
+  .dw-hr-p {
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: var(--rain, #3b82f6);
+  }
+  .dw-hrs.light .dw-hr-t,
+  .dw-hrs.light .dw-hr-p {
+    color: inherit;
+    opacity: 0.85;
+  }
+  .dw-hrs.light .dw-hr-i.wxi-mask {
+    background: #fff;
+  }
+
+  /* large sizes: hours and days next to the sky */
+  .dw-wx-more {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 2px 4px 0;
+  }
+  .dw-days2 {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    padding-top: 6px;
     border-top: 1px solid var(--line);
+  }
+  .dw-d {
+    display: grid;
+    grid-template-columns: minmax(3.2em, 1fr) 1.6rem 2.6em 2.2em minmax(30px, 2fr) 2.2em;
+    align-items: center;
+    gap: 6px;
+    min-height: 22px;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .dw-d-name {
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .dw-d-i {
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+  .dw-d-rain {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--rain, #3b82f6);
+  }
+  .dw-d-min {
+    color: var(--muted);
+    text-align: right;
+  }
+  .dw-d-max {
+    font-weight: 750;
+  }
+  .dw-d-bar {
+    position: relative;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface-2);
+  }
+  .dw-d-bar i {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc(var(--from) * 100%);
+    right: calc(var(--to) * 100%);
+    min-width: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #0ea5e9, #f59e0b);
+  }
+
+  /* how much fits decides the tile's real height */
+  @container dw (max-height: 229px) {
+    /* medium tile, low: no hours below the sky */
+    .dw-wx.m .dw-hrs {
+      display: none;
+    }
+  }
+  @container dw (max-height: 169px) {
+    .dw-wx.m .dw-sky-top,
+    .dw-wx.s .dw-sky-sub {
+      display: none;
+    }
+  }
+  @container dw (max-width: 329px) {
+    /* a narrow medium tile (phone): the next two hours below the sky instead of beside it */
+    .dw-wx.m .dw-nc {
+      display: none;
+    }
+    .dw-wx.m .dw-sky {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+  /* large, low: fewer days */
+  @container dw (max-height: 479px) {
+    .dw-wx.l .dw-d:nth-child(n + 5),
+    .dw-wx.xl .dw-d:nth-child(n + 6) {
+      display: none;
+    }
+    .dw-wx.l .dw-sky-feels {
+      display: none;
+    }
+  }
+  @container dw (max-height: 399px) {
+    .dw-wx.l .dw-d:nth-child(n + 4),
+    .dw-wx.xl .dw-d:nth-child(n + 5) {
+      display: none;
+    }
+    .dw-wx.l .dw-nc {
+      display: none;
+    }
+  }
+  @container dw (max-height: 319px) {
+    .dw-wx.l .dw-d:nth-child(n + 3),
+    .dw-wx.xl .dw-d:nth-child(n + 4) {
+      display: none;
+    }
   }
 
   /* ---------------- Pollen & UV */
