@@ -722,35 +722,7 @@
     font-weight: 800;
   }
 
-  /* clock: the hero card with the halo rings of the logo */
-  [data-style='wally'] .dw.dw-clock .dw-inner {
-    background:
-      radial-gradient(
-        circle at 100% 0%,
-        transparent 0 69px,
-        var(--halo) 70px 71px,
-        transparent 72px 129px,
-        var(--halo) 130px 131px,
-        transparent 132px 199px,
-        var(--halo) 200px 201px,
-        transparent 202px
-      ),
-      radial-gradient(70% 90% at 100% 0%, color-mix(in srgb, #fb923c 16%, transparent), transparent 70%);
-  }
-  [data-style='wally'][data-mode='dark'] .dw.dw-clock .dw-inner {
-    background:
-      radial-gradient(
-        circle at 100% 0%,
-        transparent 0 69px,
-        var(--halo) 70px 71px,
-        transparent 72px 129px,
-        var(--halo) 130px 131px,
-        transparent 132px 199px,
-        var(--halo) 200px 201px,
-        transparent 202px
-      ),
-      radial-gradient(70% 90% at 100% 0%, rgba(124, 108, 255, 0.28), transparent 70%);
-  }
+  /* clock: a plain card like the others, only the type makes it the hero */
   [data-style='wally'] .dw-clock-time {
     font-family: var(--display);
     font-weight: 800;
