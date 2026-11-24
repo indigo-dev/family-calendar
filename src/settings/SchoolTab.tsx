@@ -3,38 +3,52 @@ import type { Member, Period, Subject } from '../types';
 import { useStore } from '../store';
 import { catalogColor, catalogGroups, DEFAULT_PERIODS, minutes, newSubject, SUBJECT_COLORS } from '../lib/school';
 import { Avatar } from '../components/Avatar';
+import { Group, Row, Switch } from './controls';
 import { t } from '../i18n';
 
 const hhmm = (min: number) => `${String(Math.floor(min / 60) % 24).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
 
 export function SchoolTab() {
-  const { members } = useStore();
+  const { members, settings, updateSettings } = useStore();
   const kids = members.filter((m) => m.timetable);
   const [kidId, setKidId] = useState<string | undefined>(kids[0]?.id);
   const kid = kids.find((k) => k.id === kidId) ?? kids[0];
 
+  const on = settings.schoolEnabled;
+
   return (
     <div className="form">
-      <div className="field">
-        <span>{t('settings.school.bellTimes')}</span>
-        {kids.length === 0 ? (
-          <p className="hint muted">{t('settings.school.noKid')}</p>
-        ) : (
-          <>
-            {kids.length > 1 && (
-              <div className="segmented small">
-                {kids.map((k) => (
-                  <button key={k.id} className={k.id === kid.id ? 'active' : ''} onClick={() => setKidId(k.id)}>
-                    {k.name}
-                  </button>
-                ))}
-              </div>
+      <Group>
+        <div className="set-card">
+          <Row label={t('settings.school.enabled')} hint={t('settings.school.enabledHint')}>
+            <Switch checked={on} onChange={(schoolEnabled) => updateSettings({ schoolEnabled })} label={t('settings.school.enabled')} />
+          </Row>
+        </div>
+      </Group>
+      {on && (
+        <>
+          <div className="field">
+            <span>{t('settings.school.bellTimes')}</span>
+            {kids.length === 0 ? (
+              <p className="hint muted">{t('settings.school.noKid')}</p>
+            ) : (
+              <>
+                {kids.length > 1 && (
+                  <div className="segmented small">
+                    {kids.map((k) => (
+                      <button key={k.id} className={k.id === kid.id ? 'active' : ''} onClick={() => setKidId(k.id)}>
+                        {k.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <PeriodEditor key={kid.id} kid={kid} others={kids.filter((k) => k.id !== kid.id)} />
+              </>
             )}
-            <PeriodEditor key={kid.id} kid={kid} others={kids.filter((k) => k.id !== kid.id)} />
-          </>
-        )}
-      </div>
-      <SubjectEditor />
+          </div>
+          <SubjectEditor />
+        </>
+      )}
     </div>
   );
 }

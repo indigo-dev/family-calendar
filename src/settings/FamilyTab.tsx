@@ -192,34 +192,36 @@ function MemberEditor({ member, onGoCalendars, onDeleted }: { member: Member; on
         </div>
       </div>
 
-      <div className="field">
-        <span>{t('settings.family.school')}</span>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={!!member.timetable}
-            onChange={(e) => {
-              if (e.target.checked) set({ timetable: newTimetable('grundschule') });
-              else if (confirm(t('settings.family.confirmDeleteTimetable', { name: member.name }))) set({ timetable: undefined });
-            }}
-          />
-          <span>{t('settings.family.hasTimetable')}</span>
-        </label>
-        {member.timetable && (
-          <div className="segmented small">
-            {(Object.keys(SCHOOL_TYPES) as (keyof typeof SCHOOL_TYPES)[]).map((type) => (
-              <button
-                key={type}
-                className={member.timetable?.schoolType === type ? 'active' : ''}
-                onClick={() => set({ timetable: { ...member.timetable!, schoolType: type } })}
-              >
-                {SCHOOL_TYPES[type]}
-              </button>
-            ))}
-          </div>
-        )}
-        {member.timetable && <p className="hint muted">{t('settings.family.timetableHint')}</p>}
-      </div>
+      {settings.schoolEnabled && (
+        <div className="field">
+          <span>{t('settings.family.school')}</span>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={!!member.timetable}
+              onChange={(e) => {
+                if (e.target.checked) set({ timetable: newTimetable('grundschule') });
+                else if (confirm(t('settings.family.confirmDeleteTimetable', { name: member.name }))) set({ timetable: undefined });
+              }}
+            />
+            <span>{t('settings.family.hasTimetable')}</span>
+          </label>
+          {member.timetable && (
+            <div className="segmented small">
+              {(Object.keys(SCHOOL_TYPES) as (keyof typeof SCHOOL_TYPES)[]).map((type) => (
+                <button
+                  key={type}
+                  className={member.timetable?.schoolType === type ? 'active' : ''}
+                  onClick={() => set({ timetable: { ...member.timetable!, schoolType: type } })}
+                >
+                  {SCHOOL_TYPES[type]}
+                </button>
+              ))}
+            </div>
+          )}
+          {member.timetable && <p className="hint muted">{t('settings.family.timetableHint')}</p>}
+        </div>
+      )}
     </div>
   );
 }

@@ -10,7 +10,7 @@ import { t } from '../../i18n';
 export function FamilyWidget({ size }: WidgetProps) {
   const { events, todos, marks } = useDash();
   const now = useMinute();
-  const { members, school, paint } = useStore();
+  const { members, school, paint, settings } = useStore();
   const subjects = subjectMap(school, paint);
   const tomorrow = addDays(startOfDay(now), 1);
   const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -28,7 +28,7 @@ export function FamilyWidget({ size }: WidgetProps) {
           const next = mine.find((e) => !e.allDay) ?? mine[0];
           const openTodos = todos.todos.filter((x) => !x.done && x.text.trim() && x.memberIds.includes(mem.id)).length;
           let schoolText: string | null = null;
-          if (mem.timetable && !schoolFree) {
+          if (settings.schoolEnabled && mem.timetable && !schoolFree) {
             const tt = mem.timetable;
             const idx = now.getDay() - 1;
             const end = lastEnd(tt, idx);

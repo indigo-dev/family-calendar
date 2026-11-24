@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react';
 import { useGamesSettings } from '../games/store';
+import { useStore } from '../store';
 import { Icon } from './Icon';
 import { arrayOf, persisted, usePersisted } from '../lib/persisted';
 import { isNative } from '../native/launcher';
@@ -63,6 +64,7 @@ interface Drag {
 export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (id: ModuleId) => void }) {
   const order = usePersisted(orderStore);
   const games = useGamesSettings();
+  const { settings } = useStore();
   const [dragging, setDragging] = useState<ModuleId | null>(null);
   const drag = useRef<Drag | null>(null);
   const navRef = useRef<HTMLElement>(null);
@@ -159,8 +161,10 @@ export function ModuleNav({ active, onSelect }: { active: ModuleId; onSelect: (i
     if (next.join() !== order.join()) setOrder(next);
   };
 
-  // the games corner only appears when it is switched on for this device
-  const list = [MODULES[0], ...order.map((id) => MODULES.find((m) => m.id === id)!)].filter((m) => m.id !== 'games' || games.enabled);
+  // the games corner only appears when it is switched on for this device, the timetable only with the school area
+  const list = [MODULES[0], ...order.map((id) => MODULES.find((m) => m.id === id)!)].filter(
+    (m) => (m.id !== 'games' || games.enabled) && (m.id !== 'timetable' || settings.schoolEnabled),
+  );
 
   return (
     <nav ref={navRef} className={`module-nav ${dragging ? 'sorting' : ''}`} aria-label={t('app.sections')}>

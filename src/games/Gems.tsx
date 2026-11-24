@@ -73,7 +73,7 @@ export function Gems({ player }: { player: string }) {
       if (!m.size) break;
       setCombo(chain);
       setPopping(m);
-      await sleep(230);
+      await sleep(320);
       if (!alive.current) return;
       total += m.size * 10 * chain;
       setScore(total);
@@ -82,7 +82,7 @@ export function Gems({ player }: { player: string }) {
       setFresh(next.fresh);
       setPopping(new Set());
       setBoard(current);
-      await sleep(300);
+      await sleep(520);
       if (!alive.current) return;
       chain++;
     }
@@ -105,11 +105,11 @@ export function Gems({ player }: { player: string }) {
     const sw = swapped(board, a, b);
     setFresh(new Set());
     setBoard(sw);
-    await sleep(190);
+    await sleep(340);
     if (!alive.current) return;
     if (!findMatches(kindsOf(sw)).size) {
       setBoard(board);
-      await sleep(190);
+      await sleep(340);
       busy.current = false;
       return;
     }

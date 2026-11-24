@@ -74,11 +74,11 @@ export function App() {
   const frameIds = (photos ?? []).filter((p) => frameCfg.selected.includes(p.id)).map((p) => p.id);
 
   useWakeLock(settings.keepAwake);
-  // the games corner was switched off while open: back to the overview
+  // the games corner or the school area was switched off while open: back to the overview
   const games = useGamesSettings();
   useEffect(() => {
-    if (module === 'games' && !games.enabled) setModule('dashboard');
-  }, [module, games.enabled]);
+    if ((module === 'games' && !games.enabled) || (module === 'timetable' && !settings.schoolEnabled)) setModule('dashboard');
+  }, [module, games.enabled, settings.schoolEnabled]);
 
   /** switches the area with the cross-fade (rail, widgets, voice, links) */
   const goModule = useCallback(

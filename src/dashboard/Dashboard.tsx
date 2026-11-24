@@ -52,7 +52,12 @@ function columnsFor(width: number) {
 
 export function Dashboard({ reloadKey, editing, onEditing, openModule, startFrame, startScreensaver, openSettings }: Props) {
   const { members, calendars, settings } = useStore();
-  const layout = useLayout();
+  const stored = useLayout();
+  // without the school area its widgets stay in the layout, just hidden (they come back when it is switched on)
+  const layout = useMemo(
+    () => (settings.schoolEnabled ? stored : stored.filter((w) => w.type !== 'timetable')),
+    [stored, settings.schoolEnabled],
+  );
   const [gridRef, size] = useSize<HTMLDivElement>();
   const [gallery, setGallery] = useState(false);
 
@@ -462,6 +467,7 @@ function SizeMenu({
 }
 
 function Gallery({ onClose }: { onClose: () => void }) {
+  const { settings } = useStore();
   // app tiles: first choose the app
   const [picking, setPicking] = useState(false);
   if (picking)
@@ -484,7 +490,7 @@ function Gallery({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <div className="dash-gallery-list">
-          {WIDGETS.map((d) => (
+          {WIDGETS.filter((d) => d.type !== 'timetable' || settings.schoolEnabled).map((d) => (
             <div key={d.type} className="dash-gallery-item">
               <span className="dash-gallery-icon">{d.icon}</span>
               <div className="dash-gallery-text">

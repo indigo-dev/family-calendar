@@ -451,16 +451,19 @@
     place-items: center;
     border-radius: 22%;
     transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%));
+    /* soft: a long, gently easing glide instead of a short jerk */
     transition:
-      transform 0.18s cubic-bezier(0.3, 0.7, 0.4, 1),
-      opacity 0.2s ease;
+      transform 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.3s ease;
   }
   .gem-svg {
     display: block;
     width: 80%;
     height: 80%;
     filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.25));
-    transition: transform 0.2s ease;
+    transition:
+      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.3s ease;
   }
   .gem.on {
     background: color-mix(in srgb, var(--accent) 22%, transparent);
@@ -468,19 +471,25 @@
   .gem.on .gem-svg {
     transform: scale(1.12);
   }
+  /* a match shrinks and fades instead of vanishing */
   .gem.pop .gem-svg {
-    transform: scale(0);
-    transition-duration: 0.22s;
+    transform: scale(0.2) rotate(-25deg);
+    opacity: 0;
+    transition:
+      transform 0.32s cubic-bezier(0.55, 0, 0.75, 0.2),
+      opacity 0.28s ease-in;
   }
+  /* new gems float down, the lower ones a little earlier */
   .gem.fresh {
-    animation: gem-drop 0.32s cubic-bezier(0.3, 0.7, 0.4, 1) both;
+    animation: gem-drop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc((7 - var(--y)) * 18ms);
   }
   .gem.hint .gem-svg {
     animation: gem-wiggle 0.6s ease-in-out 3;
   }
   @keyframes gem-drop {
     from {
-      transform: translate(calc(var(--x) * 100%), calc((var(--y) - 4) * 100%));
+      transform: translate(calc(var(--x) * 100%), calc((var(--y) - 3) * 100%));
       opacity: 0;
     }
   }

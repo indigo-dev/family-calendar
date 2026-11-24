@@ -1038,6 +1038,8 @@ export const en: Messages = {
       },
     },
     school: {
+      enabled: 'School & timetables',
+      enabledHint: "Off hides the timetable area, its widgets and the children's school times. Timetables you entered are kept.",
       bellTimes: 'Bell times',
       noKid: 'No child with a timetable yet. Turn on “Has a timetable” for the person under “Family”.',
       confirmRemovePeriod: 'Lesson {n} has subjects. Remove it anyway?',

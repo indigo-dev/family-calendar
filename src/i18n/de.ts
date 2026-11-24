@@ -1042,6 +1042,9 @@ export const de = {
       },
     },
     school: {
+      enabled: 'Schule & Stundenpläne',
+      enabledHint:
+        'Aus blendet den Stundenplan-Bereich, seine Widgets und die Schulzeiten der Kinder aus. Eingetragene Stundenpläne bleiben erhalten.',
       bellTimes: 'Klingelzeiten',
       noKid: 'Noch kein Kind mit Stundenplan. Unter „Familie“ bei der Person „Hat Stundenplan“ einschalten.',
       confirmRemovePeriod: 'In der {n}. Stunde sind Fächer eingetragen. Trotzdem entfernen?',

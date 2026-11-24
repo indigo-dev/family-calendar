@@ -44,7 +44,7 @@ The app speaks German and English (Settings → Device, or the device language).
   Minimal · Functional) are still available. Light/dark follows the device or is set by hand.
 - **Colours follow the style:** people, subjects and shopping departments keep the colour they were given, but each
   style draws them in its own palette (HomeWally: the logo spectrum, Minimal: muted tones, others: vivid).
-- **Symbols:** shopping symbols (Twemoji by default, other colour, one-colour and line sets) and weather icons
+- **Symbols:** shopping symbols (OpenMoji by default, other colour, one-colour and line sets) and weather icons
   (Meteocons, Material, Fluent) are bundled with the app – nothing is loaded from icon services at runtime.
 - **Transitions** between the areas: fade (default), glide, zoom or instant.
 - All fonts are bundled locally (no Google Fonts).

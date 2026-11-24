@@ -29,6 +29,12 @@ describe('parseConfig', () => {
     expect(style('sonoma')).toBe(DEFAULT_SETTINGS.style);
   });
 
+  it('has the school area on unless it was switched off', () => {
+    expect(parseConfig(base).settings.schoolEnabled).toBe(true);
+    expect(parseConfig({ ...base, settings: { schoolEnabled: false } }).settings.schoolEnabled).toBe(false);
+    expect(parseConfig({ ...base, settings: { schoolEnabled: 'no' } }).settings.schoolEnabled).toBe(true);
+  });
+
   it('accepts backups without a language and keeps a valid one', () => {
     expect(parseConfig(base).settings.language).toBe('auto');
     expect(parseConfig({ ...base, settings: { language: 'en' } }).settings.language).toBe('en');

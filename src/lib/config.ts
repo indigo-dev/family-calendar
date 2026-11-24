@@ -105,6 +105,7 @@ export const DEFAULT_SETTINGS: Settings = {
   style: 'wally',
   symbols: DEFAULT_SYMBOL_SET,
   weatherIcons: DEFAULT_WEATHER_ICONS,
+  schoolEnabled: true,
 };
 
 const STYLE_IDS: UiStyle[] = ['wally', 'classic', 'clear', 'flow', 'aurora', 'nodes', 'minimal'];

@@ -57,7 +57,7 @@ export const SYMBOL_SETS: SymbolSetInfo[] = SETS.map((s) => ({
   },
 }));
 
-export const DEFAULT_SYMBOL_SET: SymbolSet = 'twemoji';
+export const DEFAULT_SYMBOL_SET: SymbolSet = 'openmoji';
 
 const available = new Map<string, Set<string>>(
   Object.entries(manifest as Record<string, string[]>).map(([set, keys]) => [set, new Set(keys)]),

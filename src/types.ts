@@ -88,8 +88,8 @@ export interface Settings {
   symbols: SymbolSet;
   /** how weather conditions are drawn */
   weatherIcons: WeatherIconSet;
-  /** how people, subjects and departments are coloured */
-  /** animation when switching modules */
+  /** school area: timetables, bell times, subjects (off = hidden everywhere) */
+  schoolEnabled: boolean;
 }
 
 export type UiStyle = 'wally' | 'classic' | 'clear' | 'flow' | 'aurora' | 'nodes' | 'minimal';
