@@ -6,6 +6,8 @@ no sign-in and no server of your own. Website: <https://indigo-dev.github.io/hom
 The same code also ships as the Android app and home-screen launcher **HomeWally** (see [Android app](#android-app)).
 The app speaks German and English (Settings → Device, or the device language).
 
+<img width="1501" height="892" alt="image" src="https://github.com/user-attachments/assets/bc3116d1-fa53-48ef-b988-11b33ce20410" />
+
 ## What's inside
 
 - **Overview (dashboard):** the start page with widgets – clock, weather, events today & tomorrow, timetable, to-dos,
